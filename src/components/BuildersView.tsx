@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Check, KeyRound, LogIn, Activity, Trash2, Star, Terminal,
@@ -161,21 +161,41 @@ export default function BuildersView() {
     catch { return { error: `The server returned ${r.status} with no explanation.` }; }
   }
 
+  const loadController = useRef<AbortController | null>(null);
+
   async function load() {
+    if (loadController.current) {
+      loadController.current.abort();
+    }
+    loadController.current = new AbortController();
+    const signal = loadController.current.signal;
+
     setRefreshing(true);
     try {
-      const j = await readJson(await fetch("/api/builders", { cache: "no-store" }));
+      const res = await fetch("/api/builders", { cache: "no-store", signal });
+      const j = await readJson(res);
+      if (signal.aborted) return;
       setClis((j.clis as Cli[]) ?? []);
       setBuilders((j.builders as Builder[]) ?? []);
       setNativeProfiles((j.nativeProfiles as NativeProfile[]) ?? []);
       setOrphans((j.orphanedDirs as string[]) ?? []);
       setErr((j.error as string) ?? null);
       setLoaded(true);
+    } catch (e: any) {
+      if (e.name === "AbortError") return;
+      setErr(e.message);
     } finally {
-      setRefreshing(false);
+      if (!signal.aborted) setRefreshing(false);
     }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    return () => {
+      if (loadController.current) {
+        loadController.current.abort();
+      }
+    };
+  }, []);
 
   // Model lists can be slow (codex app-server, agy PTY, provider calls). Load
   // the page first, then hydrate model dropdowns in the background per profile.
@@ -183,7 +203,7 @@ export default function BuildersView() {
   // or heavy network calls all at once, which causes Node event loop freezes.
   const fetchingModels = useMemo(() => new Set<string>(), []);
   useEffect(() => {
-    let alive = true;
+    const controller = new AbortController();
 
     async function hydrateSequentially() {
       // Find missing models. We filter against fetchingModels so we don't re-queue.
@@ -191,16 +211,19 @@ export default function BuildersView() {
       if (!missing.length) return;
 
       for (const b of missing) {
-        if (!alive) break;
+        if (controller.signal.aborted) break;
         fetchingModels.add(b.id);
 
         try {
-          const res = await fetch(`/api/builders/${encodeURIComponent(b.id)}/models`, { cache: "no-store" });
+          const res = await fetch(`/api/builders/${encodeURIComponent(b.id)}/models`, {
+            cache: "no-store",
+            signal: controller.signal
+          });
           const j = await res.json();
-          if (!alive) break;
+          if (controller.signal.aborted) break;
           setModelInfos((m) => ({ ...m, [b.id]: (j.modelsInfo ?? null) as Builder["modelsInfo"] }));
         } catch {
-          if (!alive) break;
+          if (controller.signal.aborted) break;
           setModelInfos((m) => ({ ...m, [b.id]: null }));
         }
       }
@@ -209,7 +232,7 @@ export default function BuildersView() {
     // Fire the async background queue
     void hydrateSequentially();
 
-    return () => { alive = false; };
+    return () => { controller.abort(); };
   }, [builders, modelInfos, fetchingModels]);
 
   async function importProfile(p: NativeProfile) {
@@ -220,28 +243,59 @@ export default function BuildersView() {
     if (j.error) setErr(String(j.error)); else { setErr(null); await load(); }
   }
 
+  const scanController = useRef<AbortController | null>(null);
+
   /** Re-run native-profile detection, then health-test every profile of one CLI. */
   async function scanCli(c: Cli) {
     if (scanFor) return;
     setScanFor(c.id);
+
+    if (scanController.current) {
+      scanController.current.abort();
+    }
+    scanController.current = new AbortController();
+    const signal = scanController.current.signal;
+
     try {
       await load();                              // fresh detection first
+      if (signal.aborted) return;
       for (const b of (byCli[c.id] ?? [])) {     // then test each profile, one at a time
-        await probe(b);
+        if (signal.aborted) return;
+        await probe(b, signal);
       }
-    } finally { setScanFor(null); }
+    } finally {
+      if (!signal.aborted) setScanFor(null);
+    }
   }
 
-  async function probe(b: Builder) {
+  useEffect(() => {
+    return () => {
+      if (scanController.current) {
+        scanController.current.abort();
+      }
+    };
+  }, []);
+
+  async function probe(b: Builder, signal?: AbortSignal) {
     setHealth((h) => ({ ...h, [b.id]: "running" }));
-    const j = await readJson(await fetch(`/api/builders/${b.id}/health`, { method: "POST" }));
-    setHealth((h) => ({
-      ...h,
-      [b.id]: (j.health as Health) ?? { state: "fail", message: String(j.error ?? "Health check failed."), version: null, durationMs: 0, warnings: [] },
-    }));
-    // The probe writes its verdict onto the builder record (the green tick) —
-    // reload so the tick appears without a manual refresh.
-    await load();
+    try {
+      const res = await fetch(`/api/builders/${b.id}/health`, { method: "POST", signal });
+      const j = await readJson(res);
+      if (signal?.aborted) return;
+      setHealth((h) => ({
+        ...h,
+        [b.id]: (j.health as Health) ?? { state: "fail", message: String(j.error ?? "Health check failed."), version: null, durationMs: 0, warnings: [] },
+      }));
+      // The probe writes its verdict onto the builder record (the green tick) —
+      // reload so the tick appears without a manual refresh.
+      if (!signal?.aborted) await load();
+    } catch (e: any) {
+      if (e.name === "AbortError") return;
+      setHealth((h) => ({
+        ...h,
+        [b.id]: { state: "fail", message: e.message, version: null, durationMs: 0, warnings: [] },
+      }));
+    }
   }
 
   async function remove(b: Builder) {
