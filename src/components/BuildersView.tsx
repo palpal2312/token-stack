@@ -179,23 +179,38 @@ export default function BuildersView() {
 
   // Model lists can be slow (codex app-server, agy PTY, provider calls). Load
   // the page first, then hydrate model dropdowns in the background per profile.
+  // We process them SEQUENTIALLY to avoid blasting the backend with 10+ PTY spawns
+  // or heavy network calls all at once, which causes Node event loop freezes.
+  const fetchingModels = useMemo(() => new Set<string>(), []);
   useEffect(() => {
     let alive = true;
-    const missing = builders.filter((b) => !b.modelsInfo && !(b.id in modelInfos));
-    for (const b of missing) {
-      fetch(`/api/builders/${encodeURIComponent(b.id)}/models`, { cache: "no-store" })
-        .then((r) => r.json())
-        .then((j) => {
-          if (!alive) return;
+
+    async function hydrateSequentially() {
+      // Find missing models. We filter against fetchingModels so we don't re-queue.
+      const missing = builders.filter((b) => !b.modelsInfo && !(b.id in modelInfos) && !fetchingModels.has(b.id));
+      if (!missing.length) return;
+
+      for (const b of missing) {
+        if (!alive) break;
+        fetchingModels.add(b.id);
+
+        try {
+          const res = await fetch(`/api/builders/${encodeURIComponent(b.id)}/models`, { cache: "no-store" });
+          const j = await res.json();
+          if (!alive) break;
           setModelInfos((m) => ({ ...m, [b.id]: (j.modelsInfo ?? null) as Builder["modelsInfo"] }));
-        })
-        .catch(() => {
-          if (!alive) return;
+        } catch {
+          if (!alive) break;
           setModelInfos((m) => ({ ...m, [b.id]: null }));
-        });
+        }
+      }
     }
+
+    // Fire the async background queue
+    void hydrateSequentially();
+
     return () => { alive = false; };
-  }, [builders, modelInfos]);
+  }, [builders, modelInfos, fetchingModels]);
 
   async function importProfile(p: NativeProfile) {
     const j = await readJson(await fetch("/api/builders/import-native", {
