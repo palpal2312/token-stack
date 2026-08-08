@@ -19,7 +19,7 @@ import { existsSync } from "node:fs";
 import { config } from "./config";
 import { agentEnv } from "./runner";
 
-const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_TIMEOUT_MS = 5_000;
 
 export function herdrBin(): string | null {
   const bin = config.herdrBin;
@@ -178,11 +178,10 @@ export async function herdrStatus(): Promise<HerdrStatus> {
     };
   }
 
-  const ver = await execHerdrText(["--version"], { timeoutMs: 8_000 });
+  const ver = await execHerdrText(["--version"], { timeoutMs: 2_000 });
   const version = ver.data?.trim().split(/\s+/)[1] ?? null;
 
-  // The snapshot doubles as the liveness check: if it answers, the server is up.
-  const snap = await execHerdr<{ snapshot?: HerdrSnapshot }>(["api", "snapshot"], { timeoutMs: 12_000 });
+  const snap = await execHerdr<{ snapshot?: HerdrSnapshot }>(["api", "snapshot"], { timeoutMs: 3_000 });
   if (!snap.ok) {
     return {
       installed: true, bin, version, running: false,
