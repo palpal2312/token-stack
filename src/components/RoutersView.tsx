@@ -116,8 +116,8 @@ export default function RoutersView() {
 
   useEffect(() => {
     load().then(() => {
-      // Small delay to let state settle before probing
-      setTimeout(() => probeAllBilling(), 300);
+      // Initiate probes directly; probing triggers localized state updates without blocking the main render
+      probeAllBilling();
     });
   }, [probeAllBilling]);
 
