@@ -23,10 +23,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   BookOpen, Boxes, Brain, CalendarClock, FileText, LayoutGrid, MessagesSquare, Plus,
-  ListTodo, Radio, RefreshCw, Repeat, Send, Square, SquareTerminal, TriangleAlert, PanelLeft, PanelRight, LayoutDashboard
+  ListTodo, Radio, RefreshCw, Repeat, Send, Square, SquareTerminal, TriangleAlert, PanelLeft, PanelRight, LayoutDashboard, Wrench
 } from "lucide-react";
 import AgentKanban from "./AgentKanban";
 import CodeSpaceView from "./CodeSpaceView";
+import BuildersView from "./BuildersView";
 import OverviewDashboard from "./Overview";
 import McpServersPanel from "./McpServersPanel";
 import ActivityStream from "./ActivityStream";
@@ -94,9 +95,9 @@ interface Overview {
   fleet: Fleet;
 }
 
-type FmTab = "mission" | "knowledge-base" | "automations" | "loop" | "code-space" | "agent-kanban" | "activity-stream" | "reports" | "memory" | "integrations";
+type FmTab = "mission" | "knowledge-base" | "automations" | "loop" | "code-space" | "agent-kanban" | "activity-stream" | "reports" | "memory" | "integrations" | "builders";
 
-const FM_TABS: FmTab[] = ["mission", "knowledge-base", "automations", "loop", "code-space", "agent-kanban", "activity-stream", "reports", "memory", "integrations"];
+const FM_TABS: FmTab[] = ["mission", "knowledge-base", "automations", "loop", "code-space", "agent-kanban", "activity-stream", "reports", "memory", "integrations", "builders"];
 
 function normalizeFmTab(raw: string | null): FmTab | null {
   if (!raw) return null;
@@ -1576,6 +1577,7 @@ export default function SenView() {
     { key: "automations", label: "Automations", icon: <CalendarClock size={14} /> },
     { key: "loop", label: "Loop", icon: <Repeat size={14} /> },
     { key: "code-space", label: "Code Space", icon: <SquareTerminal size={14} /> },
+    { key: "builders", label: "Builders", icon: <Wrench size={14} /> },
     { key: "memory",     label: "Memory",     icon: <Brain size={14} /> },
     { key: "integrations", label: "Integrations", icon: <Boxes size={14} /> },
     { key: "agent-kanban", label: "Agent Kanban", icon: <LayoutDashboard size={14} /> },
@@ -1621,6 +1623,13 @@ export default function SenView() {
       );
     }
     if (tab === "code-space") return <CodeSpaceView embedded />;
+    if (tab === "builders") {
+      return (
+        <div className="flex min-h-[520px] flex-col overflow-y-auto">
+          <BuildersView />
+        </div>
+      );
+    }
     if (tab === "agent-kanban") {
       return (
         <div className="flex min-h-[520px] flex-col">
