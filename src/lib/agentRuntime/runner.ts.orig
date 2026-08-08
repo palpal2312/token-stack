@@ -1,0 +1,384 @@
+// The runner: turn an Agent declaration into a traced, resumable run.
+//
+// The loop itself is small on purpose. Each turn: ask the brain for one
+// completion; words alone finish the run; tool calls go through the policies,
+// execute, and land back in the conversation as tool results — then ask
+// again. Every beat appends a step to RunState and saves it, so a run can be
+// watched live (onStep), survives a restart, and can be resumed from its
+// state file — including from "blocked", where a parked approval left it.
+//
+// Two refusals look different on purpose. A denied call becomes the tool's
+// own result and the loop continues — the model reads the no and routes
+// around it. A parked call stops the run: pendingApproval holds the exact
+// call, and resume(agent, runId, { approval }) is how it gets its answer.
+
+import { randomUUID } from "node:crypto";
+import type { Agent, ToolContext } from "./agent";
+import { resolveBrain } from "./agent";
+import type { Brain, BrainToolCall } from "./brain";
+import { AllowAll, type PolicyContext, type PolicyDecision, type ToolPolicy } from "./policies";
+import {
+  MemoryStateStore,
+  type RunState,
+  type RunStatus,
+  type RunStep,
+  type StateStore,
+} from "./state";
+import { writeTranscript } from "./transcript";
+import type { ChatMessage, ChatTool } from "../routers/adapters/base";
+import { ExecutionManager } from "../llmops/execution-manager";
+
+export interface RunOptions {
+  /** Where the run's state lives. Defaults to memory — persistence is opt-in. */
+  stateStore?: StateStore;
+  /** Groups runs into a conversation; a fresh one is minted when absent. */
+  threadId?: string;
+  /**
+   * A prior conversation to continue (no system message — the agent's own
+   * instructions always lead). How a chat surface keeps one thread across
+   * runs: each new run seeds from the thread's last state instead of
+   * starting blank, so the brain sees the whole conversation.
+   */
+  seedMessages?: ChatMessage[];
+  /** Pre-assigned run id — for callers that must know the run dir up front
+   *  (automations jail the toolkits at stateStore.runDir(runId)). */
+  runId?: string;
+  signal?: AbortSignal;
+  /** Every step, just after it is persisted — for live progress UI. */
+  onStep?: (step: RunStep, state: RunState) => void;
+  /** Checked for every tool call, strictest wins. Defaults to AllowAll. */
+  policies?: ToolPolicy[];
+}
+
+export interface RunResult {
+  runId: string;
+  status: Exclude<RunStatus, "running">;
+  finalText: string;
+  state: RunState;
+}
+
+export interface ResumeOptions extends RunOptions {
+  /** The answer to a parked approval. Required when the run is blocked. */
+  approval?: "approve" | "deny";
+}
+
+const DEFAULT_MAX_TURNS = 10;
+const ACTIVE_RUN_MESSAGE = (runId: string) =>
+  `Run "${runId}" already has an active runtime in this process. Wait for it to finish or cancel it before resuming again.`;
+
+export async function run(agent: Agent, input: string, opts: RunOptions = {}): Promise<RunResult> {
+  const now = new Date().toISOString();
+  const state: RunState = {
+    // Callers that must know the run directory up front (automations jail the
+    // toolkits at it) pass runId themselves; everyone else gets a fresh one.
+    id: opts.runId ?? randomUUID(),
+    threadId: opts.threadId ?? randomUUID(),
+    agentName: agent.name,
+    status: "running",
+    steps: [],
+    artifacts: [],
+    messages: [
+      { role: "system", content: agent.instructions },
+      ...(opts.seedMessages ?? []),
+      { role: "user", content: input },
+    ],
+    createdAt: now,
+    updatedAt: now,
+    revision: 0,
+  };
+  // Remember the brain pick so a resume can rebuild it — the user's
+  // model/effort choice must survive the approval boundary. Only a router
+  // pick can be rebuilt; a scripted brain lives only in this process.
+  if (agent.brain.kind === "router") {
+    state.brain = {
+      kind: "router",
+      routerId: agent.brain.routerId,
+      ...(agent.brain.model !== undefined ? { model: agent.brain.model } : {}),
+      ...(agent.brain.effort !== undefined ? { effort: agent.brain.effort } : {}),
+    };
+  } else if (agent.brain.kind === "builder") {
+    state.brain = {
+      kind: "builder",
+      builderId: agent.brain.builderId,
+      ...(agent.brain.model !== undefined ? { model: agent.brain.model } : {}),
+      ...(agent.brain.effort !== undefined ? { effort: agent.brain.effort } : {}),
+      ...(agent.brain.sessionId !== undefined ? { builderSessionId: agent.brain.sessionId } : {}),
+    };
+  }
+  const store: StateStore = opts.stateStore ?? new MemoryStateStore();
+  const persist = makePersist(store, state, opts.onStep);
+  const claim = ExecutionManager.claim(state.id, `runner:${agent.name}`);
+  if (!claim) throw new Error(ACTIVE_RUN_MESSAGE(state.id));
+  const linkedOpts = {
+    ...opts,
+    signal: opts.signal ? AbortSignal.any([opts.signal, claim.signal]) : claim.signal,
+  };
+  try {
+    await persist({ kind: "input", text: input, at: new Date().toISOString() });
+    return await drive(agent, state, persist, linkedOpts, store.runDir?.(state.id));
+  } finally {
+    ExecutionManager.releaseClaim(state.id, claim);
+  }
+}
+
+/**
+ * Continue a run from its stored state. A blocked run needs the parked
+ * approval answered first: approve executes the exact call that was parked
+ * (no second policy check — the human IS the policy now), deny feeds the
+ * refusal back as the tool result and lets the model route around it.
+ */
+export async function resume(agent: Agent, runId: string, opts: ResumeOptions = {}): Promise<RunResult> {
+  const claim = ExecutionManager.claim(runId, `runner:${agent.name}`);
+  if (!claim) throw new Error(ACTIVE_RUN_MESSAGE(runId));
+  try {
+    const store: StateStore = opts.stateStore ?? new MemoryStateStore();
+    const state = await store.load(runId);
+    if (!state) throw new Error(`No run "${runId}" in this store.`);
+
+    if (state.status === "done" || state.status === "max-turns") {
+      return { runId, status: state.status, finalText: lastBrainText(state), state };
+    }
+
+    const persist = makePersist(store, state, opts.onStep);
+    const linkedOpts = {
+      ...opts,
+      signal: opts.signal ? AbortSignal.any([opts.signal, claim.signal]) : claim.signal,
+    };
+
+    if (state.status === "blocked") {
+      const pending = state.pendingApproval;
+      if (!pending) {
+        throw new Error(`Run "${runId}" is blocked but names no pending approval — the state file is inconsistent.`);
+      }
+      if (!opts.approval) {
+        throw new Error(
+          `Run "${runId}" is blocked on ${pending.tool}. Resume with approval: "approve" or "deny" — it will not decide on its own.`,
+        );
+      }
+      state.pendingApproval = undefined;
+      if (opts.approval === "approve") {
+        await executeAndAppend(agent, state, persist, {
+          id: pending.toolCallId,
+          name: pending.tool,
+          arguments: pending.args,
+          argumentsText: JSON.stringify(pending.args ?? {}),
+        }, linkedOpts, "approved-on-resume", store.runDir?.(state.id));
+      } else {
+        await persist(appendToolResult(state, pending.toolCallId, pending.tool, pending.args, {
+          error: `The parked call to ${pending.tool} was denied on resume. Do not retry it — answer with what you have.`,
+        }, "deny"));
+      }
+    }
+
+    state.status = "running";
+    return await drive(agent, state, persist, linkedOpts, store.runDir?.(state.id));
+  } finally {
+    ExecutionManager.releaseClaim(runId, claim);
+  }
+}
+
+// ------------------------------------------------------------------ the loop
+
+type Persist = (step: RunStep) => Promise<void>;
+
+function makePersist(store: StateStore, state: RunState, onStep?: RunOptions["onStep"]): Persist {
+  return async (step) => {
+    state.steps.push(step);
+    state.revision += 1;
+    state.updatedAt = new Date().toISOString();
+    await store.save(state);
+    // The transcript rides the same boundary as the save: a store with a run
+    // directory gets a fresh, readable narrative after every step, so a crash
+    // leaves a story instead of a half-told JSON trace.
+    const runDir = store.runDir?.(state.id);
+    if (runDir) await writeTranscript(runDir, state);
+    onStep?.(step, state);
+  };
+}
+
+async function drive(
+  agent: Agent,
+  state: RunState,
+  persist: Persist,
+  opts: RunOptions,
+  runDir?: string,
+): Promise<RunResult> {
+  let brain: Brain;
+  try {
+    brain = resolveBrain(agent.brain);
+  } catch (e) {
+    return settle(state, persist, "failed", String((e as Error)?.message ?? e));
+  }
+
+  const chatTools: ChatTool[] = agent.tools.map((t) => ({
+    type: "function",
+    function: { name: t.name, description: t.description, parameters: t.schema },
+  }));
+  const maxTurns = agent.maxTurns ?? DEFAULT_MAX_TURNS;
+
+  for (let turn = 1; turn <= maxTurns; turn++) {
+    if (opts.signal?.aborted) return settle(state, persist, "failed", "The run was aborted.");
+
+    let result: Awaited<ReturnType<Brain["complete"]>>;
+    try {
+      result = await brain.complete(state.messages, chatTools, opts.signal);
+    } catch (e) {
+      return settle(state, persist, "failed", String((e as Error)?.message ?? e));
+    }
+    if (state.brain?.kind === "builder") {
+      if (result.sessionId) {
+        state.brain.builderSessionId = result.sessionId;
+        delete state.brain.sessionUnavailableReason;
+      } else if (result.sessionUnavailableReason) {
+        state.brain.sessionUnavailableReason = result.sessionUnavailableReason;
+      }
+    }
+
+    // The model's turn goes back into the conversation whole — its words and
+    // its calls — because the next request must show it its own hand before
+    // it sees the results.
+    const assistant: ChatMessage = { role: "assistant", content: result.text };
+    if (result.toolCalls.length) {
+      assistant.toolCalls = result.toolCalls.map((c) => ({ id: c.id, name: c.name, argumentsText: c.argumentsText }));
+    }
+    state.messages.push(assistant);
+    await persist({ kind: "brain", turn, text: result.text, toolCalls: result.toolCalls, at: new Date().toISOString() });
+
+    if (!result.toolCalls.length) return settle(state, persist, "done", result.text);
+
+    for (const call of result.toolCalls) {
+      const tool = agent.tools.find((t) => t.name === call.name);
+      if (!tool) {
+        await persist(appendToolResult(state, call.id, call.name, call.arguments, {
+          error: `This agent has no tool "${call.name}". Use one of: ${agent.tools.map((t) => t.name).join(", ")}.`,
+        }, "deny"));
+        continue;
+      }
+
+      const decision = await evaluatePolicies(opts.policies ?? [AllowAll], tool, {
+        runId: state.id, threadId: state.threadId, agentName: agent.name, toolCallId: call.id, args: call.arguments,
+      });
+
+      if (decision === "park") {
+        state.pendingApproval = { toolCallId: call.id, tool: call.name, args: call.arguments };
+        return settle(state, persist, "blocked", lastBrainText(state));
+      }
+      if (decision === "deny") {
+        await persist(appendToolResult(state, call.id, call.name, call.arguments, {
+          error: `A policy refused to run ${call.name}. Do not retry the same call — use another tool or answer with what you have.`,
+        }, "deny"));
+        continue;
+      }
+      await executeAndAppend(agent, state, persist, call, opts, "allow", runDir);
+    }
+  }
+  return settle(state, persist, "max-turns", lastBrainText(state));
+}
+
+// ------------------------------------------------------------------ helpers
+
+async function evaluatePolicies(
+  policies: ToolPolicy[],
+  tool: Agent["tools"][number],
+  ctx: PolicyContext,
+): Promise<PolicyDecision> {
+  // Strictest wins: any park beats any deny beats allow. Evaluated in order
+  // so a fast DenyAll is not charged for a slow approval handler first.
+  let sawDeny = false;
+  for (const p of policies) {
+    const d = await p.evaluate(tool, ctx);
+    if (d === "park") return "park";
+    if (d === "deny") sawDeny = true;
+  }
+  return sawDeny ? "deny" : "allow";
+}
+
+async function executeAndAppend(
+  agent: Agent,
+  state: RunState,
+  persist: Persist,
+  call: BrainToolCall,
+  opts: RunOptions,
+  decision: string,
+  runDir?: string,
+): Promise<void> {
+  const tool = agent.tools.find((t) => t.name === call.name);
+  if (!tool) {
+    await persist(appendToolResult(state, call.id, call.name, call.arguments, {
+      error: `This agent has no tool "${call.name}".`,
+    }, "deny"));
+    return;
+  }
+  const ctx: ToolContext = {
+    runId: state.id, threadId: state.threadId, agentName: agent.name, signal: opts.signal, runDir,
+  };
+  let out: unknown;
+  try {
+    out = await tool.execute(call.arguments, ctx);
+  } catch (e) {
+    // A thrown tool never ends the run — the exception becomes the tool's
+    // result so the model sees its tool failed and can route around it.
+    out = { error: String((e as Error)?.message ?? e) };
+  }
+  // A producing tool's { path, kind } is copied into the registry here,
+  // before the save, so the artifact list lands in the same revision as the
+  // step that made it.
+  if (tool.metadata?.producesArtifacts && isArtifactResult(out)) {
+    state.artifacts.push({ path: out.path, kind: out.kind, createdAt: new Date().toISOString() });
+  }
+  await persist(appendToolResult(state, call.id, call.name, call.arguments, out, decision));
+}
+
+function isArtifactResult(out: unknown): out is { path: string; kind: string } {
+  if (typeof out !== "object" || out === null) return false;
+  const o = out as Record<string, unknown>;
+  return typeof o.path === "string" && typeof o.kind === "string";
+}
+
+/**
+ * Push the tool result onto the conversation and return its trace step for
+ * the caller to persist — the actual save lives only in makePersist, which is
+ * what keeps the revision counter honest.
+ */
+function appendToolResult(
+  state: RunState,
+  toolCallId: string,
+  name: string,
+  args: unknown,
+  result: unknown,
+  decision: string,
+): RunStep {
+  const content = typeof result === "string" ? result : JSON.stringify(result ?? null);
+  state.messages.push({ role: "tool", content, toolCallId });
+  return {
+    kind: "tool",
+    toolCallId,
+    name,
+    args,
+    result,
+    decision,
+    error: typeof result === "object" && result !== null && "error" in result
+      ? String((result as { error: unknown }).error)
+      : undefined,
+    at: new Date().toISOString(),
+  };
+}
+
+async function settle(
+  state: RunState,
+  persist: Persist,
+  status: RunResult["status"],
+  finalText: string,
+): Promise<RunResult> {
+  state.status = status;
+  await persist({ kind: "finish", name: status, text: finalText, at: new Date().toISOString() });
+  return { runId: state.id, status, finalText, state };
+}
+
+function lastBrainText(state: RunState): string {
+  for (let i = state.steps.length - 1; i >= 0; i--) {
+    const s = state.steps[i];
+    if (s.kind === "brain" && s.text) return s.text;
+  }
+  return "";
+}
