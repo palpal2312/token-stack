@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, X, Check, KeyRound, LogIn, Activity, Trash2, Star, Terminal,
   AlertTriangle, CircleDot, Copy, Settings2, ScanSearch, RefreshCw, SlidersHorizontal,
@@ -201,18 +200,20 @@ export default function BuildersView() {
   // the page first, then hydrate model dropdowns in the background per profile.
   // We process them SEQUENTIALLY to avoid blasting the backend with 10+ PTY spawns
   // or heavy network calls all at once, which causes Node event loop freezes.
-  const fetchingModels = useMemo(() => new Set<string>(), []);
+  // A ref avoids triggering useEffect cleanup loops when its state changes.
+  const fetchingModels = useRef(new Set<string>());
+
   useEffect(() => {
     const controller = new AbortController();
 
     async function hydrateSequentially() {
-      // Find missing models. We filter against fetchingModels so we don't re-queue.
-      const missing = builders.filter((b) => !b.modelsInfo && !(b.id in modelInfos) && !fetchingModels.has(b.id));
+      // Find missing models checking both the current prop state and our local fetching ref.
+      const missing = builders.filter((b) => !b.modelsInfo && !fetchingModels.current.has(b.id));
       if (!missing.length) return;
 
       for (const b of missing) {
         if (controller.signal.aborted) break;
-        fetchingModels.add(b.id);
+        fetchingModels.current.add(b.id);
 
         try {
           const res = await fetch(`/api/builders/${encodeURIComponent(b.id)}/models`, {
@@ -233,7 +234,8 @@ export default function BuildersView() {
     void hydrateSequentially();
 
     return () => { controller.abort(); };
-  }, [builders, modelInfos, fetchingModels]);
+    // Only re-run if builders change (not when modelInfos changes, to avoid loop trashing)
+  }, [builders]);
 
   async function importProfile(p: NativeProfile) {
     const j = await readJson(await fetch("/api/builders/import-native", {
@@ -344,16 +346,11 @@ export default function BuildersView() {
     setLoginInfo({ builder: b, command: String(j.command ?? ""), opened: Boolean(j.opened), note: String(j.note ?? "") });
   }
 
-  const hydratedBuilders = useMemo(() => builders.map((b) => ({
-    ...b,
-    modelsInfo: (b.id in modelInfos) ? modelInfos[b.id] : b.modelsInfo,
-  })), [builders, modelInfos]);
-
   const byCli = useMemo(() => {
     const m: Record<string, Builder[]> = {};
-    for (const b of hydratedBuilders) (m[b.cli] ??= []).push(b);
+    for (const b of builders) (m[b.cli] ??= []).push(b);
     return m;
-  }, [hydratedBuilders]);
+  }, [builders]);
 
   const stats = useMemo(() => ({
     profiles: builders.length,
@@ -418,6 +415,7 @@ export default function BuildersView() {
             builders={byCli[c.id] ?? []}
             nativeProfiles={nativeProfiles.filter((p) => p.cli === c.id)}
             health={health}
+            modelInfos={modelInfos}
             onAdd={() => setAddFor(c)}
             onProbe={probe}
             onDelete={remove}
@@ -432,7 +430,7 @@ export default function BuildersView() {
         ))}
       </div>
 
-      <AnimatePresence>
+      <>
         {addFor && (
           <AddBuilderModal
             cli={addFor}
@@ -442,14 +440,15 @@ export default function BuildersView() {
           />
         )}
         {loginInfo && <LoginModal info={loginInfo} onClose={() => { setLoginInfo(null); load(); }} />}
-      </AnimatePresence>
+      </>
       </div>
     </div>
   );
 }
 
-function CliCard({ cli, builders, nativeProfiles, health, onAdd, onProbe, onDelete, onDefault, onLogin, onEffort, onModel, onImport, onScan, scanning }: {
+function CliCard({ cli, builders, nativeProfiles, health, modelInfos, onAdd, onProbe, onDelete, onDefault, onLogin, onEffort, onModel, onImport, onScan, scanning }: {
   cli: Cli; builders: Builder[]; nativeProfiles: NativeProfile[]; health: Record<string, Health | "running">;
+  modelInfos: Record<string, Builder["modelsInfo"]>;
   onAdd: () => void; onProbe: (b: Builder) => void; onDelete: (b: Builder) => void;
   onDefault: (b: Builder) => void; onLogin: (b: Builder) => void; onEffort: (b: Builder, effort: string | null) => void;
   onModel: (b: Builder, model: string | null) => void;
@@ -521,13 +520,14 @@ function CliCard({ cli, builders, nativeProfiles, health, onAdd, onProbe, onDele
 
       {builders.length > 0 && (
         <div className="mt-3 pt-3 border-t border-[var(--panel-border)] space-y-2">
-          {builders.map((b) => (
-            <BuilderRow key={b.id} builder={b} cli={cli} health={health[b.id]}
-                        onProbe={() => onProbe(b)} onDelete={() => onDelete(b)}
-                        onDefault={() => onDefault(b)} onLogin={() => onLogin(b)}
-                        onEffort={(e) => onEffort(b, e)} onModel={(m) => onModel(b, m)} />
-          ))}
-        </div>
+        {builders.map((b) => (
+          <BuilderRow key={b.id} builder={b} cli={cli} health={health[b.id]}
+                      modelsInfo={modelInfos[b.id] ?? b.modelsInfo}
+                      onProbe={() => onProbe(b)} onDelete={() => onDelete(b)}
+                      onDefault={() => onDefault(b)} onLogin={() => onLogin(b)}
+                      onEffort={(e) => onEffort(b, e)} onModel={(m) => onModel(b, m)} />
+        ))}
+      </div>
       )}
 
       {nativeProfiles.length > 0 && (
@@ -556,8 +556,9 @@ function CliCard({ cli, builders, nativeProfiles, health, onAdd, onProbe, onDele
   );
 }
 
-function BuilderRow({ builder: b, cli, health, onProbe, onDelete, onDefault, onLogin, onEffort, onModel }: {
+function BuilderRow({ builder: b, cli, health, modelsInfo, onProbe, onDelete, onDefault, onLogin, onEffort, onModel }: {
   builder: Builder; cli: Cli; health: Health | "running" | undefined;
+  modelsInfo: Builder["modelsInfo"];
   onProbe: () => void; onDelete: () => void; onDefault: () => void; onLogin: () => void;
   onEffort: (effort: string | null) => void; onModel: (model: string | null) => void;
 }) {
@@ -753,11 +754,9 @@ function AddBuilderModal({ cli, onClose, onCreated, onError }: {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 grid place-items-center p-4"
+    <div className="fixed inset-0 z-50 grid place-items-center p-4"
                 style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
-      <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 10, opacity: 0 }}
-                  className="panel p-5 w-full max-w-[520px] space-y-4" onClick={(e) => e.stopPropagation()}>
+      <div className="panel p-5 w-full max-w-[520px] space-y-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-[15px]">New {cli.label} profile</h3>
           <button onClick={onClose} className="text-[var(--fg-dim)] hover:text-[var(--fg)]"><X size={16} /></button>
@@ -846,8 +845,8 @@ function AddBuilderModal({ cli, onClose, onCreated, onError }: {
             <Check size={14} /> Create
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -856,11 +855,9 @@ function LoginModal({ info, onClose }: {
 }) {
   const [copied, setCopied] = useState(false);
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 grid place-items-center p-4"
+    <div className="fixed inset-0 z-50 grid place-items-center p-4"
                 style={{ background: "rgba(0,0,0,0.6)" }} onClick={onClose}>
-      <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 10, opacity: 0 }}
-                  className="panel p-5 w-full max-w-[620px] space-y-3" onClick={(e) => e.stopPropagation()}>
+      <div className="panel p-5 w-full max-w-[620px] space-y-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h3 className="text-[15px]">Sign in to “{info.builder.name}”</h3>
           <button onClick={onClose} className="text-[var(--fg-dim)] hover:text-[var(--fg)]"><X size={16} /></button>
@@ -889,8 +886,8 @@ function LoginModal({ info, onClose }: {
             Done — recheck
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
