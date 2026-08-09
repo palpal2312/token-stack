@@ -5,6 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Swords, Play, Crown, History, AlertTriangle, Clock, Hash, X, Square,
 } from "lucide-react";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  readCache,
+} from "@/lib/client-data-cache";
 
 // The Arena answers one question: does this profile actually work, and how does
 // it compare? Same prompt, several profiles, side by side, with honest timings.
@@ -51,18 +57,42 @@ export default function ArenaView() {
   }
 
   const loadHistory = useCallback(async () => {
-    const j = await readJson(await fetch("/api/arena/runs?limit=50", { cache: "no-store" }));
+    const key = ClientCacheKeys.arenaRuns;
+    const policy = CachePresets.semi;
+    const hit = readCache<Record<string, unknown>>(key, policy);
+    if (hit?.usable) {
+      setHistory((hit.data.runs as ArenaRun[]) ?? []);
+      if (hit.fresh) return;
+    }
+    const { data: j } = await cachedFetchJson(
+      key,
+      async () => readJson(await fetch("/api/arena/runs?limit=50", { cache: "no-store" })),
+      { ...policy, force: true },
+    );
     setHistory((j.runs as ArenaRun[]) ?? []);
   }, []);
 
   useEffect(() => {
     (async () => {
-      const j = await readJson(await fetch("/api/builders", { cache: "no-store" }));
+      const key = ClientCacheKeys.builders;
+      const policy = CachePresets.static;
+      const hit = readCache<Record<string, unknown>>(key, policy);
+      if (hit?.usable) {
+        const bs = ((hit.data.builders as BuilderRef[]) ?? []).filter((b) => !b.cli.startsWith("fixture"));
+        setBuilders(bs);
+        setClis(((hit.data.clis as CliRef[]) ?? []).map((c) => ({ id: c.id, label: c.label })));
+        if (hit.fresh) return;
+      }
+      const { data: j } = await cachedFetchJson(
+        key,
+        async () => readJson(await fetch("/api/builders", { cache: "no-store" })),
+        { ...policy, force: true },
+      );
       const bs = ((j.builders as BuilderRef[]) ?? []).filter((b) => !b.cli.startsWith("fixture"));
       setBuilders(bs);
       setClis(((j.clis as CliRef[]) ?? []).map((c) => ({ id: c.id, label: c.label })));
     })();
-    loadHistory();
+    void loadHistory();
   }, [loadHistory]);
 
   function toggle(id: string) {

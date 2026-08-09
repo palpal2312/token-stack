@@ -1,10 +1,12 @@
 // Automatic quota refresh, driven by staleness instead of clicks.
 //
 // Quota readings used to update only when someone pressed probe. The rule now:
-// a reading older than QUOTA_STALE_MS refreshes itself at the moments the data
-// is about to be used — loading /builders (background kick, response annotates
-// `refreshing: true`, plus the legacy `quotaRefreshing` alias) and list_workers
-// (inline, before ranking).
+// a reading older than QUOTA_STALE_MS refreshes itself at explicit use points —
+// CLI Config Refresh (`GET /api/builders?refreshQuota=1`, background kick with
+// `refreshing` / legacy `quotaRefreshing` annotations) and list_workers
+// (inline, before ranking). Plain page loads do NOT kick probes: doing so
+// saturated the Node event loop and made soft-nav away from /builders many
+// times slower than other dashboard transitions.
 //
 // Two hard limits keep the automation honest:
 //
@@ -12,7 +14,7 @@
 //     a sub-2s status command (codex login status + the ChatGPT wham/usage
 //     endpoint, API-key /models probes, native -p provider probes). Kimi's only
 //     quota path is a PTY-driven TUI boot (~30s), so it is never automatic.
-//   * Concurrency is capped (default 2) so a page load costs at most a couple
+//   * Concurrency is capped (default 2) so a refresh costs at most a couple
 //     of provider calls per hour, never a spawn storm.
 //
 // The heavy-probe helper (kimi TUI boot) remains available only for explicit

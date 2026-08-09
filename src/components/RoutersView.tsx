@@ -9,17 +9,48 @@
 // health probe — it sends the key outbound, so it is a POST the user asks for,
 // never something that fires on page load.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
   Plus, X, Check, KeyRound, Activity, Trash2, Star, Globe, HardDrive,
   AlertTriangle, CircleDot, Settings2, Pencil, SquareTerminal, ExternalLink,
-  RefreshCw, Waypoints,
+  RefreshCw, Waypoints, ChevronDown, CalendarClock,
 } from "lucide-react";
 import HeaderStatPills from "./HeaderStatPills";
 import PageHeaderIcon from "./PageHeaderIcon";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  invalidateCache,
+  readCache,
+  setCache,
+  peekCache,
+} from "@/lib/client-data-cache";
 
+/** Soft list refresh while the page stays open (visibility / focus). */
+const LIST_STALE_MS = CachePresets.static.ttlMs ?? 60_000;
+/** Billing health/quota: re-probe only when last check is older than this. */
+const BILLING_STALE_MS = 5 * 60 * 1000;
+
+function formatWhen(isoOrMs: string | number | null | undefined): string {
+  if (isoOrMs == null) return "never";
+  const t = typeof isoOrMs === "number" ? isoOrMs : Date.parse(isoOrMs);
+  if (!Number.isFinite(t)) return "never";
+  return new Date(t).toLocaleString();
+}
+
+function formatAgeShort(isoOrMs: string | number | null | undefined, now = Date.now()): string {
+  if (isoOrMs == null) return "never";
+  const t = typeof isoOrMs === "number" ? isoOrMs : Date.parse(isoOrMs);
+  if (!Number.isFinite(t)) return "never";
+  const sec = Math.max(0, Math.round((now - t) / 1000));
+  if (sec < 45) return "just now";
+  if (sec < 3600) return `${Math.round(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.round(sec / 3600)}h ago`;
+  return `${Math.round(sec / 86400)}d ago`;
+}
 interface Kind {
   id: string; label: string; defaultBaseUrl: string | null; keyRequired: boolean;
   keyHint: string; local: boolean; notes: string; profileCount: number;
@@ -69,17 +100,57 @@ export default function RoutersView() {
   const [cliFor, setCliFor] = useState<Router | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [healthRefreshing, setHealthRefreshing] = useState(false);
+  const [listUpdatedAt, setListUpdatedAt] = useState<number | null>(null);
+  const [healthUpdatedAt, setHealthUpdatedAt] = useState<number | null>(null);
+  /** Exclusive accordion: Active (has routers) vs Inactive (no routers). */
+  const [openSection, setOpenSection] = useState<"active" | "inactive">("active");
   const routersRef = useRef<Router[]>([]);
+  const healthTimeRef = useRef<Record<string, number>>({});
+  const listUpdatedAtRef = useRef<number | null>(null);
+  const healthRefreshingRef = useRef(false);
+  const openSectionRef = useRef(openSection);
+  const mountedRef = useRef(true);
+  healthTimeRef.current = healthTime;
+  openSectionRef.current = openSection;
 
-  async function load() {
+  function rememberListTime(ms = Date.now()) {
+    listUpdatedAtRef.current = ms;
+    setListUpdatedAt(ms);
+  }
+
+  function applyList(j: Record<string, unknown>, fetchedAt = Date.now()) {
+    setKinds((j.kinds as Kind[]) ?? []);
+    const rs = (j.routers as Router[]) ?? [];
+    setRouters(rs);
+    routersRef.current = rs;
+    setErr((j.error as string) ?? null);
+    setLoaded(true);
+    rememberListTime(fetchedAt);
+  }
+
+  async function load(opts?: { force?: boolean }) {
+    const key = ClientCacheKeys.routers;
+    const policy = CachePresets.static;
+
+    if (!opts?.force) {
+      const hit = readCache<Record<string, unknown>>(key, policy);
+      if (hit?.usable) {
+        applyList(hit.data, Date.now() - hit.ageMs);
+        if (hit.fresh) return;
+      }
+    } else {
+      invalidateCache(key);
+    }
+
     setRefreshing(true);
     try {
-      const j = await readJson(await fetch("/api/routers", { cache: "no-store" }));
-      setKinds((j.kinds as Kind[]) ?? []);
-      const rs = (j.routers as Router[]) ?? [];
-      setRouters(rs);
-      routersRef.current = rs;
-      setErr((j.error as string) ?? null);
+      const { data: j } = await cachedFetchJson(
+        key,
+        async () => readJson(await fetch("/api/routers", { cache: "no-store" })),
+        { ...policy, force: true },
+      );
+      applyList(j, Date.now());
     } catch (e) {
       setErr(`Could not reach the dashboard's own API: ${String((e as Error)?.message ?? e)}`);
     } finally {
@@ -95,12 +166,23 @@ export default function RoutersView() {
     });
     try {
       const j = await readJson(await fetch(`/api/routers/${r.id}/health`, { method: "POST" }));
-      setHealth((h) => ({
-        ...h,
-        [r.id]: (j.health as Health) ?? fallback(String(j.error ?? "The check failed.")),
-      }));
-      setHealthTime((t) => ({ ...t, [r.id]: Date.now() }));
+      if (!mountedRef.current) return;
+      const next = (j.health as Health) ?? fallback(String(j.error ?? "The check failed."));
+      // Status first (state / reachability), then quota fields on the same object.
+      const { quota, ...statusOnly } = next;
+      setHealth((h) => ({ ...h, [r.id]: { ...statusOnly, quota: null } }));
+      await new Promise<void>((res) => requestAnimationFrame(() => res()));
+      if (!mountedRef.current) return;
+      setHealth((h) => ({ ...h, [r.id]: next }));
+      const at = Date.now();
+      setHealthTime((t) => {
+        const n = { ...t, [r.id]: at };
+        healthTimeRef.current = n;
+        return n;
+      });
+      setHealthUpdatedAt(at);
     } catch (e) {
+      if (!mountedRef.current) return;
       setHealth((h) => ({
         ...h,
         [r.id]: fallback(`The check could not be sent: ${String((e as Error)?.message ?? e)}`),
@@ -108,23 +190,67 @@ export default function RoutersView() {
     }
   }, []);
 
-  // Auto-probe routers with plan/payg on mount, then every 5 minutes
-  const probeAllBilling = useCallback(async () => {
+  /** Probe plan/payg routers only when last check is past BILLING_STALE_MS (or force). */
+  const refreshBillingIfNeeded = useCallback(async (opts?: { force?: boolean }) => {
+    if (healthRefreshingRef.current) return;
+    const force = !!opts?.force;
     const billing = routersRef.current.filter((r) => r.plan || r.payg);
-    for (const r of billing) probe(r);
+    if (!billing.length) return;
+    const now = Date.now();
+    const targets = billing.filter((r) => {
+      if (force) return true;
+      const last = healthTimeRef.current[r.id];
+      return last == null || now - last >= BILLING_STALE_MS;
+    });
+    if (!targets.length) return;
+
+    healthRefreshingRef.current = true;
+    setHealthRefreshing(true);
+    try {
+      for (const r of targets) {
+        if (!mountedRef.current) return;
+        await probe(r);
+      }
+    } finally {
+      healthRefreshingRef.current = false;
+      if (mountedRef.current) setHealthRefreshing(false);
+    }
   }, [probe]);
 
-  useEffect(() => {
-    load().then(() => {
-      // Initiate probes directly; probing triggers localized state updates without blocking the main render
-      probeAllBilling();
-    });
-  }, [probeAllBilling]);
+  function refreshListIfStale() {
+    if (document.visibilityState !== "visible") return;
+    const updated = listUpdatedAtRef.current;
+    if (updated != null && Date.now() - updated < LIST_STALE_MS) return;
+    void load();
+  }
 
   useEffect(() => {
-    const id = setInterval(probeAllBilling, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, [probeAllBilling]);
+    mountedRef.current = true;
+    void (async () => {
+      await load();
+      if (mountedRef.current && openSectionRef.current === "active") {
+        void refreshBillingIfNeeded();
+      }
+    })();
+    return () => { mountedRef.current = false; };
+  }, [refreshBillingIfNeeded]);
+
+  // No setInterval. Re-check staleness only when the tab becomes visible again.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      refreshListIfStale();
+      if (openSectionRef.current === "active") void refreshBillingIfNeeded();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [refreshBillingIfNeeded]);
+
+  // When user opens Active, run a stale check once (not a continuous poll).
+  useEffect(() => {
+    if (!loaded || openSection !== "active") return;
+    void refreshBillingIfNeeded();
+  }, [loaded, openSection, refreshBillingIfNeeded]);
 
   async function remove(r: Router) {
     if (!confirm(
@@ -132,7 +258,7 @@ export default function RoutersView() {
       + `their conversations stay on disk.`,
     )) return;
     const j = await readJson(await fetch(`/api/routers/${r.id}`, { method: "DELETE" }));
-    if (j.error) setErr(j.error as string); else { setErr(null); await load(); }
+    if (j.error) setErr(j.error as string); else { setErr(null); await load({ force: true }); }
   }
 
   async function makeDefault(r: Router) {
@@ -141,7 +267,14 @@ export default function RoutersView() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ isDefault: true }),
     });
-    await load();
+    const next = routersRef.current.map((x) =>
+      x.kind === r.kind ? { ...x, isDefault: x.id === r.id } : x,
+    );
+    routersRef.current = next;
+    setRouters(next);
+    const cached = peekCache<Record<string, unknown>>(ClientCacheKeys.routers);
+    if (cached) setCache(ClientCacheKeys.routers, { ...cached, routers: next });
+    rememberListTime();
   }
 
   const byKind = useMemo(() => {
@@ -150,11 +283,42 @@ export default function RoutersView() {
     return m;
   }, [routers]);
 
+  const { activeKinds, inactiveKinds } = useMemo(() => {
+    const byLabel = (a: Kind, b: Kind) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
+    const active: Kind[] = [];
+    const inactive: Kind[] = [];
+    for (const k of kinds) {
+      if ((byKind[k.id] ?? []).length > 0) active.push(k);
+      else inactive.push(k);
+    }
+    active.sort(byLabel);
+    inactive.sort(byLabel);
+    return { activeKinds: active, inactiveKinds: inactive };
+  }, [kinds, byKind]);
+
   const stats = useMemo(() => ({
     routers: routers.length,
     kinds: new Set(routers.map((r) => r.kind)).size,
     withKey: routers.filter((r) => r.hasKey).length,
   }), [routers]);
+
+  function renderKindCard(k: Kind) {
+    return (
+      <KindCard
+        key={k.id}
+        kind={k}
+        routers={byKind[k.id] ?? []}
+        health={health}
+        healthTime={healthTime}
+        onAdd={() => setAddFor(k)}
+        onProbe={probe}
+        onDelete={remove}
+        onDefault={makeDefault}
+        onEdit={(r) => setEditing({ kind: k, router: r })}
+        onUseWithCli={(r) => setCliFor(r)}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-col h-full px-4 md:px-6 py-3">
@@ -174,14 +338,38 @@ export default function RoutersView() {
             />
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={refreshing}
-          className="ml-auto shrink-0 inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
-        >
-          <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} /> Refresh
-        </button>
+        <div className="ml-auto flex flex-wrap items-center gap-2 shrink-0">
+          <div
+            className="text-[10px] text-[var(--fg-dimmer)] text-right leading-snug hidden sm:block"
+            title={[
+              listUpdatedAt ? `List last update ${formatWhen(listUpdatedAt)}` : "List not loaded yet",
+              healthUpdatedAt ? `Newest health/quota check ${formatWhen(healthUpdatedAt)}` : "No health check yet",
+              "Auto-fetch only when this page is open and lastUpdate is past the stale window — no background polling.",
+            ].join("\n")}
+          >
+            <div>List · {listUpdatedAt ? formatAgeShort(listUpdatedAt) : "—"}</div>
+            <div>Health · {healthUpdatedAt ? formatAgeShort(healthUpdatedAt) : "—"}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void refreshBillingIfNeeded({ force: true })}
+            disabled={healthRefreshing}
+            title="Force-check plan/payg health and quota now. Auto path only runs when a reading is older than 5 minutes while this page is open."
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)] disabled:opacity-50"
+          >
+            <CalendarClock size={13} className={healthRefreshing ? "animate-pulse" : ""} />
+            {healthRefreshing ? "Health…" : "Health"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void load({ force: true })}
+            disabled={refreshing}
+            title="Force fetch — bypass cache and reload routers. Does not probe health (use Health for that)."
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)] disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} /> Force fetch
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto space-y-6">
@@ -194,30 +382,46 @@ export default function RoutersView() {
 
       {!loaded && <div className="text-sm text-[var(--fg-dim)] py-8 text-center">Reading your Routers…</div>}
 
-      <div className="space-y-3">
-        {kinds.map((k) => (
-          <KindCard
-            key={k.id}
-            kind={k}
-            routers={byKind[k.id] ?? []}
-            health={health}
-            healthTime={healthTime}
-            onAdd={() => setAddFor(k)}
-            onProbe={probe}
-            onDelete={remove}
-            onDefault={makeDefault}
-            onEdit={(r) => setEditing({ kind: k, router: r })}
-            onUseWithCli={(r) => setCliFor(r)}
-          />
-        ))}
-      </div>
+      {loaded && (
+        <div className="space-y-4">
+          <RouterSection
+            id="active"
+            title="Active"
+            hint="Kinds with at least one router"
+            count={activeKinds.length}
+            open={openSection === "active"}
+            onToggle={() => setOpenSection("active")}
+          >
+            {activeKinds.length === 0 ? (
+              <div className="text-[12px] text-[var(--fg-dimmer)] px-1 py-2">No routers yet — add one under Inactive.</div>
+            ) : (
+              <div className="space-y-3">{activeKinds.map(renderKindCard)}</div>
+            )}
+          </RouterSection>
+
+          <RouterSection
+            id="inactive"
+            title="Inactive"
+            hint="Kinds with no routers yet"
+            count={inactiveKinds.length}
+            open={openSection === "inactive"}
+            onToggle={() => setOpenSection("inactive")}
+          >
+            {inactiveKinds.length === 0 ? (
+              <div className="text-[12px] text-[var(--fg-dimmer)] px-1 py-2">Every catalogued kind already has a router.</div>
+            ) : (
+              <div className="space-y-3">{inactiveKinds.map(renderKindCard)}</div>
+            )}
+          </RouterSection>
+        </div>
+      )}
 
       <AnimatePresence>
         {addFor && (
           <RouterModal
             kind={addFor}
             onClose={() => setAddFor(null)}
-            onSaved={async () => { setAddFor(null); await load(); }}
+            onSaved={async () => { setAddFor(null); await load({ force: true }); }}
             onError={setErr}
           />
         )}
@@ -226,7 +430,7 @@ export default function RoutersView() {
             kind={editing.kind}
             existing={editing.router}
             onClose={() => setEditing(null)}
-            onSaved={async () => { setEditing(null); await load(); }}
+            onSaved={async () => { setEditing(null); await load({ force: true }); }}
             onError={setErr}
           />
         )}
@@ -236,6 +440,58 @@ export default function RoutersView() {
       </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+function RouterSection({
+  id,
+  title,
+  hint,
+  count,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  hint: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-2">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`routers-section-${id}`}
+        className="w-full flex items-center gap-2 px-1 py-1.5 text-left transition hover:opacity-90"
+      >
+        <ChevronDown
+          size={14}
+          className="shrink-0 transition-transform"
+          style={{
+            color: open ? "var(--gold)" : "var(--cream-mute)",
+            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+          }}
+        />
+        <span
+          className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+          style={{ color: open ? "var(--gold)" : "var(--cream-mute)" }}
+        >
+          {title}
+        </span>
+        <span className="text-[11px] text-[var(--fg-dimmer)]">· {count}</span>
+        <span className="text-[11px] text-[var(--fg-dimmer)] truncate hidden sm:inline">— {hint}</span>
+      </button>
+      {open && (
+        <div id={`routers-section-${id}`}>
+          {children}
+        </div>
+      )}
+    </section>
   );
 }
 

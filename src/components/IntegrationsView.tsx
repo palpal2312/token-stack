@@ -13,6 +13,14 @@ import {
 } from "lucide-react";
 import HeaderStatPills from "./HeaderStatPills";
 import PageHeaderIcon from "./PageHeaderIcon";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  invalidateCache,
+  readCache,
+  setCache,
+} from "@/lib/client-data-cache";
 
 interface Row {
   id: string; name: string; repo: string; license: string; category: string;
@@ -47,12 +55,39 @@ export default function IntegrationsView({ embedded = false }: { embedded?: bool
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async (fresh = false) => {
+    const url = `/api/integrations${fresh ? "?fresh=1" : ""}`;
+    const key = fresh ? `GET ${url}` : ClientCacheKeys.integrations;
+    const policy = CachePresets.static;
+
+    if (!fresh) {
+      const hit = readCache<Record<string, unknown>>(key, policy);
+      if (hit?.usable) {
+        if (hit.data.error) setErr(String(hit.data.error));
+        else {
+          setErr(null);
+          setRows((hit.data.integrations as Row[]) ?? []);
+        }
+        if (hit.fresh) return;
+      }
+    } else {
+      invalidateCache(ClientCacheKeys.integrations);
+      invalidateCache(key);
+    }
+
     if (fresh) setRefreshing(true);
-    const j = await readJson(await fetch(`/api/integrations${fresh ? "?fresh=1" : ""}`, { cache: "no-store" }));
+    const { data: j } = await cachedFetchJson(
+      key,
+      async () => readJson(await fetch(url, { cache: "no-store" })),
+      { ...policy, force: true },
+    );
     setRefreshing(false);
     if (j.error) { setErr(String(j.error)); return; }
     setErr(null);
     setRows((j.integrations as Row[]) ?? []);
+    if (fresh) {
+      // Keep the warm default key in sync after an explicit re-probe.
+      setCache(ClientCacheKeys.integrations, j);
+    }
   }, []);
 
   useEffect(() => { void load(); }, [load]);

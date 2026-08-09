@@ -6,6 +6,14 @@ import { Plus, Target, X, Check, Tag, RefreshCw } from "lucide-react";
 import VoiceButton from "./VoiceButton";
 import HeaderStatPills from "./HeaderStatPills";
 import PageHeaderIcon from "./PageHeaderIcon";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  invalidateCache,
+  readCache,
+  setCache,
+} from "@/lib/client-data-cache";
 
 interface Goal { id: string; text: string; done: boolean; category?: string; createdAt: string; }
 
@@ -27,18 +35,35 @@ export default function GoalsView({ embedded = false }: { embedded?: boolean }) 
     catch { return { error: `The server returned ${r.status} with no explanation.` }; }
   }
 
-  async function load() {
+  async function load(opts?: { force?: boolean }) {
+    const key = ClientCacheKeys.goals;
+    const policy = CachePresets.semi;
+
+    if (!opts?.force) {
+      const hit = readCache<Record<string, unknown>>(key, policy);
+      if (hit?.usable) {
+        setGoals((hit.data.goals as Goal[]) ?? []);
+        setErr((hit.data.error as string) ?? null);
+        if (hit.fresh) return;
+      }
+    } else {
+      invalidateCache(key);
+    }
+
     setRefreshing(true);
     try {
-      const r = await fetch("/api/goals", { cache: "no-store" });
-      const j = await readJson(r);
+      const { data: j } = await cachedFetchJson(
+        key,
+        async () => readJson(await fetch("/api/goals", { cache: "no-store" })),
+        { ...policy, force: true },
+      );
       setGoals((j.goals as Goal[]) ?? []);
       setErr((j.error as string) ?? null);
     } finally {
       setRefreshing(false);
     }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { void load(); }, []);
 
   async function add() {
     const text = input.trim();
@@ -52,7 +77,11 @@ export default function GoalsView({ embedded = false }: { embedded?: boolean }) 
       });
       const j = await readJson(r);
       if (j.goal) {
-        setGoals((g) => [j.goal as Goal, ...g]);
+        setGoals((g) => {
+          const next = [j.goal as Goal, ...g];
+          setCache(ClientCacheKeys.goals, { goals: next });
+          return next;
+        });
         setInput("");   // keep what they typed when it did not save
         setErr(null);
       } else {
@@ -63,7 +92,11 @@ export default function GoalsView({ embedded = false }: { embedded?: boolean }) 
 
   async function toggle(g: Goal) {
     const next = { ...g, done: !g.done };
-    setGoals((arr) => arr.map((x) => (x.id === g.id ? next : x)));
+    setGoals((arr) => {
+      const updated = arr.map((x) => (x.id === g.id ? next : x));
+      setCache(ClientCacheKeys.goals, { goals: updated });
+      return updated;
+    });
     await fetch("/api/goals", {
       method: "PATCH",
       headers: { "content-type": "application/json" },
@@ -72,7 +105,11 @@ export default function GoalsView({ embedded = false }: { embedded?: boolean }) 
   }
 
   async function remove(id: string) {
-    setGoals((arr) => arr.filter((x) => x.id !== id));
+    setGoals((arr) => {
+      const updated = arr.filter((x) => x.id !== id);
+      setCache(ClientCacheKeys.goals, { goals: updated });
+      return updated;
+    });
     await fetch(`/api/goals?id=${encodeURIComponent(id)}`, { method: "DELETE" });
   }
 
@@ -258,7 +295,7 @@ export default function GoalsView({ embedded = false }: { embedded?: boolean }) 
         </div>
         <button
           type="button"
-          onClick={() => void load()}
+          onClick={() => void load({ force: true })}
           disabled={refreshing}
           className="ml-auto shrink-0 inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
         >

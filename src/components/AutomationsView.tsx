@@ -22,6 +22,13 @@ import {
 import { usePollWhileVisible } from "@/lib/usePollWhileVisible";
 import HeaderStatPills from "./HeaderStatPills";
 import PageHeaderIcon from "./PageHeaderIcon";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  invalidateCache,
+  readCache,
+} from "@/lib/client-data-cache";
 
 interface Automation {
   id: string; name: string;
@@ -112,13 +119,44 @@ export default function AutomationsView() {
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [refreshing, setRefreshing] = useState(false);
 
-  async function load() {
+  async function load(opts?: { force?: boolean }) {
+    const autoKey = ClientCacheKeys.automations;
+    const apprKey = ClientCacheKeys.approvals;
+    const policy = CachePresets.semi;
+
+    if (!opts?.force) {
+      const autoHit = readCache<Record<string, unknown>>(autoKey, policy);
+      const apprHit = readCache<Record<string, unknown>>(apprKey, CachePresets.live);
+      if (autoHit?.usable && apprHit?.usable) {
+        setAutomations((autoHit.data.automations as Automation[]) ?? []);
+        setCap((autoHit.data.cap as number) ?? 6);
+        setApprovals((apprHit.data.approvals as ApprovalItem[]) ?? []);
+        setPending((apprHit.data.pending as number) ?? 0);
+        setErr((autoHit.data.error as string) ?? (apprHit.data.error as string) ?? null);
+        setLoaded(true);
+        if (autoHit.fresh && apprHit.fresh) return;
+      }
+    } else {
+      invalidateCache(autoKey);
+      invalidateCache(apprKey);
+    }
+
     setRefreshing(true);
     try {
-      const [aj, pj] = await Promise.all([
-        readJson(await fetch("/api/automations", { cache: "no-store" })),
-        readJson(await fetch("/api/approvals", { cache: "no-store" })),
+      const [ajRes, pjRes] = await Promise.all([
+        cachedFetchJson(
+          autoKey,
+          async () => readJson(await fetch("/api/automations", { cache: "no-store" })),
+          { ...policy, force: true },
+        ),
+        cachedFetchJson(
+          apprKey,
+          async () => readJson(await fetch("/api/approvals", { cache: "no-store" })),
+          { ...CachePresets.live, force: true },
+        ),
       ]);
+      const aj = ajRes.data;
+      const pj = pjRes.data;
       setAutomations((aj.automations as Automation[]) ?? []);
       setCap((aj.cap as number) ?? 6);
       setApprovals((pj.approvals as ApprovalItem[]) ?? []);
@@ -138,16 +176,26 @@ export default function AutomationsView() {
   // this page counts as in flight the moment its button is clicked (busy),
   // which is how an idle page ever learns a run began — there is no idle poll.
   const anyInFlight = automations.some((a) => a.inFlight || busy[`run:${a.id}`]);
-  usePollWhileVisible(load, 5000, [], anyInFlight);
+  usePollWhileVisible(() => { void load({ force: true }); }, 5000, [], anyInFlight);
 
   // Brain pickers: the existing registries, read once per modal open.
   useEffect(() => {
     if (!editing) return;
     void (async () => {
-      const [rj, bj] = await Promise.all([
-        readJson(await fetch("/api/routers", { cache: "no-store" })),
-        readJson(await fetch("/api/builders", { cache: "no-store" })),
+      const [rjRes, bjRes] = await Promise.all([
+        cachedFetchJson(
+          ClientCacheKeys.routers,
+          async () => readJson(await fetch("/api/routers", { cache: "no-store" })),
+          CachePresets.static,
+        ),
+        cachedFetchJson(
+          ClientCacheKeys.builders,
+          async () => readJson(await fetch("/api/builders", { cache: "no-store" })),
+          CachePresets.static,
+        ),
       ]);
+      const rj = rjRes.data;
+      const bj = bjRes.data;
       setRouters(((rj.routers as { id: string; name: string; defaultModel: string | null }[]) ?? [])
         .map((r) => ({ id: r.id, name: r.name, hint: r.defaultModel ?? "no default model" })));
       setBuilders(((bj.builders as { id: string; name: string; cli: string }[]) ?? [])
@@ -163,7 +211,7 @@ export default function AutomationsView() {
     if (j.error) setErr(String(j.error));
     else setErr(null);
     setBusy((b) => ({ ...b, [item.id]: false }));
-    await load();
+    await load({ force: true });
   }
 
   async function runNow(a: Automation) {
@@ -172,20 +220,20 @@ export default function AutomationsView() {
     if (j.error) setErr(String(j.error));
     else setErr(null);
     setBusy((b) => ({ ...b, [`run:${a.id}`]: false }));
-    await load();
+    await load({ force: true });
   }
 
   async function toggle(a: Automation) {
     await fetch(`/api/automations/${a.id}`, {
       method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: !a.enabled }),
     });
-    await load();
+    await load({ force: true });
   }
 
   async function remove(a: Automation) {
     if (!confirm(`Delete "${a.name}"?\n\nIts run history and transcripts stay on disk.`)) return;
     const j = await readJson(await fetch(`/api/automations/${a.id}`, { method: "DELETE" }));
-    if (j.error) setErr(String(j.error)); else { setErr(null); await load(); }
+    if (j.error) setErr(String(j.error)); else { setErr(null); await load({ force: true }); }
   }
 
   const brainLabel = useMemo(() => {
@@ -237,7 +285,7 @@ export default function AutomationsView() {
         </div>
         <button
           type="button"
-          onClick={() => void load()}
+          onClick={() => void load({ force: true })}
           disabled={refreshing}
           className="ml-auto shrink-0 inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
         >
@@ -436,7 +484,7 @@ export default function AutomationsView() {
             key="modal"
             editing={editing === "new" ? null : editing}
             routers={routers} builders={builders}
-            onClose={(saved) => { setEditing(null); if (saved) void load(); }}
+            onClose={(saved) => { setEditing(null); if (saved) void load({ force: true }); }}
           />
         )}
         {runsFor && <RunsDrawer key="runs" automation={runsFor} onClose={() => setRunsFor(null)} />}

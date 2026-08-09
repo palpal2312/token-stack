@@ -14,8 +14,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const builder = await getBuilder(id);
   if (!builder) return NextResponse.json({ error: `No profile "${id}".` }, { status: 404 });
 
+  const live = new URL(req.url).searchParams.get("live") === "1";
   try {
-    return NextResponse.json({ modelsInfo: await modelsForBuilder(builder) });
+    return NextResponse.json({
+      modelsInfo: await modelsForBuilder(builder, { live, signal: req.signal }),
+    });
   } catch (error) {
     return NextResponse.json({ modelsInfo: null, error: String(error instanceof Error ? error.message : error) });
   }

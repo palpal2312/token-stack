@@ -6,6 +6,15 @@ import { motion } from "framer-motion";
 import { Brain, TrendingUp, Columns3, NotebookText, Film, Building2, Workflow, MessagesSquare, Image as ImageIcon, Gamepad2, Music2, Network, Clapperboard, Repeat, Cpu, LayoutDashboard, Palette, GripVertical, Eye, EyeOff, SlidersHorizontal, Check, SquareTerminal, Route, Scissors, FlaskConical, Swords, Bot, Plus, Boxes, Waypoints, CalendarClock, ChevronDown, Target } from "lucide-react";
 import { useState, useEffect, type ReactNode } from "react";
 import AgentAvatar from "./AgentAvatar";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  invalidateCache,
+  readCache,
+  setCache,
+} from "@/lib/client-data-cache";
+import { useNavPendingOptional } from "@/context/nav-pending-context";
 
 interface NavItem {
   href: string;
@@ -112,6 +121,11 @@ interface AgentRow { id: string; name: string; skinId: string; ready: boolean }
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const nav = useNavPendingOptional();
+  // Prefer pending target so the active item + section flip on click, before
+  // Next finishes mounting the destination page.
+  const activePath = nav?.displayPath ?? pathname;
+  const beginNav = nav?.beginNav;
   const [mounted, setMounted] = useState(false);
   const [order, setOrder] = useState<string[]>(DEFAULT_ORDER);
   const [hidden, setHidden] = useState<string[]>([]);
@@ -126,13 +140,13 @@ export default function Sidebar() {
   const [expandedSection, setExpandedSection] = useState<SectionName>("Workspace");
   // Agent Skins nests under Agents — collapsed until opened or a skin route is active.
   const [skinsOpen, setSkinsOpen] = useState(false);
-  const onSkinRoute = SKIN_ROUTES.has(pathname);
+  const onSkinRoute = SKIN_ROUTES.has(activePath);
 
-  // Follow the active route into its section (exclusive accordion).
+  // Follow the active (or pending) route into its section (exclusive accordion).
   useEffect(() => {
-    setExpandedSection(sectionForPath(pathname));
+    setExpandedSection(sectionForPath(activePath));
     setSkinsOpen(onSkinRoute);
-  }, [pathname, onSkinRoute]);
+  }, [activePath, onSkinRoute]);
 
   // Pending approvals deserve to be seen from anywhere, not only when the
   // Automations page is open — a parked Sen run is a queue, and queues
@@ -243,10 +257,10 @@ export default function Sidebar() {
     // agent whose id happens to start with "new", and prefix matching
     // would light up both.
     const active = href === "/sen"
-      ? pathname.startsWith("/sen") || pathname.startsWith("/firstmate")
+      ? activePath.startsWith("/sen") || activePath.startsWith("/firstmate")
       : href === "/" || href.startsWith("/agents")
-        ? pathname === href
-        : pathname.startsWith(href);
+        ? activePath === href
+        : activePath.startsWith(href);
     const isHidden = hidden.includes(href);
     const isOver = overHref === href && dragHref !== href;
 
@@ -291,6 +305,7 @@ export default function Sidebar() {
           href={href}
           title={item.label}
           data-section={sec}
+          onClick={() => beginNav?.(href)}
           className={`sidebar-item sidebar-item--rail relative group grid place-items-center w-11 h-11 mx-auto rounded-lg ${active ? "active" : ""}`}
         >
           {active && (
@@ -324,6 +339,7 @@ export default function Sidebar() {
         key={href}
         href={href}
         data-section={sec}
+        onClick={() => beginNav?.(href)}
         style={{ animationDelay: `${Math.min(i, 14) * 28}ms` }}
         className={`sidebar-item nav-enter relative group flex items-center gap-3 py-2.5 px-5 ${active ? "active" : ""}`}
       >
@@ -450,7 +466,7 @@ export default function Sidebar() {
       <nav className="flex flex-col gap-0.5 relative">
         {sections.map(({ sec, items }, secIdx) => {
           const open = customize || expandedSection === sec;
-          const sectionActive = sectionForPath(pathname) === sec;
+          const sectionActive = sectionForPath(activePath) === sec;
           // Workspace header lives above the nav (with customize controls).
           const showHeader = sec !== "Workspace";
           return (
@@ -531,15 +547,18 @@ export default function Sidebar() {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const nav = useNavPendingOptional();
+  const activePath = nav?.displayPath ?? pathname;
   const items = NAV.filter((_, i) => i !== 5 && i !== 6); // hide goals/journal/memory on mobile bar for space
   return (
     <nav className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 panel panel-hot px-2 py-1.5 flex gap-1">
       {items.map((item) => {
-        const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        const active = item.href === "/" ? activePath === "/" : activePath.startsWith(item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => nav?.beginNav(item.href)}
             className="grid place-items-center w-10 h-10 rounded-lg transition"
             style={{
               background: active ? item.dim : "transparent",

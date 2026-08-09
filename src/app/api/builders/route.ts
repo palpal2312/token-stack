@@ -8,6 +8,7 @@ import {
   type Builder,
 } from "@/lib/builders/registry";
 import { refreshStaleQuota, isQuotaRefreshing } from "@/lib/builders/quotaRefresh";
+import { probeOmniRoute } from "@/lib/omniroute";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,7 @@ function failed(e: unknown) {
 // credential-adjacent, so a local process without the token gets nothing.
 
 import { credentialIdentity, sameAccountSiblings } from "@/lib/builders/credentialIdentity";
+import { modelsForBuilder } from "@/lib/sen-models";
 
 function sharedAccountWith(b: Builder, all: Builder[]): string[] {
   return sameAccountSiblings(b, all).map((o) => o.id);
@@ -33,39 +35,90 @@ export async function GET(req: Request) {
   if (guard) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
   try {
+    const url = new URL(req.url);
+    // Summary: enough to paint Active/Inactive shells (CLI cards + profile rows)
+    // without models catalogs or native-profile disk scans. Full GET follows.
+    const summary = url.searchParams.get("summary") === "1";
+    const refreshQuota = url.searchParams.get("refreshQuota") === "1";
+
+    const mark = (label: string, started: number) => {
+      const ms = Date.now() - started;
+      if (ms >= 50) console.info(`[api/builders] ${label} ${ms}ms`);
+      return Date.now();
+    };
+    let t = Date.now();
     const builders = await listBuilders();
-    // Stale quota readings refresh themselves: kick a background pass over the
-    // cheap-to-probe profiles (concurrency-capped, never a TUI boot) and mark
-    // the in-flight ones below. Not awaited — the response must not block on
-    // provider calls. refreshStaleQuota never rejects; the catch is belt and
-    // braces for a fire-and-forget promise.
-    void refreshStaleQuota(builders).catch(() => {});
+    t = mark("listBuilders", t);
+    // Free Claude Code is a virtual CLI (claude binary + OmniRoute proxy). Having
+    // Claude Code installed must not mark FCC as installed when the gateway is down.
+    // Summary skips the probe so Active can paint without waiting on :20128.
+    const omniReachable = summary ? false : await probeOmniRoute();
+    if (!summary) t = mark("probeOmniRoute", t);
     const clis = allClis()
       .filter((c) => !c.id.startsWith("fixture"))
       .map((c) => {
         const bin = defaultBinFor(c);
+        const hostBinOk = Boolean(bin && existsSync(bin));
+        // Virtual CLIs reuse another binary; "installed" means the product path works.
+        const installed = c.id === "fcc"
+          ? hostBinOk && omniReachable
+          : hostBinOk;
         return {
           id: c.id, label: c.label,
-          installed: Boolean(bin && existsSync(bin)),
+          installed,
           defaultBin: bin,
           authKinds: c.authKinds,
           apiKeyEnv: c.apiKeyEnv,
-          multiProfile: c.multiProfile,
+          multiProfile: c.multiProfile && installed,
           isolationEnv: c.isolationEnv,
           canLogin: Boolean(c.loginArgs),
           notes: c.notes,
           profileCount: builders.filter((b) => b.cli === c.id).length,
         };
       });
+    t = mark("clis", t);
+
     // Native CLI profiles the dashboard has not imported yet. One is "imported"
     // when a Builder exists with the same cli and the same invoking args.
-    const sameArgs = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
-    const nativeProfiles = detectNativeProfiles()
-      .filter((p) => !builders.some((b) => b.cli === p.cli && sameArgs(b.args, p.args)));
+    // Deferred on summary — mainly useful when browsing Inactive / Add profile.
+    let nativeProfiles: ReturnType<typeof detectNativeProfiles> = [];
+    if (!summary) {
+      const sameArgs = (a: string[], b: string[]) => a.length === b.length && a.every((v, i) => v === b[i]);
+      nativeProfiles = detectNativeProfiles()
+        .filter((p) => !builders.some((b) => b.cli === p.cli && sameArgs(b.args, p.args)));
+      t = mark("nativeProfiles", t);
+    }
 
-    return NextResponse.json({
+    // Cache/config-only model lists — parallel, no CLI spawns / provider HTTP.
+    // Skipped on summary so Active can paint before catalog reads finish.
+    const modelsById = new Map<string, Awaited<ReturnType<typeof modelsForBuilder>>>();
+    if (!summary) {
+      await Promise.all(builders.map(async (b) => {
+        try {
+          modelsById.set(b.id, await modelsForBuilder(b, { live: false, signal: req.signal }));
+        } catch {
+          modelsById.set(b.id, { models: [], cliDefault: null, source: "unavailable" });
+        }
+      }));
+      t = mark("modelsForBuilder×N", t);
+    }
+
+    // Quota probes must not start on every page load — they saturate the Node
+    // event loop (provider HTTP / status spawns) and make soft-nav away from
+    // /builders multi-seconds slower than other dashboard transitions. Opt in
+    // via ?refreshQuota=1 (CLI Config Quota button / hourly schedule).
+    if (refreshQuota) {
+      void refreshStaleQuota(builders).catch(() => {});
+    }
+
+    const orphanedDirs = summary ? [] : await orphanedProfileDirs();
+    if (!summary) t = mark("orphanedDirs", t);
+
+    const payload = {
+      summary: summary || undefined,
       builders: builders.map((b) => ({
         ...publicBuilder(b),
+        modelsInfo: modelsById.get(b.id) ?? null,
         // Set when a background quota refresh for this profile is in flight —
         // its reading below is the stale one being replaced right now.
         // `refreshing` is the policy contract; keep `quotaRefreshing` as a
@@ -83,8 +136,10 @@ export async function GET(req: Request) {
       })),
       clis,
       nativeProfiles,
-      orphanedDirs: await orphanedProfileDirs(),
-    });
+      orphanedDirs,
+    };
+    mark("publicBuilder map", t);
+    return NextResponse.json(payload);
   } catch (e) { return failed(e); }
 }
 

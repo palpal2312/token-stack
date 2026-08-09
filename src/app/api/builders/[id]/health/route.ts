@@ -29,14 +29,32 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     // The quota belongs to the ACCOUNT, not this one profile — a manual probe
     // of one kimi profile refreshes the reading on every profile of the same
     // identity, just like the automatic lanes.
+    const siblingIds: string[] = [];
     if (health.quota) {
       const all = await listBuilders();
       for (const s of sameAccountSiblings(b, all)) {
-        try { await setBuilderQuota(s.id, health.quota); } catch { /* best-effort */ }
+        try {
+          await setBuilderQuota(s.id, health.quota);
+          siblingIds.push(s.id);
+        } catch { /* best-effort */ }
       }
     }
 
-    return NextResponse.json({ health });
+    // Return a field patch so the UI can update status then quota without
+    // reloading every CLI / profile on this page.
+    const updated = await getBuilder(id);
+    return NextResponse.json({
+      health,
+      builder: updated
+        ? {
+            id: updated.id,
+            verifiedAt: updated.verifiedAt ?? null,
+            verifiedDetail: updated.verifiedDetail ?? null,
+            quota: updated.quota ?? null,
+          }
+        : null,
+      siblingIds,
+    });
   } catch (e) {
     return NextResponse.json({ error: String(e instanceof Error ? e.message : e) }, { status: 500 });
   }

@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { RotateCw, Square, Check, X, Loader2, Target, FlaskConical, Eye, Code2, ExternalLink, Download, FolderOpen, RefreshCw } from "lucide-react";
 import HeaderStatPills from "./HeaderStatPills";
 import PageHeaderIcon from "./PageHeaderIcon";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  readCache,
+} from "@/lib/client-data-cache";
 
 function fmtAgo(ms: number): string {
   if (!ms) return "";
@@ -61,10 +67,29 @@ export default function LoopView() {
   const [builds, setBuilds] = useState<Build[]>([]);
   const [preview, setPreview] = useState<Build | null>(null);
 
-  async function loadBuilds() {
-    try { const j = await fetch("/api/loop/builds", { cache: "no-store" }).then((r) => r.json()); setBuilds(j.builds || []); } catch { /* offline */ }
+  async function loadBuilds(opts?: { force?: boolean }) {
+    const key = ClientCacheKeys.loopBuilds;
+    const policy = CachePresets.semi;
+    try {
+      if (!opts?.force) {
+        const hit = readCache<{ builds?: Build[] }>(key, policy);
+        if (hit?.usable) {
+          setBuilds(hit.data.builds || []);
+          if (hit.fresh) return;
+        }
+      }
+      const { data: j } = await cachedFetchJson(
+        key,
+        async () => {
+          const r = await fetch("/api/loop/builds", { cache: "no-store" });
+          return r.json() as Promise<{ builds?: Build[] }>;
+        },
+        { ...policy, force: true },
+      );
+      setBuilds(j.builds || []);
+    } catch { /* offline */ }
   }
-  useEffect(() => { loadBuilds(); }, []);
+  useEffect(() => { void loadBuilds(); }, []);
 
   useEffect(() => {
     fetch("/api/loop/nous-models").then((r) => r.json()).then((d) => {
@@ -115,7 +140,7 @@ export default function LoopView() {
         }
       }
     } catch (e) { if (!ac.signal.aborted) setErr(String(e)); }
-    finally { setRunning(false); ctrl.current = null; loadBuilds(); }
+    finally { setRunning(false); ctrl.current = null; void loadBuilds({ force: true }); }
   }
   function stop() { ctrl.current?.abort(); setRunning(false); }
 
@@ -149,7 +174,7 @@ export default function LoopView() {
         </div>
         <button
           type="button"
-          onClick={() => void loadBuilds()}
+          onClick={() => void loadBuilds({ force: true })}
           className="ml-auto shrink-0 inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
         >
           <RefreshCw size={13} /> Refresh
@@ -236,7 +261,7 @@ export default function LoopView() {
         <div className="rounded-xl border p-4 mb-5" style={{ borderColor: "var(--panel-border)", background: "var(--panel)" }}>
           <div className="flex items-center justify-between mb-3">
             <span className="inline-flex items-center gap-2 text-[12px] font-semibold" style={{ color: "var(--fg)" }}><FolderOpen size={14} style={{ color: ACCENT }} /> Builds workspace <span style={{ color: "var(--fg-dimmer)", fontWeight: 400 }}>· {builds.length}</span></span>
-            <button onClick={loadBuilds} title="Refresh" className="text-[var(--fg-dimmer)] hover:text-[var(--fg)]"><RefreshCw size={12} /></button>
+            <button onClick={() => void loadBuilds({ force: true })} title="Refresh" className="text-[var(--fg-dimmer)] hover:text-[var(--fg)]"><RefreshCw size={12} /></button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
             {builds.map((b) => (

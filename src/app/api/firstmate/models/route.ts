@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const builder = await getBuilder(id);
   if (!builder) return NextResponse.json({ error: `No Builder profile "${id}".` }, { status: 404 });
   try {
-    const { models, cliDefault, source } = await modelsForBuilder(builder);
+    const { models, cliDefault, source } = await modelsForBuilder(builder, { live: true, signal: req.signal });
     return NextResponse.json({
       models, cliDefault, source,
       builderModel: builder.model,

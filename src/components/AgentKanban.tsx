@@ -43,6 +43,12 @@ import {
 } from "lucide-react";
 import { apiStreamUrl } from "@/lib/apiFetch";
 import { usePollWhileVisible } from "@/lib/usePollWhileVisible";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  readCache,
+} from "@/lib/client-data-cache";
 import PageHeaderIcon from "./PageHeaderIcon";
 import { ActivityTimeline, formatWhen } from "./agent-kanban/ActivityTimeline";
 
@@ -443,11 +449,32 @@ export default function AgentKanban({ embedded = false }: { embedded?: boolean }
   }, []);
 
   const loadCards = useCallback(async (quiet = false) => {
-    if (!quiet) setLoading(true);
+    const key = ClientCacheKeys.kanbanCards;
+    const policy = CachePresets.live;
+    if (!quiet) {
+      const hit = readCache<Record<string, unknown>>(key, policy);
+      if (hit?.usable) {
+        const next = getCards(hit.data);
+        setCards(next);
+        cardsRef.current = next;
+        setErr(null);
+        setLoading(false);
+        if (hit.fresh) return;
+      } else {
+        setLoading(true);
+      }
+    }
     try {
-      const response = await fetch("/api/agent-kanban/cards", { cache: "no-store" });
-      const body = await readJson<Record<string, unknown>>(response);
-      if (!response.ok) throw new Error(String(body.error ?? `HTTP ${response.status}`));
+      const { data: body } = await cachedFetchJson(
+        key,
+        async () => {
+          const response = await fetch("/api/agent-kanban/cards", { cache: "no-store" });
+          const parsed = await readJson<Record<string, unknown>>(response);
+          if (!response.ok) throw new Error(String(parsed.error ?? `HTTP ${response.status}`));
+          return parsed;
+        },
+        { ...policy, force: true },
+      );
       const next = getCards(body);
       setCards(next);
       cardsRef.current = next;
@@ -460,13 +487,35 @@ export default function AgentKanban({ embedded = false }: { embedded?: boolean }
   }, []);
 
   const loadBuildersAndConfig = useCallback(async () => {
+    const buildersHit = readCache<Record<string, unknown>>(ClientCacheKeys.builders, CachePresets.static);
+    if (buildersHit?.usable) {
+      setBuilders(Array.isArray(buildersHit.data.builders)
+        ? buildersHit.data.builders as BuilderRow[]
+        : []);
+    }
+    const configHit = readCache<Record<string, unknown>>(ClientCacheKeys.kanbanConfig, CachePresets.semi);
+    if (configHit?.usable) setConfig(normalizeConfig(configHit.data));
+
     const [buildersResult, configResult] = await Promise.allSettled([
-      fetch("/api/builders", { cache: "no-store" }).then(readJson<Record<string, unknown>>),
-      fetch("/api/agent-kanban/config", { cache: "no-store" }).then(async (response) => {
-        const body = await readJson<Record<string, unknown>>(response);
-        if (!response.ok) throw new Error(String(body.error ?? `HTTP ${response.status}`));
-        return body;
-      }),
+      buildersHit?.fresh
+        ? Promise.resolve(buildersHit.data)
+        : cachedFetchJson(
+          ClientCacheKeys.builders,
+          async () => readJson<Record<string, unknown>>(await fetch("/api/builders", { cache: "no-store" })),
+          { ...CachePresets.static, force: true },
+        ).then((r) => r.data),
+      configHit?.fresh
+        ? Promise.resolve(configHit.data)
+        : cachedFetchJson(
+          ClientCacheKeys.kanbanConfig,
+          async () => {
+            const response = await fetch("/api/agent-kanban/config", { cache: "no-store" });
+            const body = await readJson<Record<string, unknown>>(response);
+            if (!response.ok) throw new Error(String(body.error ?? `HTTP ${response.status}`));
+            return body;
+          },
+          { ...CachePresets.semi, force: true },
+        ).then((r) => r.data),
     ]);
     if (buildersResult.status === "fulfilled") {
       setBuilders(Array.isArray(buildersResult.value.builders)
@@ -477,9 +526,22 @@ export default function AgentKanban({ embedded = false }: { embedded?: boolean }
   }, []);
 
   const loadWorkspace = useCallback(async () => {
+    const key = ClientCacheKeys.kanbanWorkspace;
+    const policy = CachePresets.live;
+    const hit = readCache<{ builds?: BuildRec[] }>(key, policy);
+    if (hit?.usable) {
+      setWs(Array.isArray(hit.data.builds) ? hit.data.builds : []);
+      if (hit.fresh) return;
+    }
     try {
-      const response = await fetch("/api/agent-kanban/workspace", { cache: "no-store" });
-      const body = await readJson<{ builds?: BuildRec[] }>(response);
+      const { data: body } = await cachedFetchJson(
+        key,
+        async () => {
+          const response = await fetch("/api/agent-kanban/workspace", { cache: "no-store" });
+          return readJson<{ builds?: BuildRec[] }>(response);
+        },
+        { ...policy, force: true },
+      );
       setWs(Array.isArray(body.builds) ? body.builds : []);
     } catch {
       setWs([]);

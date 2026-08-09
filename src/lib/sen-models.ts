@@ -40,6 +40,13 @@ export interface BuilderModels {
   source: string;
 }
 
+/** How hard to work for a model list. Page loads use cache/config only. */
+export interface ModelsResolveOpts {
+  /** Spawn CLIs (codex app-server, agy PTY). Off by default — too slow for navigation. */
+  live?: boolean;
+  signal?: AbortSignal;
+}
+
 function configHome(builder: Builder, defaultDir: string): string {
   return builder.auth.kind === "oauth" && builder.auth.configDir
     ? builder.auth.configDir
@@ -68,7 +75,8 @@ async function kimiModels(builder: Builder): Promise<BuilderModels> {
  * display names plus per-model supported reasoning efforts. Returns null on
  * any failure (caller falls back to the config-derived list).
  */
-async function codexLiveModels(builder: Builder): Promise<BuilderModels | null> {
+async function codexLiveModels(builder: Builder, signal?: AbortSignal): Promise<BuilderModels | null> {
+  if (signal?.aborted) return null;
   let child: ReturnType<typeof spawnProc> | null = null;
   try {
     const resolved = resolveBuilderSpawn(builder);
@@ -82,7 +90,14 @@ async function codexLiveModels(builder: Builder): Promise<BuilderModels | null> 
     return await new Promise<BuilderModels | null>((resolve) => {
       let buf = "";
       let id = 0;
-      const done = (v: BuilderModels | null) => { clearTimeout(timer); killTree(proc); resolve(v); };
+      const done = (v: BuilderModels | null) => {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
+        killTree(proc);
+        resolve(v);
+      };
+      const onAbort = () => done(null);
+      signal?.addEventListener("abort", onAbort, { once: true });
       const call = (method: string, params: unknown) => {
         proc.stdin.write(JSON.stringify({ jsonrpc: "2.0", id: ++id, method, params }) + "\n");
       };
@@ -128,10 +143,7 @@ async function codexLiveModels(builder: Builder): Promise<BuilderModels | null> 
   }
 }
 
-export async function codexModels(builder: Builder): Promise<BuilderModels> {
-  const live = await codexLiveModels(builder);
-  if (live) return live;
-
+async function codexCachedModels(builder: Builder): Promise<BuilderModels> {
   const home = configHome(builder, ".codex");
   const source = path.join(home, "config.toml");
   const toml = await readToml(source);
@@ -189,7 +201,15 @@ export async function codexModels(builder: Builder): Promise<BuilderModels> {
   };
 }
 
-async function claudeModels(builder: Builder): Promise<BuilderModels> {
+export async function codexModels(builder: Builder, opts: ModelsResolveOpts = {}): Promise<BuilderModels> {
+  if (opts.live) {
+    const live = await codexLiveModels(builder, opts.signal);
+    if (live) return live;
+  }
+  return codexCachedModels(builder);
+}
+
+async function claudeModels(builder: Builder, opts: ModelsResolveOpts = {}): Promise<BuilderModels> {
   // An API-key profile can ask its provider for the real list its key sees.
   // The provider is not always Anthropic: a base-URL override (claude-fugu →
   // Sakana) means the list lives at THAT host — asking api.anthropic.com
@@ -197,7 +217,7 @@ async function claudeModels(builder: Builder): Promise<BuilderModels> {
   // health probe had. The documented pair stays the fallback for OAuth logins
   // and endpoint failures.
   const key = builder.auth.kind === "api" ? (builder.auth.env?.ANTHROPIC_API_KEY ?? Object.values(builder.auth.env ?? {})[0]) : undefined;
-  if (key) {
+  if (key && opts.live) {
     const customBase = (builder.env ?? {}).ANTHROPIC_BASE_URL ?? (builder.auth.env ?? {}).ANTHROPIC_BASE_URL;
     const host = (customBase ? customBase.replace(/\/+$/, "") : "https://api.anthropic.com") + "/v1/models";
     try {
@@ -238,10 +258,18 @@ async function claudeModels(builder: Builder): Promise<BuilderModels> {
  * with no output), so this goes through a PTY, the same reason the kimi quota
  * probe does.
  */
-async function agyModels(builder: Builder): Promise<BuilderModels> {
+async function agyModels(builder: Builder, opts: ModelsResolveOpts = {}): Promise<BuilderModels> {
   const spec = cliSpec("antigravity");
   const bin = builder.bin ?? (spec ? defaultBinFor(spec) : null);
   if (!bin) return { models: [], cliDefault: null, source: "agy.exe not found" };
+  if (!opts.live) {
+    const id = builder.model;
+    return {
+      models: id ? [{ id, note: "profile override" }] : [],
+      cliDefault: id,
+      source: "agy models deferred (use live refresh for full list)",
+    };
+  }
   try {
     const pty = await import("node-pty");
     const proc = pty.spawn(bin, ["models"], {
@@ -251,8 +279,10 @@ async function agyModels(builder: Builder): Promise<BuilderModels> {
     let out = "";
     proc.onData((d) => { out += d; });
     const code = await new Promise<number>((resolve) => {
-      proc.onExit((e) => resolve(e.exitCode));
-      setTimeout(() => { try { proc.kill(); } catch { /* gone */ } resolve(-1); }, 15_000);
+      const timer = setTimeout(() => { try { proc.kill(); } catch { /* gone */ } resolve(-1); }, 15_000);
+      const onAbort = () => { clearTimeout(timer); try { proc.kill(); } catch { /* gone */ } resolve(-1); };
+      opts.signal?.addEventListener("abort", onAbort, { once: true });
+      proc.onExit((e) => { clearTimeout(timer); opts.signal?.removeEventListener("abort", onAbort); resolve(e.exitCode); });
     });
     if (code !== 0) return { models: [], cliDefault: null, source: `agy models exited ${code}` };
     const clean = out.replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, "");
@@ -298,7 +328,7 @@ async function loadRouters(): Promise<RouterEntry[]> {
  *
  * Returns null when the builder isn't a router profile.
  */
-async function routerModels(builder: Builder): Promise<BuilderModels | null> {
+async function routerModels(builder: Builder, opts: ModelsResolveOpts = {}): Promise<BuilderModels | null> {
   const routers = await loadRouters();
 
   let baseUrl: string | null = null;
@@ -346,27 +376,29 @@ async function routerModels(builder: Builder): Promise<BuilderModels | null> {
   const cleanBase = baseUrl.replace(/\/v1\/?$/, "").replace(/\/+$/, "");
   const endpoint = cleanBase + "/v1/models";
 
-  // Try live /v1/models query (OpenAI-compatible)
-  try {
-    const res = await fetch(endpoint, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      signal: AbortSignal.timeout(8_000),
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const j = (await res.json()) as { data?: { id?: string; display_name?: string }[] };
-      const models: ModelChoice[] = (j.data ?? [])
-        .filter((m) => m.id)
-        .map((m) => ({ id: String(m.id), note: m.display_name || undefined }));
-      if (models.length) {
-        return { models, cliDefault: builder.model ?? models[0].id, source: `${endpoint} (live)` };
+  // Live /v1/models query — skipped on page loads; static catalogs are enough for dropdowns.
+  if (opts.live) {
+    try {
+      const res = await fetch(endpoint, {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        signal: opts.signal ?? AbortSignal.timeout(8_000),
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const j = (await res.json()) as { data?: { id?: string; display_name?: string }[] };
+        const models: ModelChoice[] = (j.data ?? [])
+          .filter((m) => m.id)
+          .map((m) => ({ id: String(m.id), note: m.display_name || undefined }));
+        if (models.length) {
+          return { models, cliDefault: builder.model ?? models[0].id, source: `${endpoint} (live)` };
+        }
       }
-    }
-  } catch { /* endpoint unavailable — fall through to static fallback */ }
+    } catch { /* endpoint unavailable — fall through to static fallback */ }
+  }
 
   // Static fallback catalogs for known providers
   const host = cleanBase.toLowerCase();
@@ -405,18 +437,24 @@ async function routerModels(builder: Builder): Promise<BuilderModels | null> {
   return null;
 }
 
-export async function modelsForBuilder(builder: Builder): Promise<BuilderModels> {
+export async function modelsForBuilder(
+  builder: Builder,
+  opts: ModelsResolveOpts = {},
+): Promise<BuilderModels> {
+  if (opts.signal?.aborted) {
+    return { models: [], cliDefault: null, source: "aborted" };
+  }
   // Router provider models take priority — query the provider's /v1/models
   // endpoint before falling through to CLI-specific discovery.
-  const router = await routerModels(builder).catch(() => null);
+  const router = await routerModels(builder, opts).catch(() => null);
   if (router && router.models.length > 0) return router;
 
   switch (builder.cli) {
     case "kimi": return kimiModels(builder);
-    case "codex": return codexModels(builder);
-    case "antigravity": return agyModels(builder);
+    case "codex": return codexModels(builder, opts);
+    case "antigravity": return agyModels(builder, opts);
     case "claude":
-    case "fcc": return claudeModels(builder);
+    case "fcc": return claudeModels(builder, opts);
     default: return { models: [], cliDefault: null, source: "no model list known for this CLI" };
   }
 }

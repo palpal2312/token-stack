@@ -15,6 +15,7 @@ export const fcc: CliSpec = {
   versionArgs: ["--version"],
   loginArgs: null,
   execArgs: (prompt) => ["-p", "--output-format", "text", prompt],
-  notes: "Virtual CLI: the claude binary pointed at a local proxy via env (see lib/fcc.ts). "
-    + "The precedent this whole Builder system generalizes.",
+  notes: "Virtual CLI: not a separate install. It runs the Claude Code binary through "
+    + "the local OmniRoute gateway (:20128). Shown as installed only when both Claude "
+    + "and OmniRoute are available — Claude alone is not Free Claude Code.",
 };

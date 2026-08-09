@@ -14,6 +14,10 @@ export function apiFetch(input: string, init: RequestInit = {}): Promise<Respons
   return fetch(input, init);
 }
 
+// Prefer `@/lib/client-data-cache` (`cachedGetJson` / `cachedFetchJson`) for
+// GET list payloads that should survive soft navigation. Keep mutating calls
+// and truly live streams on plain `apiFetch` / `fetch` with `cache: "no-store"`.
+
 /** Same-origin EventSource URL — the session cookie rides along automatically. */
 export function apiStreamUrl(path: string): string {
   return path;

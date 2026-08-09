@@ -7,8 +7,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Open a real OS terminal running herdr (Windows Terminal when available).
- * Detached — does not nest inside the dashboard PTY. Loopback + token only.
+ * Open a separate OS console running herdr.
+ * On Windows: classic CMD window via `start … cmd /k` (not Windows Terminal, not
+ * the dashboard PTY). Loopback + token only.
  */
 export async function POST(req: Request) {
   const guard = checkLocalRequest(req);
@@ -21,30 +22,38 @@ export async function POST(req: Request) {
     }, { status: 404 });
   }
 
-  // Prefer Windows Terminal (proper TUI); fall back to Start-Process on the binary.
   const tried: string[] = [];
-  if (await trySpawn("wt.exe", [bin], tried)) {
-    return NextResponse.json({ ok: true, via: "windows-terminal" });
-  }
-  if (await trySpawn("powershell.exe", [
-    "-NoLogo", "-NoProfile", "-Command",
-    `Start-Process -FilePath '${bin.replace(/'/g, "''")}'`,
-  ], tried)) {
-    return NextResponse.json({ ok: true, via: "start-process" });
+
+  if (process.platform === "win32") {
+    // Same pattern as builder login: `start` gives a real console with a TTY.
+    // windowsVerbatimArguments so cmd.exe does its own quoting.
+    const safeBin = bin.replace(/"/g, "");
+    const line = `start "Agent OS - Herdr" cmd /k "${safeBin}"`;
+    if (await trySpawn("cmd.exe", ["/c", line], tried, { windowsVerbatimArguments: true })) {
+      return NextResponse.json({ ok: true, via: "cmd" });
+    }
+  } else if (await trySpawn(bin, [], tried)) {
+    return NextResponse.json({ ok: true, via: "direct" });
   }
 
   return NextResponse.json({
-    error: `Could not open an external terminal (${tried.join("; ") || "no launcher worked"}). Run herdr yourself from a terminal.`,
+    error: `Could not open a CMD window (${tried.join("; ") || "no launcher worked"}). Run herdr yourself from a terminal.`,
   }, { status: 500 });
 }
 
-function trySpawn(cmd: string, args: string[], tried: string[]): Promise<boolean> {
+function trySpawn(
+  cmd: string,
+  args: string[],
+  tried: string[],
+  opts?: { windowsVerbatimArguments?: boolean },
+): Promise<boolean> {
   return new Promise((resolve) => {
     try {
       const child = spawn(cmd, args, {
         detached: true,
         stdio: "ignore",
         windowsHide: false,
+        windowsVerbatimArguments: opts?.windowsVerbatimArguments,
         env: process.env,
       });
       child.on("error", (e) => {

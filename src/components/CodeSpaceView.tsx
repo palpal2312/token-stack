@@ -1,19 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { RefreshCw, AlertTriangle, PanelLeft, PanelLeftClose, SquareTerminal, ExternalLink, Code } from "lucide-react";
-import HerdrTerminal from "./HerdrTerminal";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { RefreshCw, AlertTriangle, PanelLeft, PanelLeftClose, SquareTerminal, ExternalLink, Code, ChevronDown } from "lucide-react";
 import DebugShell from "./DebugShell";
 import HeaderStatPills from "./HeaderStatPills";
 import PageHeaderIcon from "./PageHeaderIcon";
 import { apiFetch } from "@/lib/apiFetch";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  invalidateCache,
+  readCache,
+} from "@/lib/client-data-cache";
 
-// The Code Space is a terminal onto Herdr with a thin status readout on the
-// left rail. Herdr owns the panes and the processes; this page attaches to
-// the same default session and aggregates its headline numbers. Closing this
-// tab does not stop anything — that is the point of using a real multiplexer.
+// Code Space surfaces running job status and descriptions. The live terminal is
+// opt-in via Debug Shell (or Open Terminal for a separate CMD window running Herdr).
+// Closing this tab does not stop Herdr panes — that is the point of attaching
+// to a real multiplexer.
 
-interface Pane { pane_id?: string; agent?: string; cwd?: string; terminal_title?: string }
+interface Pane {
+  pane_id?: string;
+  agent?: string;
+  agent_status?: string;
+  cwd?: string;
+  terminal_title?: string;
+  terminal_title_stripped?: string;
+}
 interface Workspace { workspace_id: string; label?: string }
 interface Status { installed: boolean; bin: string | null; version: string | null; running: boolean; error: string | null }
 interface RuntimeAttempt {
@@ -27,6 +40,53 @@ interface RuntimeAttempt {
 }
 
 const LS_PANEL = "agentos.code-space.left-open";
+const ATTACHED_ATTEMPT = new Set<RuntimeAttempt["status"]>(["pending", "attached"]);
+const DONE_ATTEMPT = new Set<RuntimeAttempt["status"]>(["completed", "failed", "cancelled"]);
+
+/** Idle board: only refetch when lastUpdate is this old while the page is open. */
+const IDLE_STALE_MS = 60_000;
+/** Active attached/busy session: shorter stale window — still not a continuous force poll. */
+const LIVE_STALE_MS = 10_000;
+
+type StatusSectionId = "attached" | "idle" | "done";
+
+function formatWhen(isoOrMs: string | number | null | undefined): string {
+  if (isoOrMs == null) return "never";
+  const t = typeof isoOrMs === "number" ? isoOrMs : Date.parse(isoOrMs);
+  if (!Number.isFinite(t)) return "never";
+  return new Date(t).toLocaleString();
+}
+
+function formatAgeShort(isoOrMs: string | number | null | undefined, now = Date.now()): string {
+  if (isoOrMs == null) return "never";
+  const t = typeof isoOrMs === "number" ? isoOrMs : Date.parse(isoOrMs);
+  if (!Number.isFinite(t)) return "never";
+  const sec = Math.max(0, Math.round((now - t) / 1000));
+  if (sec < 45) return "just now";
+  if (sec < 3600) return `${Math.round(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.round(sec / 3600)}h ago`;
+  return `${Math.round(sec / 86400)}d ago`;
+}
+
+function isRealTimestamp(value: string | undefined): boolean {
+  if (!value) return false;
+  const t = Date.parse(value);
+  return Number.isFinite(t) && t > 0 && new Date(t).getUTCFullYear() >= 2000;
+}
+
+function paneStatus(pane: Pane): string {
+  return (pane.agent_status || "running").toLowerCase();
+}
+
+function isIdlePane(pane: Pane): boolean {
+  return paneStatus(pane) === "idle";
+}
+
+function sortByName<T>(items: T[], nameOf: (item: T) => string): T[] {
+  return [...items].sort((a, b) =>
+    nameOf(a).localeCompare(nameOf(b), undefined, { sensitivity: "base" }),
+  );
+}
 
 export default function CodeSpaceView({ embedded = false }: { embedded?: boolean }) {
   const [status, setStatus] = useState<Status | null>(null);
@@ -38,19 +98,22 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [listUpdatedAt, setListUpdatedAt] = useState<number | null>(null);
   const [openingExt, setOpeningExt] = useState(false);
   const [extMsg, setExtMsg] = useState<string | null>(null);
   const [debugShellOpen, setDebugShellOpen] = useState(false);
-  // Status rail starts closed so the terminal owns the page; user can expand it.
-  const [leftOpen, setLeftOpen] = useState(false);
+  const [leftOpen, setLeftOpen] = useState(true);
   const [leftReady, setLeftReady] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const listUpdatedAtRef = useRef<number | null>(null);
+  const liveWorkRef = useRef(false);
+  const mountedRef = useRef(true);
+  const loadInFlightRef = useRef(false);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_PANEL);
+      if (raw === "0") setLeftOpen(false);
       if (raw === "1") setLeftOpen(true);
-      // missing or "0" → stay closed (default)
     } catch { /* ignore */ }
     setLeftReady(true);
   }, []);
@@ -73,7 +136,7 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
         setExtMsg(String(j.error ?? "Could not open an external terminal."));
         return;
       }
-      setExtMsg(j.via === "windows-terminal" ? "Opened Herdr in Windows Terminal." : "Opened Herdr in a system terminal.");
+      setExtMsg(j.via === "cmd" ? "Opened Herdr in a CMD window." : "Opened Herdr in a system terminal.");
     } catch (e) {
       setExtMsg(e instanceof Error ? e.message : String(e));
     } finally {
@@ -81,34 +144,153 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
     }
   }, []);
 
-  const load = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      let j: Record<string, unknown>;
-      try { j = await (await fetch("/api/herdr/snapshot", { cache: "no-store" })).json(); }
-      catch { j = { error: "The dashboard did not answer." }; }
-      setStatus((j.status as Status) ?? null);
-      const snap = j.snapshot as { panes?: Pane[]; workspaces?: Workspace[] } | null;
-      setPanes(snap?.panes ?? []);
-      setWorkspaces(snap?.workspaces ?? []);
-      setRuntimeAttempts((j.runtimeAttempts as RuntimeAttempt[]) ?? []);
-      setRuntimeProjectionEnabled(j.runtimeProjectionEnabled === true);
-      setRuntimeProjectionError((j.runtimeProjectionError as string) ?? null);
-      setErr((j.snapshotError as string) ?? null);
-      setLoaded(true);
-    } finally { setRefreshing(false); }
+  const rememberListTime = useCallback((ms = Date.now()) => {
+    listUpdatedAtRef.current = ms;
+    setListUpdatedAt(ms);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const applySnapshot = useCallback((j: Record<string, unknown>, fetchedAt = Date.now()) => {
+    setStatus((j.status as Status) ?? null);
+    const snap = j.snapshot as { panes?: Pane[]; workspaces?: Workspace[] } | null;
+    setPanes(snap?.panes ?? []);
+    setWorkspaces(snap?.workspaces ?? []);
+    setRuntimeAttempts((j.runtimeAttempts as RuntimeAttempt[]) ?? []);
+    setRuntimeProjectionEnabled(j.runtimeProjectionEnabled === true);
+    setRuntimeProjectionError((j.runtimeProjectionError as string) ?? null);
+    setErr((j.snapshotError as string) ?? null);
+    setLoaded(true);
+    rememberListTime(fetchedAt);
+  }, [rememberListTime]);
 
-  useEffect(() => {
-    pollRef.current = setInterval(load, 10_000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  const load = useCallback(async (opts?: { force?: boolean }) => {
+    if (loadInFlightRef.current && !opts?.force) return;
+    const policy = CachePresets.live;
+    const key = ClientCacheKeys.herdrSnapshot;
+
+    if (!opts?.force) {
+      const hit = readCache<Record<string, unknown>>(key, policy);
+      if (hit?.usable) {
+        applySnapshot(hit.data, Date.now() - hit.ageMs);
+        if (hit.fresh) return;
+      }
+    } else {
+      invalidateCache(key);
+    }
+
+    loadInFlightRef.current = true;
+    setRefreshing(true);
+    try {
+      const { data: j } = await cachedFetchJson(
+        key,
+        async () => {
+          try {
+            return await (await fetch("/api/herdr/snapshot", { cache: "no-store" })).json() as Record<string, unknown>;
+          } catch {
+            return { error: "The dashboard did not answer." };
+          }
+        },
+        { ...policy, force: true },
+      );
+      if (mountedRef.current) applySnapshot(j, Date.now());
+    } finally {
+      loadInFlightRef.current = false;
+      if (mountedRef.current) setRefreshing(false);
+    }
+  }, [applySnapshot]);
+
+  /** Fetch only when lastUpdate is past the stale window for the current session mode. */
+  const refreshIfStale = useCallback((opts?: { force?: boolean }) => {
+    if (opts?.force) {
+      void load({ force: true });
+      return;
+    }
+    if (document.visibilityState !== "visible") return;
+    const updated = listUpdatedAtRef.current;
+    const threshold = liveWorkRef.current ? LIVE_STALE_MS : IDLE_STALE_MS;
+    if (updated != null && Date.now() - updated < threshold) return;
+    void load();
   }, [load]);
 
-  const agentPanes = panes.filter((p) => p.agent);
-  const activeRuntimeAttempts = runtimeAttempts.filter((attempt) => attempt.status === "attached");
-  const showProjectionOnly = runtimeProjectionEnabled && activeRuntimeAttempts.length > 0;
+  useEffect(() => {
+    mountedRef.current = true;
+    void load();
+    return () => { mountedRef.current = false; };
+  }, [load]);
+
+  // Arm a single timeout to the next stale boundary — no continuous force poll.
+  // Live attached/busy sessions use LIVE_STALE_MS; idle boards use IDLE_STALE_MS.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const arm = () => {
+      if (timer) clearTimeout(timer);
+      if (!mountedRef.current || document.visibilityState !== "visible") return;
+      const updated = listUpdatedAtRef.current ?? Date.now();
+      const threshold = liveWorkRef.current ? LIVE_STALE_MS : IDLE_STALE_MS;
+      const wait = Math.max(750, threshold - (Date.now() - updated));
+      timer = setTimeout(() => {
+        refreshIfStale();
+        arm();
+      }, wait);
+    };
+    arm();
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        refreshIfStale();
+        arm();
+      } else if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [refreshIfStale, listUpdatedAt]);
+
+  const agentPanes = useMemo(() => panes.filter((p) => p.agent), [panes]);
+  const attachedAttempts = useMemo(
+    () => sortByName(
+      runtimeAttempts.filter((a) => ATTACHED_ATTEMPT.has(a.status)),
+      (a) => a.builder_id || a.attempt_id,
+    ),
+    [runtimeAttempts],
+  );
+  const doneAttempts = useMemo(
+    () => sortByName(
+      runtimeAttempts.filter((a) => DONE_ATTEMPT.has(a.status)),
+      (a) => a.builder_id || a.attempt_id,
+    ),
+    [runtimeAttempts],
+  );
+  const busyPanes = useMemo(
+    () => sortByName(
+      agentPanes.filter((p) => !isIdlePane(p)),
+      (p) => p.terminal_title_stripped || p.terminal_title || p.agent || "",
+    ),
+    [agentPanes],
+  );
+  const idlePanes = useMemo(
+    () => sortByName(
+      agentPanes.filter(isIdlePane),
+      (p) => p.terminal_title_stripped || p.terminal_title || p.agent || "",
+    ),
+    [agentPanes],
+  );
+  const jobCount = attachedAttempts.length + busyPanes.length;
+  liveWorkRef.current = jobCount > 0;
+
+  const jobBoard = (
+    <JobBoard
+      compact={embedded}
+      attachedAttempts={attachedAttempts}
+      doneAttempts={doneAttempts}
+      busyPanes={busyPanes}
+      idlePanes={idlePanes}
+      onOpenDebug={() => setDebugShellOpen(true)}
+    />
+  );
 
   if (embedded) {
     return (
@@ -128,48 +310,24 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
         {loaded && status && !status.running && (
           <StatusHint status={status} />
         )}
-        <div className="grid grid-cols-3 gap-3">
-          <Stat
-            label={runtimeProjectionEnabled ? "Active attempts" : "Running agents"}
-            value={String(runtimeProjectionEnabled ? activeRuntimeAttempts.length : agentPanes.length)}
-            accent="#22d3ee"
-            compact
-          />
-          <Stat label="Panes open" value={String(panes.length)} accent="#a855f7" compact />
-          <Stat label="Workspaces" value={String(workspaces.length)} accent="#86efac" compact />
-        </div>
-        {showProjectionOnly ? (
-          <div className="panel p-4 space-y-3">
-            <div className="text-[11px] uppercase tracking-widest text-[var(--fg-dimmer)]">
-              Canonical Runtime Projection
-            </div>
-            {activeRuntimeAttempts.map((attempt) => (
-              <div key={attempt.attempt_id} className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[13px] font-medium truncate" style={{ color: "var(--cream)" }}>{attempt.builder_id}</span>
-                  <StatusBadge status={attempt.status} />
-                </div>
-                <div className="text-[10px] truncate" style={{ color: "var(--fg-dim)" }} title={attempt.task_id}>
-                  Task: {attempt.task_id}
-                </div>
-                <div className="text-[10px]" style={{ color: "var(--fg-dim)" }}>
-                  Pane: {attempt.pane_id}
-                </div>
-                {attempt.last_heartbeat_at && (
-                  <div className="text-[10px]" style={{ color: "var(--fg-dim)" }}>
-                    Last heartbeat: {new Date(attempt.last_heartbeat_at).toLocaleTimeString()}
-                  </div>
-                )}
-                {attempt.terminal_summary && (
-                  <div className="text-[10px] truncate" style={{ color: "var(--fg-dim)" }} title={attempt.terminal_summary}>
-                    {attempt.terminal_summary}
-                  </div>
-                )}
-              </div>
-            ))}
+        <div className="flex items-center justify-between gap-2">
+          <div className="grid grid-cols-3 gap-3 flex-1 min-w-0">
+            <Stat label="Active jobs" value={String(jobCount)} accent="#22d3ee" compact />
+            <Stat label="Panes open" value={String(panes.length)} accent="#a855f7" compact />
+            <Stat label="Workspaces" value={String(workspaces.length)} accent="#86efac" compact />
           </div>
-        ) : (
-          <HerdrTerminal compact />
+          <button
+            type="button"
+            onClick={() => setDebugShellOpen(true)}
+            title="Open debug shell"
+            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
+          >
+            <Code size={13} /> Debug Shell
+          </button>
+        </div>
+        {jobBoard}
+        {debugShellOpen && (
+          <DebugShell open={debugShellOpen} onClose={() => setDebugShellOpen(false)} />
         )}
       </div>
     );
@@ -207,10 +365,7 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
             </span>
             <HeaderStatPills
               stats={[
-                ...(runtimeProjectionEnabled ? [{
-                  label: `${activeRuntimeAttempts.length} active attempts`,
-                  tone: activeRuntimeAttempts.length ? "ok" as const : "neutral" as const,
-                }] : []),
+                { label: `${jobCount} jobs`, tone: jobCount ? "ok" : "neutral" },
                 { label: `${agentPanes.length} agents`, tone: agentPanes.length ? "ok" : "neutral" },
                 { label: `${panes.length} panes`, tone: panes.length ? "accent" : "neutral" },
                 { label: `${workspaces.length} workspaces`, tone: workspaces.length ? "accent" : "neutral" },
@@ -218,12 +373,25 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
             />
           </div>
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
+          <div
+            className="text-[10px] text-[var(--fg-dimmer)] text-right leading-snug hidden sm:block"
+            title={[
+              listUpdatedAt ? `Snapshot last update ${formatWhen(listUpdatedAt)}` : "Snapshot not loaded yet",
+              jobCount > 0
+                ? `Live session mode · refresh when older than ${LIVE_STALE_MS / 1000}s`
+                : `Idle mode · refresh when older than ${IDLE_STALE_MS / 1000}s`,
+              "No continuous force poll — only when this page is open and lastUpdate is stale.",
+            ].join("\n")}
+          >
+            <div>Updated · {listUpdatedAt ? formatAgeShort(listUpdatedAt) : "—"}</div>
+            <div>{jobCount > 0 ? "Live · 10s stale" : "Idle · 60s stale"}</div>
+          </div>
           <button
             type="button"
             onClick={() => void openExternal()}
             disabled={openingExt || (loaded && status !== null && !status.installed)}
-            title="Open Herdr in Windows Terminal (recommended for heavy TUI)"
+            title="Open Herdr in a separate CMD window"
             className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)] disabled:opacity-40"
           >
             <ExternalLink size={13} /> {openingExt ? "Opening…" : "Open Terminal"}
@@ -231,17 +399,19 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
           <button
             type="button"
             onClick={() => setDebugShellOpen(true)}
-            title="Open debug shell (bypasses projection authority)"
+            title="Open debug shell for a manual terminal"
             className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
           >
             <Code size={13} /> Debug Shell
           </button>
           <button
-            onClick={load}
+            type="button"
+            onClick={() => void load({ force: true })}
             disabled={refreshing}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
+            title="Force fetch — bypass cache and reload Herdr snapshot now"
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)] disabled:opacity-50"
           >
-            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} /> Refresh
+            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} /> Force fetch
           </button>
         </div>
       </header>
@@ -257,9 +427,7 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
           >
             <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3 sidebar-scroll">
               <div className="space-y-2">
-                {runtimeProjectionEnabled && (
-                  <Stat label="Canonical active" value={String(activeRuntimeAttempts.length)} accent="#22d3ee" compact />
-                )}
+                <Stat label="Active jobs" value={String(jobCount)} accent="#22d3ee" compact />
                 <Stat label="Herdr agents" value={String(agentPanes.length)} accent="#d4a574" compact />
                 <Stat label="Panes open" value={String(panes.length)} accent="#a855f7" compact />
                 <Stat label="Workspaces" value={String(workspaces.length)} accent="#86efac" compact />
@@ -281,10 +449,10 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
                 <StatusHint status={status} compact />
               )}
 
-              {runtimeProjectionEnabled && runtimeAttempts.length > 0 && (
+              {runtimeAttempts.length > 0 && (
                 <section className="space-y-1.5">
                   <h2 className="text-[10px] font-semibold uppercase tracking-[.16em]" style={{ color: "var(--cream-mute)" }}>
-                    Canonical attempts
+                    Attempts
                   </h2>
                   {runtimeAttempts.map((attempt) => (
                     <div
@@ -322,9 +490,9 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
                       <div className="truncate font-medium" style={{ color: "var(--cream)" }} title={pane.agent}>
                         {pane.agent}
                       </div>
-                      {(pane.terminal_title || pane.cwd) && (
+                      {(pane.terminal_title_stripped || pane.terminal_title || pane.cwd) && (
                         <div className="mt-0.5 truncate text-[10px]" style={{ color: "var(--cream-mute)" }} title={pane.cwd ?? pane.terminal_title}>
-                          {pane.terminal_title || pane.cwd}
+                          {pane.terminal_title_stripped || pane.terminal_title || pane.cwd}
                         </div>
                       )}
                     </div>
@@ -353,48 +521,262 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
           </aside>
         )}
 
-        <div className="flex-1 min-w-0 min-h-0">
-          {showProjectionOnly ? (
-            <div className="h-full overflow-y-auto p-6 space-y-4" style={{ background: "var(--bg-deep)" }}>
-              <div className="text-[13px] uppercase tracking-widest text-[var(--fg-dimmer)]">
-                Canonical Runtime Projection
-              </div>
-              {activeRuntimeAttempts.map((attempt) => (
-                <div key={attempt.attempt_id} className="panel p-4 space-y-2.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[15px] font-semibold truncate" style={{ color: "var(--cream)" }} title={attempt.builder_id}>
-                      {attempt.builder_id}
-                    </span>
-                    <StatusBadge status={attempt.status} />
-                  </div>
-                  <div className="text-[11.5px] truncate" style={{ color: "var(--fg-dim)" }} title={attempt.task_id}>
-                    <span className="text-[var(--fg-dimmer)]">Task:</span> {attempt.task_id}
-                  </div>
-                  <div className="text-[11.5px]" style={{ color: "var(--fg-dim)" }}>
-                    <span className="text-[var(--fg-dimmer)]">Pane:</span> {attempt.pane_id}
-                  </div>
-                  {attempt.last_heartbeat_at && (
-                    <div className="text-[11.5px]" style={{ color: "var(--fg-dim)" }}>
-                      <span className="text-[var(--fg-dimmer)]">Last heartbeat:</span>{" "}
-                      {new Date(attempt.last_heartbeat_at).toLocaleTimeString()}
-                    </div>
-                  )}
-                  {attempt.terminal_summary && (
-                    <div className="text-[11.5px] truncate" style={{ color: "var(--fg-dim)" }} title={attempt.terminal_summary}>
-                      <span className="text-[var(--fg-dimmer)]">Terminal:</span> {attempt.terminal_summary}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <HerdrTerminal fill />
-          )}
+        <div className="flex-1 min-w-0 min-h-0 overflow-y-auto" style={{ background: "var(--bg-deep)" }}>
+          <div className="h-full p-6">
+            {jobBoard}
+          </div>
         </div>
       </div>
 
       {debugShellOpen && (
         <DebugShell open={debugShellOpen} onClose={() => setDebugShellOpen(false)} />
+      )}
+    </div>
+  );
+}
+
+function JobBoard({
+  compact,
+  attachedAttempts,
+  doneAttempts,
+  busyPanes,
+  idlePanes,
+  onOpenDebug,
+}: {
+  compact?: boolean;
+  attachedAttempts: RuntimeAttempt[];
+  doneAttempts: RuntimeAttempt[];
+  busyPanes: Pane[];
+  idlePanes: Pane[];
+  onOpenDebug: () => void;
+}) {
+  const attachedCount = attachedAttempts.length + busyPanes.length;
+  const idleCount = idlePanes.length;
+  const doneCount = doneAttempts.length;
+  const empty = attachedCount === 0 && idleCount === 0 && doneCount === 0;
+
+  // Prefer Attached (like Active on builders); fall over only when that bucket is empty.
+  const [openSection, setOpenSection] = useState<StatusSectionId>("attached");
+
+  useEffect(() => {
+    setOpenSection((cur) => {
+      const curEmpty =
+        (cur === "attached" && attachedCount === 0)
+        || (cur === "idle" && idleCount === 0)
+        || (cur === "done" && doneCount === 0);
+      if (!curEmpty) return cur;
+      if (attachedCount > 0) return "attached";
+      if (idleCount > 0) return "idle";
+      if (doneCount > 0) return "done";
+      return "attached";
+    });
+  }, [attachedCount, idleCount, doneCount]);
+
+  return (
+    <div className={compact ? "space-y-3" : "space-y-4"}>
+      {empty && (
+        <div className={`panel ${compact ? "p-4" : "p-5"} space-y-2`}>
+          <div className="text-[13px] font-medium" style={{ color: "var(--cream)" }}>
+            No running jobs
+          </div>
+          <div className="text-[12px] leading-relaxed" style={{ color: "var(--fg-dim)" }}>
+            Groups below update as attempts attach or Herdr panes change. Open Debug Shell only for a manual terminal.
+          </div>
+          <button
+            type="button"
+            onClick={onOpenDebug}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
+          >
+            <Code size={13} /> Debug Shell
+          </button>
+        </div>
+      )}
+
+      <StatusSection
+        id="attached"
+        title="Attached"
+        hint="Pending / attached attempts and busy panes"
+        count={attachedCount}
+        open={openSection === "attached"}
+        onToggle={() => setOpenSection("attached")}
+      >
+        {attachedCount === 0 ? (
+          <div className="text-[12px] text-[var(--fg-dimmer)] px-1 py-2">Nothing attached right now.</div>
+        ) : (
+          <div className={compact ? "space-y-2" : "space-y-3"}>
+            {attachedAttempts.map((attempt) => (
+              <AttemptCard key={attempt.attempt_id} attempt={attempt} compact={compact} />
+            ))}
+            {busyPanes.map((pane, i) => (
+              <PaneCard key={pane.pane_id ?? `busy-${i}`} pane={pane} compact={compact} />
+            ))}
+          </div>
+        )}
+      </StatusSection>
+
+      <StatusSection
+        id="idle"
+        title="Idle"
+        hint="Herdr panes waiting"
+        count={idleCount}
+        open={openSection === "idle"}
+        onToggle={() => setOpenSection("idle")}
+      >
+        {idleCount === 0 ? (
+          <div className="text-[12px] text-[var(--fg-dimmer)] px-1 py-2">No idle panes.</div>
+        ) : (
+          <div className={compact ? "space-y-2" : "space-y-3"}>
+            {idlePanes.map((pane, i) => (
+              <PaneCard key={pane.pane_id ?? `idle-${i}`} pane={pane} compact={compact} />
+            ))}
+          </div>
+        )}
+      </StatusSection>
+
+      <StatusSection
+        id="done"
+        title="Done"
+        hint="Completed, failed, or cancelled attempts"
+        count={doneCount}
+        open={openSection === "done"}
+        onToggle={() => setOpenSection("done")}
+      >
+        {doneCount === 0 ? (
+          <div className="text-[12px] text-[var(--fg-dimmer)] px-1 py-2">No settled attempts yet.</div>
+        ) : (
+          <div className={compact ? "space-y-2" : "space-y-3"}>
+            {doneAttempts.map((attempt) => (
+              <AttemptCard key={attempt.attempt_id} attempt={attempt} compact={compact} />
+            ))}
+          </div>
+        )}
+      </StatusSection>
+    </div>
+  );
+}
+
+function StatusSection({
+  id,
+  title,
+  hint,
+  count,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  hint: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-2">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`code-space-section-${id}`}
+        className="w-full flex items-center gap-2 px-1 py-1.5 text-left transition hover:opacity-90"
+      >
+        <ChevronDown
+          size={14}
+          className="shrink-0 transition-transform"
+          style={{
+            color: open ? "var(--gold)" : "var(--cream-mute)",
+            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+          }}
+        />
+        <span
+          className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+          style={{ color: open ? "var(--gold)" : "var(--cream-mute)" }}
+        >
+          {title}
+        </span>
+        <span className="text-[11px] text-[var(--fg-dimmer)]">· {count}</span>
+        <span className="text-[11px] text-[var(--fg-dimmer)] truncate hidden sm:inline">— {hint}</span>
+      </button>
+      {open && (
+        <div id={`code-space-section-${id}`}>
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AttemptCard({ attempt, compact }: { attempt: RuntimeAttempt; compact?: boolean }) {
+  const summary = attempt.terminal_summary?.trim();
+  return (
+    <div className={`panel space-y-2 ${compact ? "p-3" : "p-4"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span
+          className={`font-semibold truncate ${compact ? "text-[13px]" : "text-[15px]"}`}
+          style={{ color: "var(--cream)" }}
+          title={attempt.builder_id}
+        >
+          {attempt.builder_id}
+        </span>
+        <StatusBadge status={attempt.status} />
+      </div>
+      {summary ? (
+        <div className={`${compact ? "text-[12px]" : "text-[13px]"} leading-relaxed`} style={{ color: "var(--cream-mute)" }}>
+          {summary}
+        </div>
+      ) : (
+        <div className={`${compact ? "text-[12px]" : "text-[13px]"}`} style={{ color: "var(--fg-dim)" }}>
+          No terminal summary yet.
+        </div>
+      )}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]" style={{ color: "var(--fg-dim)" }}>
+        <span title={attempt.task_id}><span className="text-[var(--fg-dimmer)]">Task:</span> {attempt.task_id}</span>
+        <span><span className="text-[var(--fg-dimmer)]">Pane:</span> {attempt.pane_id}</span>
+        {isRealTimestamp(attempt.last_heartbeat_at) && (
+          <span>
+            <span className="text-[var(--fg-dimmer)]">Heartbeat:</span>{" "}
+            {new Date(attempt.last_heartbeat_at).toLocaleTimeString()}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PaneCard({ pane, compact }: { pane: Pane; compact?: boolean }) {
+  const title = pane.terminal_title_stripped || pane.terminal_title || pane.agent || "Pane";
+  const statusLabel = paneStatus(pane);
+  return (
+    <div className={`panel space-y-2 ${compact ? "p-3" : "p-4"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span
+          className={`font-semibold truncate ${compact ? "text-[13px]" : "text-[15px]"}`}
+          style={{ color: "var(--cream)" }}
+          title={title}
+        >
+          {title}
+        </span>
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide"
+          style={{
+            borderColor: statusLabel === "idle" ? "rgba(161,161,170,.35)" : "rgba(134,239,172,.35)",
+            background: statusLabel === "idle" ? "rgba(161,161,170,.10)" : "rgba(134,239,172,.10)",
+            color: statusLabel === "idle" ? "#a1a1aa" : "#86efac",
+          }}
+        >
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "currentColor" }} />
+          {statusLabel}
+        </span>
+      </div>
+      <div className={`${compact ? "text-[12px]" : "text-[13px]"}`} style={{ color: "var(--cream-mute)" }}>
+        {pane.agent ? `${pane.agent} on Herdr` : "Herdr pane"}
+        {pane.cwd ? ` · ${pane.cwd}` : ""}
+      </div>
+      {pane.pane_id && (
+        <div className="text-[11px]" style={{ color: "var(--fg-dim)" }}>
+          <span className="text-[var(--fg-dimmer)]">Pane:</span> {pane.pane_id}
+        </div>
       )}
     </div>
   );

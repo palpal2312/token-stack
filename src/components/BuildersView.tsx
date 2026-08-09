@@ -1,12 +1,71 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
 import {
   Plus, X, Check, KeyRound, LogIn, Activity, Trash2, Star, Terminal,
-  AlertTriangle, CircleDot, Copy, Settings2, ScanSearch, RefreshCw, SlidersHorizontal,
+  AlertTriangle, CircleDot, Copy, Settings2, ScanSearch, RefreshCw, SlidersHorizontal, ChevronDown,
+  CalendarClock,
 } from "lucide-react";
 import HeaderStatPills from "./HeaderStatPills";
 import PageHeaderIcon from "./PageHeaderIcon";
+import {
+  CachePresets,
+  ClientCacheKeys,
+  cachedFetchJson,
+  invalidateCache,
+  peekCache,
+  readCache,
+  setCache,
+} from "@/lib/client-data-cache";
+
+/** Match `quotaRefresh.QUOTA_STALE_MS` — auto-fetch only when painted data is this old. */
+const QUOTA_STALE_MS = 60 * 60 * 1000;
+/** Soft list refresh threshold while the page stays open (visibility / focus). */
+const LIST_STALE_MS = CachePresets.static.ttlMs ?? 60_000;
+
+function newestQuotaCheckedAt(builders: Builder[]): number | null {
+  let max = 0;
+  for (const b of builders) {
+    const t = b.quota?.checkedAt ? Date.parse(b.quota.checkedAt) : NaN;
+    if (Number.isFinite(t) && t > max) max = t;
+  }
+  return max > 0 ? max : null;
+}
+
+/** True when at least one dated quota reading is older than the stale window. */
+function hasStaleQuotaReading(builders: Builder[], now = Date.now()): boolean {
+  for (const b of builders) {
+    if (!b.quota?.checkedAt) continue;
+    const t = Date.parse(b.quota.checkedAt);
+    if (!Number.isFinite(t) || now - t > QUOTA_STALE_MS) return true;
+  }
+  return false;
+}
+
+type BuilderLivePatch = {
+  id: string;
+  verifiedAt?: string | null;
+  verifiedDetail?: string | null;
+  quota?: { text: string; checkedAt: string } | null;
+};
+
+function formatWhen(isoOrMs: string | number | null | undefined): string {
+  if (isoOrMs == null) return "never";
+  const t = typeof isoOrMs === "number" ? isoOrMs : Date.parse(isoOrMs);
+  if (!Number.isFinite(t)) return "never";
+  return new Date(t).toLocaleString();
+}
+
+function formatAgeShort(isoOrMs: string | number | null | undefined, now = Date.now()): string {
+  if (isoOrMs == null) return "never";
+  const t = typeof isoOrMs === "number" ? isoOrMs : Date.parse(isoOrMs);
+  if (!Number.isFinite(t)) return "never";
+  const sec = Math.max(0, Math.round((now - t) / 1000));
+  if (sec < 45) return "just now";
+  if (sec < 3600) return `${Math.round(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.round(sec / 3600)}h ago`;
+  return `${Math.round(sec / 86400)}d ago`;
+}
 
 // A Builder is one runnable configuration of a CLI — binary + account + env.
 // This page is where they are made. It never shows a secret and never performs
@@ -152,6 +211,20 @@ export default function BuildersView() {
   const [modelInfos, setModelInfos] = useState<Record<string, Builder["modelsInfo"]>>({});
   const [loaded, setLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [quotaRefreshing, setQuotaRefreshing] = useState(false);
+  /** Exclusive accordion: Active (has profiles) vs Inactive (no profiles). */
+  const [openSection, setOpenSection] = useState<"active" | "inactive">("active");
+  /** Full payload (models + nativeProfiles) loaded after summary paint. */
+  const [detailsReady, setDetailsReady] = useState(false);
+  /** When the painted list was last fetched / patched (ms). */
+  const [listUpdatedAt, setListUpdatedAt] = useState<number | null>(null);
+  /** Newest quota.checkedAt among painted builders (ms), for the header clock. */
+  const [quotaUpdatedAt, setQuotaUpdatedAt] = useState<number | null>(null);
+  const mountedRef = useRef(true);
+  const buildersRef = useRef<Builder[]>([]);
+  const listUpdatedAtRef = useRef<number | null>(null);
+  const quotaKickAtRef = useRef<number | null>(null);
+  buildersRef.current = builders;
 
   // A route that dies mid-flight sends no body, and res.json() would throw where
   // nothing catches it — so every read goes through here.
@@ -162,24 +235,163 @@ export default function BuildersView() {
 
   const loadController = useRef<AbortController | null>(null);
 
-  async function load() {
+  function rememberListTime(ms = Date.now()) {
+    listUpdatedAtRef.current = ms;
+    setListUpdatedAt(ms);
+  }
+
+  /** Keep soft-nav cache aligned with in-place patches (status / quota / effort). */
+  function writeBuildersCaches(nextBuilders: Builder[], extras?: Partial<{ clis: Cli[]; nativeProfiles: NativeProfile[]; orphanedDirs: string[] }>) {
+    const full = peekCache<Record<string, unknown>>(ClientCacheKeys.builders);
+    const summary = peekCache<Record<string, unknown>>(ClientCacheKeys.buildersSummary);
+    const base = (full ?? summary ?? {}) as Record<string, unknown>;
+    const stamped = Date.now();
+    const next = {
+      ...base,
+      builders: nextBuilders,
+      clis: extras?.clis ?? (base.clis as Cli[] | undefined) ?? clis,
+      nativeProfiles: extras?.nativeProfiles ?? (base.nativeProfiles as NativeProfile[] | undefined) ?? nativeProfiles,
+      orphanedDirs: extras?.orphanedDirs ?? (base.orphanedDirs as string[] | undefined) ?? orphans,
+    };
+    setCache(ClientCacheKeys.builders, next, stamped);
+    setCache(ClientCacheKeys.buildersSummary, { ...next, summary: true }, stamped);
+    rememberListTime(stamped);
+  }
+
+  function applyBuildersPayload(j: Record<string, unknown>, opts?: { details?: boolean; fetchedAt?: number }) {
+    const nextBuilders = (j.builders as Builder[]) ?? [];
+    buildersRef.current = nextBuilders;
+    setClis((j.clis as Cli[]) ?? []);
+    setBuilders(nextBuilders);
+    if (opts?.details !== false) {
+      setNativeProfiles((j.nativeProfiles as NativeProfile[]) ?? []);
+      setOrphans((j.orphanedDirs as string[]) ?? []);
+    } else if (Array.isArray(j.nativeProfiles) && (j.nativeProfiles as NativeProfile[]).length) {
+      setNativeProfiles(j.nativeProfiles as NativeProfile[]);
+    }
+    if (Array.isArray(j.orphanedDirs) && (j.orphanedDirs as string[]).length) {
+      setOrphans(j.orphanedDirs as string[]);
+    }
+    setErr((j.error as string) ?? null);
+    if (mountedRef.current) {
+      const fromApi: Record<string, Builder["modelsInfo"]> = {};
+      for (const b of nextBuilders) {
+        if (b.modelsInfo) fromApi[b.id] = b.modelsInfo;
+      }
+      if (Object.keys(fromApi).length) setModelInfos((m) => ({ ...m, ...fromApi }));
+    }
+    setLoaded(true);
+    if (opts?.details || j.summary !== true) setDetailsReady(true);
+    rememberListTime(opts?.fetchedAt ?? Date.now());
+    const qAt = newestQuotaCheckedAt(nextBuilders);
+    if (qAt) setQuotaUpdatedAt(qAt);
+  }
+
+  /** Merge only live fields (status / quota) — never replace whole CLI catalogs. */
+  function applyLivePatches(patches: BuilderLivePatch[]) {
+    if (!patches.length) return;
+    const byId = new Map(patches.map((p) => [p.id, p]));
+    const prev = buildersRef.current;
+    const next = prev.map((b) => {
+      const p = byId.get(b.id);
+      if (!p) return b;
+      const patched: Builder = { ...b };
+      if ("verifiedAt" in p) {
+        if (p.verifiedAt) patched.verifiedAt = p.verifiedAt;
+        else delete patched.verifiedAt;
+      }
+      if ("verifiedDetail" in p) {
+        if (p.verifiedDetail) patched.verifiedDetail = p.verifiedDetail;
+        else delete patched.verifiedDetail;
+      }
+      if ("quota" in p && p.quota) {
+        patched.quota = p.quota;
+      }
+      return patched;
+    });
+    buildersRef.current = next;
+    setBuilders(next);
+    writeBuildersCaches(next);
+    const qAt = newestQuotaCheckedAt(next);
+    if (qAt) setQuotaUpdatedAt(qAt);
+  }
+
+  async function loadFull(opts?: { refreshQuota?: boolean; force?: boolean; signal?: AbortSignal }) {
+    const qs = opts?.refreshQuota ? "?refreshQuota=1" : "";
+    const url = `/api/builders${qs}`;
+    const cacheKeyForUrl = opts?.refreshQuota ? `GET ${url}` : ClientCacheKeys.builders;
+    const policy = CachePresets.static;
+    const force = opts?.force || !!opts?.refreshQuota;
+    if (force) invalidateCache(cacheKeyForUrl);
+
+    const { data: j } = await cachedFetchJson(
+      cacheKeyForUrl,
+      async () => readJson(await fetch(url, { cache: "no-store", signal: opts?.signal })),
+      { ...policy, force: true },
+    );
+    if (opts?.signal?.aborted) return;
+    const fetchedAt = Date.now();
+    applyBuildersPayload(j, { details: true, fetchedAt });
+    // Keep summary cache warm with the shell fields so soft-nav paints Active fast.
+    if (!opts?.refreshQuota) {
+      setCache(ClientCacheKeys.buildersSummary, { ...j, summary: true }, fetchedAt);
+    }
+  }
+
+  /**
+   * Soft nav: paint cache first. Network only when cache is missing/stale.
+   * Never kicks quota probes — those are Force / scheduled only.
+   */
+  async function load(opts?: { force?: boolean }) {
     if (loadController.current) {
       loadController.current.abort();
     }
     loadController.current = new AbortController();
     const signal = loadController.current.signal;
+    const policy = CachePresets.static;
 
+    if (opts?.force) {
+      setRefreshing(true);
+      try {
+        await loadFull({ force: true, signal });
+      } catch (e: any) {
+        if (e.name === "AbortError") return;
+        setErr(e.message);
+      } finally {
+        if (!signal.aborted) setRefreshing(false);
+      }
+      return;
+    }
+
+    // Soft: paint from cache immediately.
+    const fullHit = readCache<Record<string, unknown>>(ClientCacheKeys.builders, policy);
+    if (fullHit?.usable) {
+      applyBuildersPayload(fullHit.data, { details: true, fetchedAt: Date.now() - fullHit.ageMs });
+      if (fullHit.fresh) return; // no network on every visit
+    }
+
+    const summaryHit = readCache<Record<string, unknown>>(ClientCacheKeys.buildersSummary, policy);
+    if (!fullHit?.usable && summaryHit?.usable) {
+      applyBuildersPayload(summaryHit.data, { details: false, fetchedAt: Date.now() - summaryHit.ageMs });
+      setDetailsReady(false);
+    }
+
+    // Stale or cold: background enrich — still no quota probes.
     setRefreshing(true);
     try {
-      const res = await fetch("/api/builders", { cache: "no-store", signal });
-      const j = await readJson(res);
-      if (signal.aborted) return;
-      setClis((j.clis as Cli[]) ?? []);
-      setBuilders((j.builders as Builder[]) ?? []);
-      setNativeProfiles((j.nativeProfiles as NativeProfile[]) ?? []);
-      setOrphans((j.orphanedDirs as string[]) ?? []);
-      setErr((j.error as string) ?? null);
-      setLoaded(true);
+      if (!summaryHit?.fresh && !fullHit?.usable) {
+        const { data: summary } = await cachedFetchJson(
+          ClientCacheKeys.buildersSummary,
+          async () => readJson(await fetch("/api/builders?summary=1", { cache: "no-store", signal })),
+          { ...policy, force: false },
+        );
+        if (signal.aborted) return;
+        applyBuildersPayload(summary, { details: false, fetchedAt: Date.now() });
+        setDetailsReady(false);
+      }
+      if (!fullHit?.fresh) {
+        void loadFull({ signal }).catch(() => { /* keep summary paint */ });
+      }
     } catch (e: any) {
       if (e.name === "AbortError") return;
       setErr(e.message);
@@ -187,67 +399,91 @@ export default function BuildersView() {
       if (!signal.aborted) setRefreshing(false);
     }
   }
+
+  /**
+   * One-shot quota refresh when painted readings are stale (or Force/Quota click).
+   * No follow-up poll loop — active CLI chat sessions own their own live updates;
+   * this page only merges what the kick response already returns.
+   */
+  async function refreshQuotaIfNeeded(opts?: { force?: boolean }) {
+    if (quotaRefreshing) return;
+    const force = !!opts?.force;
+    const lastKick = quotaKickAtRef.current;
+    const now = Date.now();
+    if (!force) {
+      if (lastKick && now - lastKick < QUOTA_STALE_MS) return;
+      if (!hasStaleQuotaReading(buildersRef.current, now)) return;
+    }
+
+    setQuotaRefreshing(true);
+    quotaKickAtRef.current = now;
+    try {
+      const r = await fetch("/api/builders?refreshQuota=1", { cache: "no-store" });
+      const j = await readJson(r);
+      if (j.error) setErr(String(j.error));
+      else {
+        const list = (j.builders as Builder[]) ?? [];
+        applyLivePatches(list.map((b) => ({
+          id: b.id,
+          verifiedAt: b.verifiedAt ?? null,
+          verifiedDetail: b.verifiedDetail ?? null,
+          quota: b.quota ?? null,
+        })));
+        setQuotaUpdatedAt(newestQuotaCheckedAt(list) ?? now);
+      }
+    } catch (e: any) {
+      if (e.name !== "AbortError") setErr(e.message);
+    } finally {
+      if (mountedRef.current) setQuotaRefreshing(false);
+    }
+  }
+
+  /** While the page is open: if list lastUpdate is past TTL, soft-fetch once. */
+  function refreshListIfStale() {
+    if (document.visibilityState !== "visible") return;
+    const updated = listUpdatedAtRef.current;
+    if (updated != null && Date.now() - updated < LIST_STALE_MS) return;
+    void load();
+  }
+
   useEffect(() => {
-    load();
+    mountedRef.current = true;
+    void (async () => {
+      await load();
+      // After cache paint: at most one quota kick if readings are already stale.
+      if (mountedRef.current) void refreshQuotaIfNeeded();
+    })();
     return () => {
+      mountedRef.current = false;
       if (loadController.current) {
         loadController.current.abort();
       }
     };
   }, []);
 
-  // Model lists can be slow (codex app-server, agy PTY, provider calls). Load
-  // the page first, then hydrate model dropdowns in the background per profile.
-  // We process them SEQUENTIALLY to avoid blasting the backend with 10+ PTY spawns
-  // or heavy network calls all at once, which causes Node event loop freezes.
-  // A ref avoids triggering useEffect cleanup loops when its state changes.
-  const fetchingModels = useRef(new Set<string>());
-
+  // No setInterval. Re-check staleness only when the tab becomes visible again.
+  // Chat sessions update themselves; builders does not poll for live CLI chats.
   useEffect(() => {
-    const controller = new AbortController();
+    const onVis = () => {
+      if (document.visibilityState !== "visible") return;
+      refreshListIfStale();
+      void refreshQuotaIfNeeded();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, []);
 
-    async function hydrateSequentially() {
-      // Find missing models checking both the current prop state and our local fetching ref.
-      const missing = builders.filter((b) => !b.modelsInfo && !fetchingModels.current.has(b.id));
-      if (!missing.length) return;
-
-      for (const b of missing) {
-        if (controller.signal.aborted) break;
-        fetchingModels.current.add(b.id);
-
-        try {
-          const res = await fetch(`/api/builders/${encodeURIComponent(b.id)}/models`, {
-            cache: "no-store",
-            signal: controller.signal
-          });
-          const j = await res.json();
-          if (controller.signal.aborted) break;
-          setModelInfos((m) => ({ ...m, [b.id]: (j.modelsInfo ?? null) as Builder["modelsInfo"] }));
-        } catch {
-          if (controller.signal.aborted) break;
-          setModelInfos((m) => ({ ...m, [b.id]: null }));
-        }
-      }
-    }
-
-    // Fire the async background queue
-    void hydrateSequentially();
-
-    return () => { controller.abort(); };
-    // Only re-run if builders change (not when modelInfos changes, to avoid loop trashing)
-  }, [builders]);
+  const scanController = useRef<AbortController | null>(null);
 
   async function importProfile(p: NativeProfile) {
     const j = await readJson(await fetch("/api/builders/import-native", {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ cli: p.cli, name: p.name }),
     }));
-    if (j.error) setErr(String(j.error)); else { setErr(null); await load(); }
+    if (j.error) setErr(String(j.error)); else { setErr(null); await load({ force: true }); }
   }
 
-  const scanController = useRef<AbortController | null>(null);
-
-  /** Re-run native-profile detection, then health-test every profile of one CLI. */
+  /** Re-run health per profile of one CLI — status first, then quota; no full list reload. */
   async function scanCli(c: Cli) {
     if (scanFor) return;
     setScanFor(c.id);
@@ -259,9 +495,8 @@ export default function BuildersView() {
     const signal = scanController.current.signal;
 
     try {
-      await load();                              // fresh detection first
-      if (signal.aborted) return;
-      for (const b of (byCli[c.id] ?? [])) {     // then test each profile, one at a time
+      const profiles = buildersRef.current.filter((b) => b.cli === c.id);
+      for (const b of profiles) {
         if (signal.aborted) return;
         await probe(b, signal);
       }
@@ -284,13 +519,34 @@ export default function BuildersView() {
       const res = await fetch(`/api/builders/${b.id}/health`, { method: "POST", signal });
       const j = await readJson(res);
       if (signal?.aborted) return;
-      setHealth((h) => ({
-        ...h,
-        [b.id]: (j.health as Health) ?? { state: "fail", message: String(j.error ?? "Health check failed."), version: null, durationMs: 0, warnings: [] },
-      }));
-      // The probe writes its verdict onto the builder record (the green tick) —
-      // reload so the tick appears without a manual refresh.
-      if (!signal?.aborted) await load();
+      const nextHealth = (j.health as Health) ?? {
+        state: "fail" as const,
+        message: String(j.error ?? "Health check failed."),
+        version: null,
+        durationMs: 0,
+        warnings: [],
+      };
+      // 1) Status / connection first — paint before quota fields.
+      setHealth((h) => ({ ...h, [b.id]: nextHealth }));
+      const patch = j.builder as BuilderLivePatch | null | undefined;
+      if (patch) {
+        applyLivePatches([{
+          id: b.id,
+          verifiedAt: patch.verifiedAt,
+          verifiedDetail: patch.verifiedDetail,
+        }]);
+      }
+      // Yield so the browser can paint status before quota text lands.
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
+      if (signal?.aborted) return;
+      // 2) Quota (+ siblings that share the account).
+      if (patch?.quota) {
+        const siblingIds = (j.siblingIds as string[] | undefined) ?? [];
+        applyLivePatches([
+          { id: b.id, quota: patch.quota },
+          ...siblingIds.map((id) => ({ id, quota: patch.quota! })),
+        ]);
+      }
     } catch (e: any) {
       if (e.name === "AbortError") return;
       setHealth((h) => ({
@@ -308,7 +564,7 @@ export default function BuildersView() {
     if (!confirm(msg)) return;
     const purge = hasLogin && confirm(`Also erase the saved login folder?\n\n${b.auth.configDir}\n\nOK = erase it (you will have to log in again).\nCancel = keep it.`);
     const j = await readJson(await fetch(`/api/builders/${b.id}${purge ? "?purge=1" : ""}`, { method: "DELETE" }));
-    if (j.error) setErr(j.error as string); else { setErr(null); await load(); }
+    if (j.error) setErr(j.error as string); else { setErr(null); await load({ force: true }); }
   }
 
   async function makeDefault(b: Builder) {
@@ -317,7 +573,12 @@ export default function BuildersView() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ isDefault: true }),
     });
-    await load();
+    const next = buildersRef.current.map((x) =>
+      x.cli === b.cli ? { ...x, isDefault: x.id === b.id } : x,
+    );
+    buildersRef.current = next;
+    setBuilders(next);
+    writeBuildersCaches(next);
   }
 
   async function setEffort(b: Builder, effort: string | null) {
@@ -326,7 +587,10 @@ export default function BuildersView() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ effort }),
     });
-    await load();
+    const next = buildersRef.current.map((x) => (x.id === b.id ? { ...x, effort } : x));
+    buildersRef.current = next;
+    setBuilders(next);
+    writeBuildersCaches(next);
   }
 
   async function setModel(b: Builder, model: string | null) {
@@ -336,7 +600,10 @@ export default function BuildersView() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ model }),
     });
-    await load();
+    const next = buildersRef.current.map((x) => (x.id === b.id ? { ...x, model } : x));
+    buildersRef.current = next;
+    setBuilders(next);
+    writeBuildersCaches(next);
   }
 
   async function startLogin(b: Builder) {
@@ -352,11 +619,57 @@ export default function BuildersView() {
     return m;
   }, [builders]);
 
+  const { activeClis, inactiveClis } = useMemo(() => {
+    const byLabel = (a: Cli, b: Cli) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
+    const active: Cli[] = [];
+    const inactive: Cli[] = [];
+    for (const c of clis) {
+      const n = (byCli[c.id] ?? []).length;
+      if (n > 0) active.push(c);
+      else inactive.push(c);
+    }
+    active.sort(byLabel);
+    inactive.sort(byLabel);
+    return { activeClis: active, inactiveClis: inactive };
+  }, [clis, byCli]);
+
   const stats = useMemo(() => ({
     profiles: builders.length,
     installed: clis.filter((c) => c.installed).length,
     multi: clis.filter((c) => c.multiProfile && c.installed).length,
   }), [builders, clis]);
+
+  function toggleSection(section: "active" | "inactive") {
+    // Exclusive accordion: opening one always collapses the other.
+    setOpenSection(section);
+    // Inactive needs native-profile scan — kick full enrich if summary-only so far.
+    if (section === "inactive" && !detailsReady) {
+      void loadFull({ signal: loadController.current?.signal }).catch(() => {});
+    }
+  }
+
+  function renderCliCard(c: Cli) {
+    return (
+      <CliCard
+        key={c.id}
+        cli={c}
+        builders={byCli[c.id] ?? []}
+        nativeProfiles={nativeProfiles.filter((p) => p.cli === c.id)}
+        health={health}
+        modelInfos={modelInfos}
+        onAdd={() => setAddFor(c)}
+        onProbe={probe}
+        onDelete={remove}
+        onDefault={makeDefault}
+        onLogin={startLogin}
+        onEffort={setEffort}
+        onModel={setModel}
+        onImport={importProfile}
+        onScan={() => scanCli(c)}
+        scanning={scanFor === c.id}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-col h-full px-4 md:px-6 py-3">
@@ -376,14 +689,40 @@ export default function BuildersView() {
             />
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={refreshing}
-          className="ml-auto shrink-0 inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)]"
-        >
-          <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} /> Refresh
-        </button>
+        <div className="ml-auto flex flex-wrap items-center gap-2 shrink-0">
+          <div
+            className="text-[10px] text-[var(--fg-dimmer)] text-right leading-snug hidden sm:block"
+            title={[
+              listUpdatedAt ? `List last update ${formatWhen(listUpdatedAt)}` : "List not loaded yet",
+              quotaUpdatedAt ? `Newest quota reading ${formatWhen(quotaUpdatedAt)}` : "No quota readings yet",
+              "Auto-fetch only when this page is open and lastUpdate is past the stale window — no background polling. Live CLI chats update on their own session pages.",
+            ].join("\n")}
+          >
+            <div>List · {listUpdatedAt ? formatAgeShort(listUpdatedAt) : "—"}</div>
+            <div>
+              Quota · {quotaUpdatedAt ? formatAgeShort(quotaUpdatedAt) : "—"}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void refreshQuotaIfNeeded({ force: true })}
+            disabled={quotaRefreshing}
+            title="Force-refresh stale quota now. Auto path only runs when the page is open and a reading is older than 1h — not a continuous backend poll."
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)] disabled:opacity-50"
+          >
+            <CalendarClock size={13} className={quotaRefreshing ? "animate-pulse" : ""} />
+            {quotaRefreshing ? "Quota…" : "Quota"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void load({ force: true })}
+            disabled={refreshing}
+            title="Force fetch — bypass cache and reload profiles / models. Does not probe quota (use Quota for that)."
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-[var(--line-soft)] bg-[var(--bg-mid)] px-3 text-[12px] font-medium text-[var(--cream-mute)] transition hover:text-[var(--cream)] disabled:opacity-50"
+          >
+            <RefreshCw size={13} className={refreshing ? "animate-spin" : ""} /> Force fetch
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto space-y-6">
@@ -407,42 +746,105 @@ export default function BuildersView() {
 
       {!loaded && <div className="text-sm text-[var(--fg-dim)] py-8 text-center">Reading your CLI setup…</div>}
 
-      <div className="space-y-3">
-        {clis.map((c) => (
-          <CliCard
-            key={c.id}
-            cli={c}
-            builders={byCli[c.id] ?? []}
-            nativeProfiles={nativeProfiles.filter((p) => p.cli === c.id)}
-            health={health}
-            modelInfos={modelInfos}
-            onAdd={() => setAddFor(c)}
-            onProbe={probe}
-            onDelete={remove}
-            onDefault={makeDefault}
-            onLogin={startLogin}
-            onEffort={setEffort}
-            onModel={setModel}
-            onImport={importProfile}
-            onScan={() => scanCli(c)}
-            scanning={scanFor === c.id}
-          />
-        ))}
-      </div>
+      {loaded && (
+        <div className="space-y-4">
+          <CliSection
+            id="active"
+            title="Active"
+            hint="CLIs with at least one profile"
+            count={activeClis.length}
+            open={openSection === "active"}
+            onToggle={() => toggleSection("active")}
+          >
+            {activeClis.length === 0 ? (
+              <div className="text-[12px] text-[var(--fg-dimmer)] px-1 py-2">No profiles yet — add one under Inactive.</div>
+            ) : (
+              <div className="space-y-3">{activeClis.map(renderCliCard)}</div>
+            )}
+          </CliSection>
+
+          <CliSection
+            id="inactive"
+            title="Inactive"
+            hint="CLIs with no profiles yet"
+            count={inactiveClis.length}
+            open={openSection === "inactive"}
+            onToggle={() => toggleSection("inactive")}
+          >
+            {inactiveClis.length === 0 ? (
+              <div className="text-[12px] text-[var(--fg-dimmer)] px-1 py-2">Every catalogued CLI already has a profile.</div>
+            ) : (
+              <div className="space-y-3">{inactiveClis.map(renderCliCard)}</div>
+            )}
+          </CliSection>
+        </div>
+      )}
 
       <>
         {addFor && (
           <AddBuilderModal
             cli={addFor}
             onClose={() => setAddFor(null)}
-            onCreated={async () => { setAddFor(null); await load(); }}
+            onCreated={async () => { setAddFor(null); await load({ force: true }); }}
             onError={setErr}
           />
         )}
-        {loginInfo && <LoginModal info={loginInfo} onClose={() => { setLoginInfo(null); load(); }} />}
+        {loginInfo && <LoginModal info={loginInfo} onClose={() => { setLoginInfo(null); void load({ force: true }); }} />}
       </>
       </div>
     </div>
+  );
+}
+
+function CliSection({
+  id,
+  title,
+  hint,
+  count,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  hint: string;
+  count: number;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="space-y-2">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        aria-controls={`builders-section-${id}`}
+        className="w-full flex items-center gap-2 px-1 py-1.5 text-left transition hover:opacity-90"
+      >
+        <ChevronDown
+          size={14}
+          className="shrink-0 transition-transform"
+          style={{
+            color: open ? "var(--gold)" : "var(--cream-mute)",
+            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+          }}
+        />
+        <span
+          className="text-[11px] font-semibold uppercase tracking-[0.16em]"
+          style={{ color: open ? "var(--gold)" : "var(--cream-mute)" }}
+        >
+          {title}
+        </span>
+        <span className="text-[11px] text-[var(--fg-dimmer)]">· {count}</span>
+        <span className="text-[11px] text-[var(--fg-dimmer)] truncate hidden sm:inline">— {hint}</span>
+      </button>
+      {open && (
+        <div id={`builders-section-${id}`}>
+          {children}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -470,9 +872,9 @@ function CliCard({ cli, builders, nativeProfiles, health, modelInfos, onAdd, onP
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[15px]">{cli.label}</span>
             <Pill tone={cli.installed ? "good" : "off"}>{cli.installed ? "installed" : "not installed"}</Pill>
-            {cli.multiProfile
+            {cli.installed && (cli.multiProfile
               ? <Pill tone="info">several accounts</Pill>
-              : <Pill tone="off" title="No isolation variable has been proven for this CLI, so every profile would share one login.">one account</Pill>}
+              : <Pill tone="off" title="No isolation variable has been proven for this CLI, so every profile would share one login.">one account</Pill>)}
             <span className="text-[11px] text-[var(--fg-dimmer)]">{builders.length} profile{builders.length === 1 ? "" : "s"}</span>
           </div>
 
@@ -488,10 +890,10 @@ function CliCard({ cli, builders, nativeProfiles, health, modelInfos, onAdd, onP
           )}
           {!cli.installed && !shim && (
             <div className="text-[11px] text-[var(--fg-dimmer)] mt-1.5">
-              Install it, or set an absolute path in a profile&apos;s Binary field.
+              Not available on this machine — install it (or bring its gateway online) before adding accounts.
             </div>
           )}
-          {cli.isolationEnv && (
+          {cli.installed && cli.isolationEnv && (
             <div className="text-[11px] text-[var(--fg-dimmer)] mt-1.5">
               Accounts are kept apart with <code className="mono">{cli.isolationEnv}</code>.
             </div>
@@ -503,13 +905,16 @@ function CliCard({ cli, builders, nativeProfiles, health, modelInfos, onAdd, onP
                   className="grid place-items-center w-8 h-8 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] transition">
             <Settings2 size={14} />
           </button>
-          <button onClick={onScan} disabled={scanning}
-                  title="Re-scan profiles the CLI owns itself, then health-test every profile of this CLI"
+          <button onClick={onScan} disabled={scanning || !cli.installed}
+                  title={cli.installed
+                    ? "Health-test each profile of this CLI — status first, then quota. Does not reload the whole list."
+                    : "Install this CLI before scanning accounts"}
                   className="grid place-items-center w-8 h-8 rounded-lg text-[var(--fg-dim)] hover:text-[var(--fg)] disabled:opacity-40 transition">
             <ScanSearch size={14} className={scanning ? "animate-pulse" : ""} />
           </button>
-          <button onClick={onAdd}
-                  className="px-3 h-8 rounded-lg flex items-center gap-1.5 text-[12px] transition"
+          <button onClick={onAdd} disabled={!cli.installed}
+                  title={cli.installed ? "Add a profile" : "Install this CLI before adding accounts"}
+                  className="px-3 h-8 rounded-lg flex items-center gap-1.5 text-[12px] transition disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: "rgba(34,211,238,0.16)", border: "1px solid rgba(34,211,238,0.45)", color: "#22d3ee" }}>
             <Plus size={13} /> Add profile
           </button>
@@ -574,7 +979,7 @@ function BuilderRow({ builder: b, cli, health, modelsInfo, onProbe, onDelete, on
             <span className="text-[13px]">{b.name}</span>
             {b.verifiedAt && (
               <span
-                title={`Verified ${new Date(b.verifiedAt).toLocaleString()} — last health probe passed and the account connected.\n${b.verifiedDetail ?? ""}`}
+                title={`Status verified ${formatWhen(b.verifiedAt)} — last health probe passed and the account connected.\n${b.verifiedDetail ?? ""}`}
                 className="grid place-items-center w-4 h-4 rounded-full"
                 style={{ background: "rgba(134,239,172,0.18)", color: "#86efac" }}>
                 <Check size={11} strokeWidth={3} />
@@ -604,7 +1009,7 @@ function BuilderRow({ builder: b, cli, health, modelsInfo, onProbe, onDelete, on
               return (
                 <Pill
                   tone={fresh ? "good" : stale ? "info" : "off"}
-                  title={`Quota reading checked ${new Date(b.quota.checkedAt).toLocaleString()}`}
+                  title={`Quota reading checked ${formatWhen(b.quota.checkedAt)}`}
                 >
                   {fresh ? "quota fresh" : stale ? "quota stale" : "quota expired"}
                 </Pill>
@@ -685,9 +1090,17 @@ function BuilderRow({ builder: b, cli, health, modelsInfo, onProbe, onDelete, on
               {h.connectionDetail && <span className="text-[var(--fg-dim)]">{h.connectionDetail}</span>}
             </div>
           )}
+          <div className="text-[10px] text-[var(--fg-dimmer)] mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+            <span title={b.verifiedAt ? formatWhen(b.verifiedAt) : "No successful status probe yet"}>
+              Status · {b.verifiedAt ? formatAgeShort(b.verifiedAt) : "never"}
+            </span>
+            <span title={b.quota?.checkedAt ? formatWhen(b.quota.checkedAt) : "No quota reading yet"}>
+              Quota · {b.quota?.checkedAt ? formatAgeShort(b.quota.checkedAt) : "never"}
+            </span>
+          </div>
           {(h?.quota ?? b.quota?.text) && (
             <div className="mono text-[10px] mt-0.5" style={{ color: "#22d3ee" }}
-                 title={h?.quota ? "Fresh from the probe just run" : `Last reading, checked ${b.quota?.checkedAt ? new Date(b.quota.checkedAt).toLocaleString() : "earlier"}. Probe to refresh.`}>
+                 title={h?.quota ? "Fresh from the probe just run" : `Last reading, checked ${b.quota?.checkedAt ? formatWhen(b.quota.checkedAt) : "earlier"}. Use Quota or Probe to refresh.`}>
               {h?.quota ?? b.quota?.text}
             </div>
           )}
