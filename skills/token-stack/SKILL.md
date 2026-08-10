@@ -16,8 +16,25 @@ which rtk && rtk --version                      # RTK shim works?
 grep -o '"[a-z-]*@[a-z-]*"' ~/.claude/plugins/installed_plugins.json | sort -u
 grep -A6 enabledPlugins ~/.claude/settings.json # ponytail + caveman = true?
 curl -s -m 3 http://127.0.0.1:8787/health       # headroom up? check "upstream"
+echo $ANTHROPIC_BASE_URL                        # in-session: 127.0.0.1:8787? direct vendor URL = bypass
 ls ~/.agents/skills | grep -E 'ponytail|caveman' # kimi-code skills junctioned?
 ```
+
+## Confirm routing actually works
+
+Env vars lie (launchers can override per-process; this shell's `$ANTHROPIC_BASE_URL` may show the vendor URL while the agent process still routes via the proxy). The only trustworthy proof is logged traffic:
+
+```bash
+curl -s http://127.0.0.1:8787/stats | grep -o '"api_requests":[0-9]*'
+curl -s http://127.0.0.1:8787/stats | grep -o '"agent":"[^"]*"\|"primary_model":"[^"]*"'
+```
+
+Success = all three:
+1. `/health` → `"ready":true` and `checks.upstream.status:"healthy"`
+2. `api_requests` rises after a real turn (one-shot curl tests don't count — no compression by design)
+3. `agent_usage` lists your client (e.g. `claude-code`) with the session's model
+
+If (1) passes but (2) never moves, the agent bypasses the proxy — repoint its `ANTHROPIC_BASE_URL` to `http://127.0.0.1:8787` and restart.
 
 ## claude-code
 
@@ -71,6 +88,8 @@ headroom doctor
 ```
 
 Caveats: cold start ~70s (Connection refused ≠ dead); one-shot curl shows 0 compression by design — judge via `/stats` after real sessions; process-env `ANTHROPIC_BASE_URL` overrides settings env and bypasses the proxy.
+
+**Custom-endpoint profile (Kimi etc.)** — normal case is one line (`ANTHROPIC_BASE_URL=http://127.0.0.1:8787` in settings env, done). Special case: a profile already pointing at a vendor endpoint (e.g. `.claude-kimicode` → `https://api.kimi.com/coding/`) *looks* configured but bypasses the proxy. Fix: repoint that profile's `ANTHROPIC_BASE_URL` to `http://127.0.0.1:8787`; API key stays in the profile env, vendor URL stays baked as the proxy's `--anthropic-api-url` upstream. Verify post-restart: in-session `echo $ANTHROPIC_BASE_URL` shows 127.0.0.1:8787, and `requests` in `~/.headroom/proxy_savings.json` rises per turn (file has counters only, no `last_activity` timestamp).
 
 ## RTK (shared)
 

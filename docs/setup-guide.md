@@ -83,6 +83,7 @@ Revert: remove/repoint `ANTHROPIC_BASE_URL` in settings env, remove the SessionS
 ## 4. Secondary cases (kept brief)
 
 - **Separate config-dir profile** (e.g. `~/.claude-something`): doesn't inherit `~/.claude` plugins/settings. Fast path: junction its `plugins` dir to the main one, then add `enabledPlugins` + hook + `ANTHROPIC_BASE_URL` in that profile's settings like the main one.
+- **Profile on a custom API endpoint** (e.g. `.claude-kimicode` → `https://api.kimi.com/coding/`): looks fully configured yet bypasses the proxy — proxy healthy, savings flat. Normal case: settings env `ANTHROPIC_BASE_URL=http://127.0.0.1:8787`, nothing else. This case: repoint that value from the vendor URL to `http://127.0.0.1:8787`, keep the API key in the profile env, keep the vendor URL as the proxy's `--anthropic-api-url` upstream. Verify after restart: in-session `echo $ANTHROPIC_BASE_URL` = 127.0.0.1:8787 and `requests` rising in `~/.headroom/proxy_savings.json` (counters only there — no `last_activity` field; hit 2026-08-10).
 - **Kimi Code CLI** (different agent, not Claude Code): reads skills from `~/.agents/skills/` — junction from the project's `.agents/skills/` with PowerShell `New-Item -ItemType Junction` (Git Bash `mklink /J` gets its args eaten by MSYS). RTK for Kimi: `rtk init --agent kimi` (project-scoped, writes AGENTS.md).
 
 ## New-machine checklist
