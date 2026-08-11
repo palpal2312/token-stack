@@ -9,32 +9,52 @@ Four independent layers: ponytail (less code), caveman (fewer words), RTK (filte
 
 Full pitfalls: `docs/setup-guide.md` in this repo.
 
-## Detect current machine first
+## Detect current session profile first
 
-```bash
-which rtk && rtk --version                      # RTK shim works?
-grep -o '"[a-z-]*@[a-z-]*"' ~/.claude/plugins/installed_plugins.json | sort -u
-grep -A6 enabledPlugins ~/.claude/settings.json # ponytail + caveman = true?
-curl -s -m 3 http://127.0.0.1:8787/health       # headroom up? check "upstream"
-echo $ANTHROPIC_BASE_URL                        # in-session: 127.0.0.1:8787? direct vendor URL = bypass
-ls ~/.agents/skills | grep -E 'ponytail|caveman' # kimi-code skills junctioned?
+Run one read-only detector. Default output is compact JSON for agent parsing; `-Human` is optional:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File "$PWD/scripts/detect-agent-context.ps1" `
+  -SourceRoot "$PWD"
 ```
 
-## Confirm routing actually works
+For another profile, pass `-ConfigDir`. Precedence: explicit parameter, `CLAUDE_CONFIG_DIR`, then `$HOME/.claude`. Detector never writes files, installs plugins, starts processes, or prints secret values. Exit `0` means valid result, even when actions are recommended; nonzero means invocation or fatal runtime failure.
 
-Env vars lie (launchers can override per-process; this shell's `$ANTHROPIC_BASE_URL` may show the vendor URL while the agent process still routes via the proxy). The only trustworthy proof is logged traffic:
+Use returned `actions` as decision input. Do not reread `settings.json`, rerun grep, or call curl when JSON already answers it. Apply only needed actions, then run detector again. Read full settings only before an approved repair; preserve unrelated hooks, env values, plugins, models, and API keys.
 
-```bash
-curl -s http://127.0.0.1:8787/stats | grep -o '"api_requests":[0-9]*'
-curl -s http://127.0.0.1:8787/stats | grep -o '"agent":"[^"]*"\|"primary_model":"[^"]*"'
+Action order:
+
+1. `inspect-invalid-settings`, `inspect-missing-settings`, `locate-source-root`
+2. `remove-process-route-override` or `set-proxy-base-url`
+3. `update-profile-skill`, `create-profile-hook`, `register-profile-hook`
+4. `enable-*`, `install-*`
+5. `inspect-stale-upstream`, `start-or-check-headroom`
+6. `restart-session-after-repair`
+
+Important fields: `profile.effectivePath`, `settings.baseUrl.requested/effective/source`, `skill.drift`, `hook.sessionStart`, `proxy.routeStatus`, `actions`. `-CheckProxy` adds bounded `/health` and compact `/stats` checks; omit it for fast local-only detection:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File "$PWD/scripts/detect-agent-context.ps1" `
+  -ConfigDir "$HOME/.claude-sub2api" `
+  -SourceRoot "$PWD" `
+  -CheckProxy
 ```
 
-Success = all three:
-1. `/health` → `"ready":true` and `checks.upstream.status:"healthy"`
-2. `api_requests` rises after a real turn (one-shot curl tests don't count — no compression by design)
-3. `agent_usage` lists your client (e.g. `claude-code`) with the session's model
+`process_override` means launcher environment wins over profile settings. `stale_upstream` means ready headroom process has different baked upstream; `/readyz` alone is not proof route is correct. Upstream changes require proxy restart or a distinct port. Other profile hooks are diagnostics only; never rewrite them mechanically.
 
-If (1) passes but (2) never moves, the agent bypasses the proxy — repoint its `ANTHROPIC_BASE_URL` to `http://127.0.0.1:8787` and restart.
+## Confirm routing after real session
+
+Use only after repair/restart or when detector reports `unknown`/`unavailable`:
+
+```bash
+headroom doctor
+curl -s -m 3 http://127.0.0.1:8787/health
+curl -s -m 3 http://127.0.0.1:8787/stats
+```
+
+Success requires `/health` ready with healthy upstream, then rising request count under `agent_usage.totals.requests` (schema may vary) and your client in `agent_usage` after a real multi-turn session. One-shot curl does not prove compression. If health passes but request count stays flat, agent bypasses proxy; inspect effective process `ANTHROPIC_BASE_URL` and restart.
 
 ## claude-code
 

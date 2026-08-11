@@ -6,8 +6,8 @@ Works with: claude-code, kimi-code, codex, agy (antigravity).
 
 ## Quick start
 
-1. Read `skills/token-stack/SKILL.md` — detect what your machine already has, then follow the block for your CLI.
-2. Full pitfalls + verify commands: `docs/setup-guide.md`.
+1. Read `skills/token-stack/SKILL.md`, then run `scripts/detect-agent-context.ps1` once for current profile state and recommended actions.
+2. Full pitfalls + fallback verify commands: `docs/setup-guide.md`.
 
 ## Layout
 

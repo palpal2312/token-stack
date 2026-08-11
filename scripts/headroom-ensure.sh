@@ -10,7 +10,8 @@
 # - hooks run with a minimal PATH -> absolute path to headroom.exe
 # - first start loads models (~60-90s) -> poll readyz instead of fixed sleep
 
-READYZ="http://127.0.0.1:8787/readyz"
+PORT="${HEADROOM_PORT:-8787}"
+READYZ="http://127.0.0.1:$PORT/readyz"
 HEADROOM="$USERPROFILE/.local/bin/headroom.exe"
 UPSTREAM="${HEADROOM_UPSTREAM:-https://api.anthropic.com}"
 
@@ -20,7 +21,7 @@ fi
 
 # Start detached (survives the hook shell).
 powershell -NoProfile -Command \
-  "Start-Process -WindowStyle Hidden -FilePath '$HEADROOM' -ArgumentList 'proxy','--port','8787','--anthropic-api-url','$UPSTREAM'" \
+  "Start-Process -WindowStyle Hidden -FilePath '$HEADROOM' -ArgumentList 'proxy','--port','$PORT','--anthropic-api-url','$UPSTREAM'" \
   >/dev/null 2>&1
 
 # Wait for readiness so the first API call doesn't race the proxy.

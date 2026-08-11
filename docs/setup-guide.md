@@ -88,10 +88,17 @@ Revert: remove/repoint `ANTHROPIC_BASE_URL` in settings env, remove the SessionS
 
 ## New-machine checklist
 
-The `token-stack` skill (`skills/token-stack/`, junction into `~/.claude/skills/` + `~/.agents/skills/`) packages detect + setup for claude-code / kimi-code / codex / agy — follow it instead of reading this whole doc.
+The `token-stack` skill (`skills/token-stack/`, junction into `~/.claude/skills/` + `~/.agents/skills/`) packages profile-aware detection for claude-code / kimi-code / codex / agy.
 
-1. RTK: install binary, shim `~/bin/rtk`, `chmod +x`.
-2. `claude plugin marketplace add` + `install` both plugins → add `enabledPlugins` → restart session.
-3. Headroom: `uv tool install`, register the `headroom-ensure.sh` hook, set `ANTHROPIC_BASE_URL` in settings env.
-4. Secondary profiles / Kimi Code: see section 4.
-5. Verify: `which rtk && rtk --version`; `/ponytail-help` in session; `headroom doctor`.
+1. Run detector once; default JSON output drives only missing or mismatched actions:
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\detect-agent-context.ps1 -SourceRoot $PWD
+   ```
+
+2. Apply recommended actions manually, preserving unrelated profile settings and secrets. Use explicit `-ConfigDir` for secondary profiles.
+3. RTK: install binary and shim `~/bin/rtk` only when detector reports it missing.
+4. Install/enable plugins only when detector reports them missing or disabled.
+5. Headroom: register profile-local hook and proxy base URL only when detector reports mismatch. A ready proxy with different baked upstream is stale; restart it or use a distinct port.
+6. Restart session after skill/settings changes.
+7. Verify with `-CheckProxy`, then `headroom doctor` or `/stats` after a real multi-turn session when route status is unknown/unavailable.
