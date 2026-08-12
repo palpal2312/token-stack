@@ -12,11 +12,35 @@ Works with: claude-code, kimi-code, codex, agy (antigravity).
 ## Layout
 
 ```
-skills/token-stack/SKILL.md   # the skill: detect + per-CLI setup
-scripts/headroom-ensure.sh    # SessionStart hook: cold-starts headroom proxy
-scripts/rtk                   # Git Bash shim for rtk.exe
-docs/setup-guide.md           # full guide + pitfalls
+skills/token-stack/SKILL.md          # router: health, setup, report
+skills/token-stack-health/            # read-only status checker
+skills/token-stack-setup/             # three-layer setup; Headroom excluded
+skills/token-stack-report/            # observed savings counters
+scripts/install-token-stack.ps1       # dry-run installer; -Apply is explicit
+scripts/headroom-ensure.sh            # SessionStart hook for dedicated Headroom setup
+scripts/rtk                           # Git Bash shim for rtk.exe
+docs/setup-guide.md                   # full guide + pitfalls
 ```
+
+## Install the skill family
+
+From this repository, run installer in dry-run mode first. It never configures Headroom:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\install-token-stack.ps1
+```
+
+Review output, then apply explicitly to a chosen profile:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\install-token-stack.ps1 `
+  -ProfileDirectory "$HOME\.claude" `
+  -Apply
+```
+
+Installer preserves existing settings and skills, writes a backup, and enables only caveman/ponytail. Configure Headroom separately with a dedicated agent; do not add upstream credentials to this repository.
 
 ## Install the skill itself
 
