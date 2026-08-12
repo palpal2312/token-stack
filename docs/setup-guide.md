@@ -69,6 +69,7 @@ headroom proxy --port 8787 --anthropic-api-url <upstream>
 - `kompress: unhealthy` in `/health` doesn't kill the proxy — SmartCrusher + cache still work.
 - Real log: `~/.headroom/logs/proxy.log` (PERF line per request: tok_before/after/saved).
 - Process-env `ANTHROPIC_BASE_URL` at launch overrides settings env → bypasses the proxy. To be sure, launch with `ANTHROPIC_BASE_URL=http://127.0.0.1:8787`.
+- **Windows `EFTYPE` error**: If your CLI throws `SessionStart:startup hook error - Failed to run: EFTYPE: inappropriate file type or format, uv_spawn`, it means Node.js is trying to execute the `.sh` file directly. Fix it by changing the hook command in `settings.json` to `"C:/Program Files/Git/bin/bash.exe"` with the script path as an argument.
 
 ### Verify
 
