@@ -81,10 +81,38 @@ curl -s http://127.0.0.1:8787/stats   # tokens saved (after real sessions)
 
 Revert: remove/repoint `ANTHROPIC_BASE_URL` in settings env, remove the SessionStart hook, kill the headroom process.
 
-## 4. Secondary cases (kept brief)
+## 4. Multi-profile headroom isolation (CRITICAL)
+
+Each profile **MUST** use its own headroom port. Port collisions cause one profile to route through another profile's upstream — silent data leak / auth failure.
+
+### Port assignment convention
+
+| Profile | Headroom port | Upstream |
+|---|---|---|
+| `.claude` (default) | 8787 | `https://api.anthropic.com` |
+| `.claude-sub2api` | 8788 | `http://127.0.0.1:5173` (sub2api) |
+| `.claude-agentrouter` | 8789 | `https://agentrouter.org` |
+| `.claude-<next>` | 8790+ | read from original `ANTHROPIC_BASE_URL` |
+
+### When installing token-stack on a new profile
+
+1. **Read upstream FIRST**: Before touching `settings.json`, read the existing `ANTHROPIC_BASE_URL` from the profile's `env` section (or `.env.<profile>` file). This is the profile's real upstream and becomes `HEADROOM_UPSTREAM`.
+2. **Pick a free port**: Scan existing `.env.claude-*` files for `HEADROOM_PORT=` values. Assign the next unused port starting from 8787.
+3. **Write `.env.<profile>`**: Set `HEADROOM_UPSTREAM=<original-url>`, `HEADROOM_PORT=<free-port>`, `ANTHROPIC_BASE_URL=<original-url>` (fallback if headroom is down).
+4. **Update `settings.json`**: Set `ANTHROPIC_BASE_URL` to `http://127.0.0.1:<free-port>` in the env section.
+5. **Copy `headroom-ensure.sh`** into the profile's `hooks/` directory and set its default port to `<free-port>`.
+6. **Register SessionStart hook** with `"C:/Program Files/Git/bin/bash.exe"` to avoid Windows EFTYPE error.
+
+### Common traps
+
+- **Forgot to read upstream before overwriting**: Profile silently routes to the wrong API. Always read `ANTHROPIC_BASE_URL` from settings BEFORE modifying it.
+- **Shared port 8787**: Two profiles can't share a headroom port — the first one to start "wins" and sets the upstream for all callers on that port.
+- **`.env` overrides settings.json**: The wrapper script loads `.env.<profile>` into process env before Claude runs. If `.env` contains `ANTHROPIC_API_KEY`, it overrides `settings.json` env — causing auth mismatch. Keep API keys in `settings.json` only; `.env` is for headroom routing vars.
+
+## 5. Other secondary cases (kept brief)
 
 - **Separate config-dir profile** (e.g. `~/.claude-something`): doesn't inherit `~/.claude` plugins/settings. Fast path: junction its `plugins` dir to the main one, then add `enabledPlugins` + hook + `ANTHROPIC_BASE_URL` in that profile's settings like the main one.
-- **Profile on a custom API endpoint** (e.g. `.claude-kimicode` → `https://api.kimi.com/coding/`): looks fully configured yet bypasses the proxy — proxy healthy, savings flat. Normal case: settings env `ANTHROPIC_BASE_URL=http://127.0.0.1:8787`, nothing else. This case: repoint that value from the vendor URL to `http://127.0.0.1:8787`, keep the API key in the profile env, keep the vendor URL as the proxy's `--anthropic-api-url` upstream. Verify after restart: in-session `echo $ANTHROPIC_BASE_URL` = 127.0.0.1:8787 and `requests` rising in `~/.headroom/proxy_savings.json` (counters only there — no `last_activity` field; hit 2026-08-10).
+- **Profile on a custom API endpoint** (e.g. `.claude-kimicode` → `https://api.kimi.com/coding/`): looks fully configured yet bypasses the proxy — proxy healthy, savings flat. Normal case: settings env `ANTHROPIC_BASE_URL=http://127.0.0.1:8787`, nothing else. This case: repoint that value from the vendor URL to `http://127.0.0.1:<profile-port>`, keep the API key in the profile env, keep the vendor URL as the proxy's `--anthropic-api-url` upstream. Verify after restart: in-session `echo $ANTHROPIC_BASE_URL` = 127.0.0.1:<port> and `requests` rising in `~/.headroom/proxy_savings.json` (counters only there — no `last_activity` field; hit 2026-08-10).
 - **Kimi Code CLI** (different agent, not Claude Code): reads skills from `~/.agents/skills/` — junction from the project's `.agents/skills/` with PowerShell `New-Item -ItemType Junction` (Git Bash `mklink /J` gets its args eaten by MSYS). RTK for Kimi: `rtk init --agent kimi` (project-scoped, writes AGENTS.md).
 
 ## New-machine checklist

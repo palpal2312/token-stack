@@ -103,4 +103,18 @@ Use `rtk proxy <cmd>` only when full unfiltered output is required for debugging
 
 Headroom setup is intentionally separate. Do not install, start, stop, or re-route Headroom from the three-layer setup skill. If a dedicated Headroom agent configures it, verify `/health` and `/stats` after a real multi-turn session. On Windows, run `.sh` SessionStart hooks through Git Bash (`C:/Program Files/Git/bin/bash.exe`) to avoid `EFTYPE`.
 
+### Multi-profile port isolation (CRITICAL)
+
+Each profile **MUST** use its own headroom port. Two profiles sharing port 8787 will route through whichever upstream started first — causing silent auth failures or data leaks.
+
+When installing token-stack on a new profile:
+
+1. **Read upstream FIRST** from the profile's existing `ANTHROPIC_BASE_URL` in `settings.json` env section — this is the real API endpoint (e.g. `https://agentrouter.org`, `http://127.0.0.1:5173`).
+2. **Pick a free port** by scanning `~/.env.claude-*` files for `HEADROOM_PORT=` values. Use next unused port starting from 8787.
+3. **Write `.env.<profile>`** with `HEADROOM_UPSTREAM=<original-url>`, `HEADROOM_PORT=<free-port>`. Do NOT put API keys in `.env` — keep them in `settings.json` only.
+4. **Update `settings.json`** env `ANTHROPIC_BASE_URL` → `http://127.0.0.1:<free-port>`.
+5. **Copy `headroom-ensure.sh`** to profile's `hooks/` dir with default port patched to `<free-port>`.
+
+The install script (`scripts/install-token-stack.ps1 -Apply`) automates all of the above.
+
 Full pitfalls: `docs/setup-guide.md`.
