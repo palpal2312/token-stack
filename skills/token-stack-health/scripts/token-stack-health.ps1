@@ -139,7 +139,8 @@ $headroomBinaryPresent = $headroomCommand.Present -or (Test-Path -LiteralPath (J
 $headroomGood = $headroomBinaryPresent -and $headroom.Configured -and $headroom.Running
 $headroomPartial = $headroomBinaryPresent -or $headroom.Configured
 $headroomStatus = if ($SkipRuntimeProbes -and $headroomPartial) { 'UNKNOWN' } else { Get-Status $headroomGood $headroomPartial }
-$headroomDetail = "installed=$($headroomBinaryPresent.ToString().ToLowerInvariant()) configured=$($headroom.Configured.ToString().ToLowerInvariant()) running=$($headroom.Running.ToString().ToLowerInvariant())"
+$headroomPort = if ($baseUrl) { try { ([Uri]$baseUrl).Port } catch { 'unknown' } } else { 'none' }
+$headroomDetail = "installed=$($headroomBinaryPresent.ToString().ToLowerInvariant()) configured=$($headroom.Configured.ToString().ToLowerInvariant()) running=$($headroom.Running.ToString().ToLowerInvariant()) port=$headroomPort"
 if ($headroom.StatusCode) { $headroomDetail += " http=$($headroom.StatusCode)" }
 $components += [pscustomobject]@{ Name = 'headroom'; Status = $headroomStatus; Detail = $headroomDetail }
 

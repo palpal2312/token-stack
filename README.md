@@ -54,7 +54,17 @@ Windows junction (PowerShell, no admin):
 New-Item -ItemType Junction -Path "$HOME\.claude\skills\token-stack" -Target '<this-repo>\skills\token-stack'
 ```
 
+## Multi-profile Headroom
+
+When running multiple Claude profiles (e.g. `.claude`, `.claude-kimicode`, `.claude-sub2api`), each profile needs:
+
+- **Its own port** (`HEADROOM_PORT`): 8787, 8788, 8789, ...
+- **Its own DB path** (`HEADROOM_DB_PATH`): prevents SQLite lock crash on second instance
+
+`headroom-ensure.sh` reads `HEADROOM_PORT`, `HEADROOM_UPSTREAM`, and `HEADROOM_DB_PATH` from environment. See `docs/setup-guide.md` § 4 for full details.
+
 ## Notes
 
 - No secrets in this repo. API keys stay in your local settings — never commit them.
 - `headroom-ensure.sh` reads upstream from `HEADROOM_UPSTREAM` (default: `https://api.anthropic.com`). Set it for custom Anthropic-compatible endpoints.
+- When using multiple Headroom instances, add `--memory-db-path` to avoid SQLite lock conflicts.

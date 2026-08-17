@@ -30,4 +30,6 @@ ANTHROPIC_BASE_URL=http://127.0.0.1:8787
 
 Then have the dedicated Headroom agent configure the proxy upstream and startup hook. Do not add upstream URLs, API keys, or credentials to this skill or chat.
 
+**Multi-instance warning**: When running multiple Claude profiles, each needs its own Headroom port AND its own `--memory-db-path`. Without separate DB paths, the second `headroom.exe` instance crashes silently due to SQLite lock conflicts. Set `HEADROOM_DB_PATH` in `.env.<profile>` to `~/.<profile>/headroom-data/headroom.db`. See `docs/setup-guide.md` § 4 for the full procedure.
+
 Scope: three-layer setup only. Does NOT report savings or silently mutate settings. Back up `settings.json` before writing. Never expose keys, credentials, prompts, transcripts, or raw config.

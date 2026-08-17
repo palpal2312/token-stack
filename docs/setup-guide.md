@@ -83,32 +83,36 @@ Revert: remove/repoint `ANTHROPIC_BASE_URL` in settings env, remove the SessionS
 
 ## 4. Multi-profile headroom isolation (CRITICAL)
 
-Each profile **MUST** use its own headroom port. Port collisions cause one profile to route through another profile's upstream — silent data leak / auth failure.
+Each profile **MUST** use its own headroom port **AND** its own `--memory-db-path`. Port collisions cause one profile to route through another profile's upstream — silent data leak / auth failure. Shared DB paths cause the second instance to crash silently due to SQLite lock conflicts.
 
-### Port assignment convention
+### Port + DB assignment convention
 
-| Profile | Headroom port | Upstream |
-|---|---|---|
-| `.claude` (default) | 8787 | `https://api.anthropic.com` |
-| `.claude-sub2api` | 8788 | `http://127.0.0.1:5173` (sub2api) |
-| `.claude-agentrouter` | 8789 | `https://agentrouter.org` |
-| `.claude-<next>` | 8790+ | read from original `ANTHROPIC_BASE_URL` |
+| Profile | Headroom port | `--memory-db-path` | Upstream |
+|---|---|---|---|
+| `.claude` (default) | 8787 | (default) | `https://api.anthropic.com` |
+| `.claude-sub2api-02` | 8787 | `~/.claude-sub2api-02/headroom-data/headroom.db` | `http://127.0.0.1:5173` (sub2api) |
+| `.claude-kimicode` | 8788 | `~/.claude-kimicode/headroom-data/headroom.db` | `https://api.kimi.com/coding` |
+| `.claude-<next>` | 8789+ | `~/.<profile>/headroom-data/headroom.db` | read from original `ANTHROPIC_BASE_URL` |
+
+> **Rule**: if only ONE profile uses Headroom, skip `--memory-db-path` (single-instance uses the default location). The moment you add a second profile, BOTH need explicit `--memory-db-path`.
 
 ### When installing token-stack on a new profile
 
 1. **Read upstream FIRST**: Before touching `settings.json`, read the existing `ANTHROPIC_BASE_URL` from the profile's `env` section (or `.env.<profile>` file). This is the profile's real upstream and becomes `HEADROOM_UPSTREAM`.
-2. **Pick a free port**: Scan existing `.env.claude-*` files for `HEADROOM_PORT=` values. Assign the next unused port starting from 8787.
-3. **Write `.env.<profile>`**: Set `HEADROOM_UPSTREAM=<original-url>`, `HEADROOM_PORT=<free-port>`, `ANTHROPIC_BASE_URL=<original-url>` (fallback if headroom is down).
-4. **Update `settings.json`**: Set `ANTHROPIC_BASE_URL` to `http://127.0.0.1:<free-port>` in the env section.
-5. **Copy `headroom-ensure.sh`** into the profile's `hooks/` directory and set its default port to `<free-port>`.
-6. **Register SessionStart hook** with `"C:/Program Files/Git/bin/bash.exe"` to avoid Windows EFTYPE error.
+2. **Pick a free port**: Scan existing `.env.claude-*` files or running `headroom` processes for port values. Assign the next unused port starting from 8787.
+3. **Create profile-local DB directory**: `mkdir -p ~/.<profile>/headroom-data/`
+4. **Write `.env.<profile>`**: Set `HEADROOM_UPSTREAM=<original-url>`, `HEADROOM_PORT=<free-port>`, `HEADROOM_DB_PATH=~/.<profile>/headroom-data/headroom.db`, `ANTHROPIC_BASE_URL=<original-url>` (fallback if headroom is down).
+5. **Update `settings.json`**: Set `ANTHROPIC_BASE_URL` to `http://127.0.0.1:<free-port>` in the env section.
+6. **Copy `headroom-ensure.sh`** into the profile's `hooks/` directory. The script reads `HEADROOM_PORT`, `HEADROOM_UPSTREAM`, and `HEADROOM_DB_PATH` from the environment.
+7. **Register SessionStart hook** with `"C:/Program Files/Git/bin/bash.exe"` to avoid Windows EFTYPE error.
 
 ### Common traps
 
+- **Forgot `--memory-db-path` on the second instance**: Headroom uses a SQLite database (under `~/.headroom/`) that locks exclusively. The second `headroom.exe` process starts, prints the banner, then crashes within seconds. Symptom: `/readyz` returns `200` briefly, then `Connection refused`. Fix: add `--memory-db-path` pointing to a per-profile directory.
 - **Forgot to read upstream before overwriting**: Profile silently routes to the wrong API. Always read `ANTHROPIC_BASE_URL` from settings BEFORE modifying it.
 - **Shared port 8787**: Two profiles can't share a headroom port — the first one to start "wins" and sets the upstream for all callers on that port.
 - **`.env` overrides settings.json**: The wrapper script loads `.env.<profile>` into process env before Claude runs. If `.env` contains `ANTHROPIC_API_KEY`, it overrides `settings.json` env — causing auth mismatch. Keep API keys in `settings.json` only; `.env` is for headroom routing vars.
-
+- **Cold start ~70s vs crash**: Both look like `Connection refused`. Difference: a cold-starting process stays alive (check `Get-Process headroom`); a crashed one disappears. Always verify the process exists before waiting.
 ## 5. Other secondary cases (kept brief)
 
 - **Separate config-dir profile** (e.g. `~/.claude-something`): doesn't inherit `~/.claude` plugins/settings. Fast path: junction its `plugins` dir to the main one, then add `enabledPlugins` + hook + `ANTHROPIC_BASE_URL` in that profile's settings like the main one.
