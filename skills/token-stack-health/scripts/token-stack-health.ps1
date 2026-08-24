@@ -113,7 +113,7 @@ function Get-HeadroomProbe {
         if (-not $result.Configured -or $Skip) { return [pscustomobject]$result }
         foreach ($path in @('/readyz', '/health')) {
             try {
-                $response = Invoke-WebRequest -Uri ([Uri]::new($uri, $path)) -UseBasicParsing -TimeoutSec 3
+                $response = Invoke-WebRequest -Uri ([Uri]::new($uri, $path)) -UseBasicParsing -TimeoutSec 2
                 $result.StatusCode = [int]$response.StatusCode
                 $result.Endpoint = $path
                 if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 300) {
@@ -198,7 +198,8 @@ $headroomGood = $headroomBinaryPresent -and $headroom.Configured -and $headroom.
 $headroomPartial = $headroomBinaryPresent -or $headroom.Configured
 $headroomStatus = if ($SkipRuntimeProbes -and $headroomPartial) { 'UNKNOWN' } else { Get-Status $headroomGood $headroomPartial }
 $headroomPort = if ($baseUrl) { try { ([Uri]$baseUrl).Port } catch { 'unknown' } } else { 'none' }
-$headroomDetail = "installed=$($headroomBinaryPresent.ToString().ToLowerInvariant()) configured=$($headroom.Configured.ToString().ToLowerInvariant()) running=$($headroom.Running.ToString().ToLowerInvariant()) port=$headroomPort"
+$runningStateStr = if ($SkipRuntimeProbes) { 'unprobed' } else { $headroom.Running.ToString().ToLowerInvariant() }
+$headroomDetail = "installed=$($headroomBinaryPresent.ToString().ToLowerInvariant()) configured=$($headroom.Configured.ToString().ToLowerInvariant()) running=$runningStateStr port=$headroomPort"
 if ($headroom.StatusCode) { $headroomDetail += " http=$($headroom.StatusCode)" }
 $components += [pscustomobject]@{ Name = 'headroom'; Status = $headroomStatus; Detail = $headroomDetail }
 
