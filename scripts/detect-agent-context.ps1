@@ -218,15 +218,27 @@ $hookMetadata = [ordered]@{ found = $false; matcher = $null; profilePathMatch = 
 foreach ($entry in $sessionEntries) {
     foreach ($hook in @($entry.hooks)) {
         $command = if ($hook.PSObject.Properties.Name -contains 'command') { [string]$hook.command } else { '' }
-        if ($command -notmatch '(?i)headroom-ensure\.sh') { continue }
+        $argsStr = if ($hook.PSObject.Properties.Name -contains 'args' -and $hook.args) { ($hook.args -join ' ') } else { '' }
+        $fullCmd = "$command $argsStr".Trim()
+        if ($fullCmd -notmatch '(?i)headroom-ensure\.sh') { continue }
         $hookMetadata.found = $true
         $hookMetadata.matcher = [string]$entry.matcher
         $hookMetadata.commandKind = 'profile-headroom'
         if ($command -match 'HEADROOM_PORT\s*=\s*(\d+)') { $hookMetadata.port = [int]$Matches[1] }
         if ($command -match 'HEADROOM_UPSTREAM\s*=\s*([^\s]+)') { $hookMetadata.upstream = ConvertTo-SafeUrl $Matches[1] }
         if ($hook.PSObject.Properties.Name -contains 'timeout') { $hookMetadata.timeout = [int]$hook.timeout }
+        $targetScript = $null
         if ($command -match '(?i)sh\s+"([^"]*headroom-ensure\.sh)"') {
-            $hookPath = Resolve-SafePath ($Matches[1] -replace '/', '\\')
+            $targetScript = $Matches[1]
+        } elseif ($hook.PSObject.Properties.Name -contains 'args' -and $hook.args) {
+            foreach ($arg in @($hook.args)) {
+                if ($arg -match '(?i)headroom-ensure\.sh') { $targetScript = [string]$arg; break }
+            }
+        }
+        if ($null -ne $targetScript) {
+            $expanded = $targetScript -replace '(?i)\$HOME', $HOME -replace '^~', $HOME
+            $expanded = [Environment]::ExpandEnvironmentVariables($expanded)
+            $hookPath = Resolve-SafePath ($expanded -replace '/', '\\')
             $hookMetadata.profilePathMatch = ($hookPath -eq (Resolve-SafePath $installedHookPath))
         }
         break

@@ -1,4 +1,4 @@
-[CmdletBinding(SupportsShouldProcess)]
+﻿[CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$ProfileDirectory,
     [string]$SourceRoot,
@@ -114,27 +114,49 @@ function Get-OriginalUpstream {
     return 'https://api.anthropic.com'
 }
 
+function Test-PortAvailable {
+    param([int]$Port)
+    try {
+        $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
+        $listener.Start()
+        $listener.Stop()
+        return $true
+    } catch {
+        return $false
+    }
+}
+
 function Get-UsedHeadroomPorts {
+    param([string]$CurrentProfileName = '')
     $usedPorts = @()
-    $envFiles = Get-ChildItem -Path $HOME -Filter '.env.claude*' -File -ErrorAction SilentlyContinue
+    $envFiles = Get-ChildItem -Path $HOME -Filter '.env*' -File -ErrorAction SilentlyContinue
     foreach ($f in $envFiles) {
+        if ($CurrentProfileName -and ($f.Name -match "\.env\.(claude-)?$([regex]::Escape($CurrentProfileName))$")) {
+            continue
+        }
         $content = Get-Content -LiteralPath $f.FullName -ErrorAction SilentlyContinue
         foreach ($line in $content) {
-            if ($line -match '^HEADROOM_PORT=(\d+)') {
+            if ($line -match '^\s*HEADROOM_PORT\s*=\s*(\d+)') {
                 $usedPorts += [int]$Matches[1]
             }
         }
     }
-    # 8787 is always reserved for the default .claude profile
-    if ($usedPorts -notcontains 8787) { $usedPorts += 8787 }
-    return $usedPorts
+    return @($usedPorts | Select-Object -Unique)
 }
 
 function Get-NextFreePort {
-    $used = Get-UsedHeadroomPorts
-    $port = 8787
-    while ($used -contains $port) { $port++ }
-    return $port
+    param(
+        [string]$CurrentProfileName = '',
+        [int]$StartPort = 8787,
+        [int]$MaxPort = 9999
+    )
+    $used = Get-UsedHeadroomPorts -CurrentProfileName $CurrentProfileName
+    for ($port = $StartPort; $port -le $MaxPort; $port++) {
+        if ($used -notcontains $port -and (Test-PortAvailable $port)) {
+            return $port
+        }
+    }
+    throw "No available port found in range $StartPort - $MaxPort"
 }
 
 function Get-ProfileName {
@@ -173,7 +195,7 @@ $headroomUpstream = $null
 if ($settingsExists) {
     $tempSettings = Get-JsonObject $settingsPath
     $headroomUpstream = Get-OriginalUpstream $tempSettings
-    $headroomPort = Get-NextFreePort
+    $headroomPort = Get-NextFreePort -CurrentProfileName $profileName -StartPort 8787 -MaxPort 9999
 }
 
 if (-not $Apply) {
@@ -292,3 +314,4 @@ try {
     if (Test-Path -LiteralPath $stagingRoot) { Remove-Item -LiteralPath $stagingRoot -Recurse -Force -ErrorAction SilentlyContinue }
     throw
 }
+

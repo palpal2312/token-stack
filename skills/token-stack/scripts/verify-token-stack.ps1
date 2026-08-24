@@ -9,7 +9,7 @@ $ledgerPath = Join-Path $ConfigDir 'token-stack-usage.jsonl'
 $counterPath = Join-Path $ConfigDir 'hooks/token-stack-usage.cjs'
 
 $settings = Get-Content $settingsPath -Raw | ConvertFrom-Json
-$rtkShow = & "$env:LOCALAPPDATA\rtk\rtk.exe" init --show 2>&1 | Out-String
+$rtkShow = try { & "$env:LOCALAPPDATA\rtk\rtk.exe" init --show 2>&1 | Out-String } catch { '' }
 $counter = if (Test-Path $counterPath) { 'installed' } else { 'missing' }
 $summary = if (Test-Path $counterPath) {
   node $counterPath --summary | ConvertFrom-Json

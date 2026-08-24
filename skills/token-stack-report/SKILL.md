@@ -1,4 +1,4 @@
----
+﻿---
 name: token-stack:report
 description: Report observed token savings from RTK, Headroom, and Claude usage counters. Use for savings, compression, token reduction, or token-stack measurement.
 user-invocable: true
@@ -9,7 +9,7 @@ user-invocable: true
 Run the read-only report:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/token-stack-report/scripts/token-stack-report.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME/.claude/skills/token-stack-report/scripts/token-stack-report.ps1"
 ```
 
 Use `-Json` for automation and `-ProfileDirectory` for another profile. Report separate evidence:
@@ -20,3 +20,4 @@ Use `-Json` for automation and `-ProfileDirectory` for another profile. Report s
 - Ponytail/Caveman: observed usage only; no savings claim without matched A/B baseline.
 
 Never add layer counters into one provider-savings number. Missing counters show `UNKNOWN`, not zero. Never output secrets, upstream URLs, prompts, transcripts, or raw logs.
+

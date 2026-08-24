@@ -1,4 +1,4 @@
----
+﻿---
 name: token-stack
 description: Route token-stack work across read-only health checks, three-layer setup, and measured savings reports for Claude Code, Kimi Code, Codex, or Antigravity. Use when checking, setting up, or measuring ponytail, caveman, RTK, or Headroom.
 user-invocable: true
@@ -77,13 +77,13 @@ Use bundled scripts:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass `
-  -File "$PWD/skills/token-stack-health/scripts/token-stack-health.ps1"
+  -File "$HOME/.claude/skills/token-stack-health/scripts/token-stack-health.ps1"
 
 powershell -NoProfile -ExecutionPolicy Bypass `
-  -File "$PWD/skills/token-stack-setup/scripts/token-stack-setup.ps1"
+  -File "$HOME/.claude/skills/token-stack-setup/scripts/token-stack-setup.ps1"
 
 powershell -NoProfile -ExecutionPolicy Bypass `
-  -File "$PWD/skills/token-stack-report/scripts/token-stack-report.ps1"
+  -File "$HOME/.claude/skills/token-stack-report/scripts/token-stack-report.ps1"
 ```
 
 Never add layer counters into one provider-savings number. Missing counters are `UNKNOWN`, not zero. Never output keys, credentials, upstream URLs, prompts, transcripts, or raw config.
@@ -105,16 +105,17 @@ Headroom setup is intentionally separate. Do not install, start, stop, or re-rou
 
 ### Multi-profile port isolation (CRITICAL)
 
-Each profile **MUST** use its own headroom port. Two profiles sharing port 8787 will route through whichever upstream started first — causing silent auth failures or data leaks.
+Each profile **MUST** use its own headroom port. Two profiles sharing port 8787 will route through whichever upstream started first â€” causing silent auth failures or data leaks.
 
 When installing token-stack on a new profile:
 
-1. **Read upstream FIRST** from the profile's existing `ANTHROPIC_BASE_URL` in `settings.json` env section — this is the real API endpoint (e.g. `https://agentrouter.org`, `http://127.0.0.1:5173`).
+1. **Read upstream FIRST** from the profile's existing `ANTHROPIC_BASE_URL` in `settings.json` env section â€” this is the real API endpoint (e.g. `https://agentrouter.org`, `http://127.0.0.1:5173`).
 2. **Pick a free port** by scanning `~/.env.claude-*` files for `HEADROOM_PORT=` values. Use next unused port starting from 8787.
-3. **Write `.env.<profile>`** with `HEADROOM_UPSTREAM=<original-url>`, `HEADROOM_PORT=<free-port>`. Do NOT put API keys in `.env` — keep them in `settings.json` only.
-4. **Update `settings.json`** env `ANTHROPIC_BASE_URL` → `http://127.0.0.1:<free-port>`.
+3. **Write `.env.<profile>`** with `HEADROOM_UPSTREAM=<original-url>`, `HEADROOM_PORT=<free-port>`. Do NOT put API keys in `.env` â€” keep them in `settings.json` only.
+4. **Update `settings.json`** env `ANTHROPIC_BASE_URL` â†’ `http://127.0.0.1:<free-port>`.
 5. **Copy `headroom-ensure.sh`** to profile's `hooks/` dir with default port patched to `<free-port>`.
 
 The install script (`scripts/install-token-stack.ps1 -Apply`) automates all of the above.
 
 Full pitfalls: `docs/setup-guide.md`.
+

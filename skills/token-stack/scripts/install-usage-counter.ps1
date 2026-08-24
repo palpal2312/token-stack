@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$ConfigDir = $(if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' }),
   [switch]$WhatIf
 )
@@ -27,7 +27,7 @@ if ($WhatIf) {
   Copy-Item $sourceHook $targetHook -Force
 }
 
-$stopHooks = @($settings.hooks.Stop)
+$stopHooks = if ($settings.hooks.PSObject.Properties['Stop'] -and $settings.hooks.Stop) { @($settings.hooks.Stop) } else { @() }
 $alreadyRegistered = $stopHooks | ForEach-Object { @($_.hooks) } | Where-Object {
   $_.args -contains 'C:/Users/ADMIN/.claude-sub2api/hooks/token-stack-usage.cjs' -or
   $_.args -contains $targetHook.Replace('\', '/')
@@ -42,9 +42,10 @@ if (-not $alreadyRegistered) {
     statusMessage = 'Recording token-stack usage'
   }
   if ($stopHooks.Count -eq 0) {
-    $settings.hooks | Add-Member -MemberType NoteProperty -Name Stop -Value @([pscustomobject]@{ matcher = '*'; hooks = @($entry) })
+    $settings.hooks | Add-Member -MemberType NoteProperty -Name Stop -Value @([pscustomobject]@{ matcher = '*'; hooks = @($entry) }) -Force
   } else {
-    $stopHooks[0].hooks = @($stopHooks[0].hooks) + $entry
+    $existing = if ($stopHooks[0].hooks) { @($stopHooks[0].hooks) } else { @() }
+    $stopHooks[0].hooks = $existing + $entry
     $settings.hooks.Stop = $stopHooks
   }
 }
@@ -57,3 +58,4 @@ if ($WhatIf) {
 $settings | ConvertTo-Json -Depth 50 | Set-Content $settingsPath -Encoding utf8
 Write-Output "Usage counter installed: $targetHook"
 Write-Output "Restart Claude Code to reload hooks."
+
