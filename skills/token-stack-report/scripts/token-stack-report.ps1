@@ -1,9 +1,28 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([string]$ProfileDirectory, [switch]$Json)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-if (-not $ProfileDirectory) { $ProfileDirectory = if ($env:CLAUDE_CONFIG_DIR) { $env:CLAUDE_CONFIG_DIR } else { Join-Path $HOME '.claude' } }
+if (-not $ProfileDirectory) {
+    if ($env:CLAUDE_CONFIG_DIR) { $ProfileDirectory = $env:CLAUDE_CONFIG_DIR }
+    elseif ($env:CODEX_HOME) { $ProfileDirectory = $env:CODEX_HOME }
+    elseif ($env:KIMI_CONFIG_DIR) { $ProfileDirectory = $env:KIMI_CONFIG_DIR }
+    else {
+        $isCodex = $false
+        $parent = Get-CimInstance Win32_Process -Filter "ProcessId = $PID" -ErrorAction SilentlyContinue
+        if ($parent -and $parent.ParentProcessId) {
+            $pproc = Get-CimInstance Win32_Process -Filter "ProcessId = $($parent.ParentProcessId)" -ErrorAction SilentlyContinue
+            if ($pproc -and ($pproc.Name -match '(?i)codex' -or $pproc.CommandLine -match '(?i)codex')) {
+                $isCodex = $true
+            }
+        }
+        if ($isCodex -and (Test-Path (Join-Path $HOME '.codex'))) {
+            $ProfileDirectory = Join-Path $HOME '.codex'
+        } else {
+            $ProfileDirectory = Join-Path $HOME '.claude'
+        }
+    }
+}
 $ProfileDirectory = [Environment]::ExpandEnvironmentVariables($ProfileDirectory)
 $healthScript = Join-Path $PSScriptRoot '..\..\token-stack-health\scripts\token-stack-health.ps1'
 $health = $null
@@ -85,7 +104,19 @@ $baseUrl = $null
 try {
     $settings = Get-Content -LiteralPath (Join-Path $ProfileDirectory 'settings.json') -Raw | ConvertFrom-Json
     $baseUrl = $settings.env.ANTHROPIC_BASE_URL
+    if (-not $baseUrl) { $baseUrl = $settings.env.OPENAI_BASE_URL }
 } catch { }
+if (-not $baseUrl) {
+    $envPath = Join-Path $ProfileDirectory '.env'
+    if (Test-Path -LiteralPath $envPath -PathType Leaf) {
+        $lines = Get-Content -LiteralPath $envPath -ErrorAction SilentlyContinue
+        foreach ($line in $lines) {
+            if ($line -match '^\s*ANTHROPIC_BASE_URL\s*=\s*([^\s]+)') { $baseUrl = $Matches[1]; break }
+            if ($line -match '^\s*OPENAI_BASE_URL\s*=\s*([^\s]+)') { $baseUrl = $Matches[1]; break }
+            if ($line -match '^\s*HEADROOM_PORT\s*=\s*(\d+)') { $baseUrl = "http://127.0.0.1:$($Matches[1])"; break }
+        }
+    }
+}
 $headroom = Get-HeadroomStats $baseUrl
 $report = [pscustomobject]@{
     profile = $ProfileDirectory
@@ -104,3 +135,4 @@ $outputTokens = if ($null -eq $usage.Totals.output_tokens) { 'UNKNOWN' } else { 
 Write-Output "headroom available=$($headroom.Available) saved_tokens=$savedTokens"
 Write-Output "claude_usage observed=$($usage.Available) turns=$turns input=$inputTokens output=$outputTokens"
 Write-Output 'ponytail+caveman savings=UNKNOWN (matched A/B baseline required)'
+

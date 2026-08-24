@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$ProfileDirectory,
     [switch]$Json,
@@ -19,6 +19,26 @@ function Get-ProfileDirectory {
     param([string]$Requested)
     if ($Requested) { return [Environment]::ExpandEnvironmentVariables($Requested) }
     if ($env:CLAUDE_CONFIG_DIR) { return [Environment]::ExpandEnvironmentVariables($env:CLAUDE_CONFIG_DIR) }
+    if ($env:CODEX_HOME) { return [Environment]::ExpandEnvironmentVariables($env:CODEX_HOME) }
+    if ($env:KIMI_CONFIG_DIR) { return [Environment]::ExpandEnvironmentVariables($env:KIMI_CONFIG_DIR) }
+
+    # Detect if running under Codex
+    $isCodex = $false
+    if ($env:CODEX_CLI_PATH -or $env:CODEX_SESSION_ID) {
+        $isCodex = $true
+    } else {
+        $parent = Get-CimInstance Win32_Process -Filter "ProcessId = $PID" -ErrorAction SilentlyContinue
+        if ($parent -and $parent.ParentProcessId) {
+            $pproc = Get-CimInstance Win32_Process -Filter "ProcessId = $($parent.ParentProcessId)" -ErrorAction SilentlyContinue
+            if ($pproc -and ($pproc.Name -match '(?i)codex' -or $pproc.CommandLine -match '(?i)codex')) {
+                $isCodex = $true
+            }
+        }
+    }
+    if ($isCodex -and (Test-Path (Join-Path $HOME '.codex'))) {
+        return (Join-Path $HOME '.codex')
+    }
+
     return (Join-Path $HOME '.claude')
 }
 
@@ -56,9 +76,19 @@ function Test-PluginEnabled {
 }
 
 function Get-SafeModel {
-    $candidates = @($env:CLAUDE_MODEL, $env:ANTHROPIC_MODEL, $env:CLAUDE_CODE_SUBAGENT_MODEL)
+    param([string]$ProfileDir = '')
+    $candidates = @($env:CLAUDE_MODEL, $env:ANTHROPIC_MODEL, $env:CODEX_MODEL, $env:OPENAI_MODEL, $env:CLAUDE_CODE_SUBAGENT_MODEL)
     foreach ($candidate in $candidates) {
         if ($candidate -and $candidate -match '^[A-Za-z0-9._:/-]{1,128}$') { return $candidate }
+    }
+    if ($ProfileDir) {
+        $tomlPath = Join-Path $ProfileDir 'config.toml'
+        if (Test-Path -LiteralPath $tomlPath -PathType Leaf) {
+            $lines = Get-Content -LiteralPath $tomlPath -ErrorAction SilentlyContinue
+            foreach ($line in $lines) {
+                if ($line -match '^\s*model\s*=\s*"([^"]+)"') { return $Matches[1] }
+            }
+        }
     }
     return 'unknown'
 }
@@ -107,17 +137,30 @@ $settings = Read-JsonFile $settingsPath
 $manifest = Read-JsonFile $manifestPath
 $components = @()
 
+$isCodexProfile = ($profile -match '(?i)\.codex' -or (Test-Path (Join-Path $profile 'config.toml')))
 $claude = Get-CommandInfo 'claude'
-$components += [pscustomobject]@{ Name = 'harness'; Status = (Get-Status $claude.Present); Detail = if ($claude.Present) { "claude $($claude.Version)" } else { 'claude not found' } }
-$components += [pscustomobject]@{ Name = 'model'; Status = if ((Get-SafeModel) -eq 'unknown') { 'UNKNOWN' } else { 'OK' }; Detail = "configured=$((Get-SafeModel)) runtime=external" }
+$codex = Get-CommandInfo 'codex'
+$harnessName = if ($isCodexProfile) {
+    if ($codex.Present) { "codex $($codex.Version)" } else { 'codex present' }
+} elseif ($claude.Present) {
+    "claude $($claude.Version)"
+} else {
+    'unknown'
+}
+$harnessPresent = if ($isCodexProfile) { $codex.Present -or (Test-Path (Join-Path $profile 'config.toml')) } else { $claude.Present }
+$components += [pscustomobject]@{ Name = 'harness'; Status = (Get-Status $harnessPresent); Detail = $harnessName }
+
+$safeModel = Get-SafeModel $profile
+$components += [pscustomobject]@{ Name = 'model'; Status = if ($safeModel -eq 'unknown') { 'UNKNOWN' } else { 'OK' }; Detail = "configured=$safeModel runtime=external" }
 
 foreach ($plugin in @('ponytail@ponytail', 'caveman@caveman')) {
-    $installed = Test-PluginInstalled $manifest $plugin
-    $enabled = Test-PluginEnabled $settings $plugin
+    $pluginName = $plugin.Split('@')[0]
+    $installed = (Test-PluginInstalled $manifest $plugin) -or (Test-Path (Join-Path $profile "skills\$pluginName"))
+    $enabled = (Test-PluginEnabled $settings $plugin) -or (Test-Path (Join-Path $profile "skills\$pluginName"))
     $good = $installed -and $enabled
     $partial = $installed -or $enabled
     $components += [pscustomobject]@{
-        Name = $plugin.Split('@')[0]
+        Name = $pluginName
         Status = Get-Status $good $partial
         Detail = "installed=$($installed.ToString().ToLowerInvariant()) enabled=$($enabled.ToString().ToLowerInvariant())"
     }
@@ -133,6 +176,21 @@ $components += [pscustomobject]@{
 }
 
 $baseUrl = Get-PropertyValue (Get-PropertyValue $settings 'env') 'ANTHROPIC_BASE_URL'
+if (-not $baseUrl) {
+    $baseUrl = Get-PropertyValue (Get-PropertyValue $settings 'env') 'OPENAI_BASE_URL'
+}
+if (-not $baseUrl) {
+    $envPath = Join-Path $profile '.env'
+    if (Test-Path -LiteralPath $envPath -PathType Leaf) {
+        $lines = Get-Content -LiteralPath $envPath -ErrorAction SilentlyContinue
+        foreach ($line in $lines) {
+            if ($line -match '^\s*ANTHROPIC_BASE_URL\s*=\s*([^\s]+)') { $baseUrl = $Matches[1]; break }
+            if ($line -match '^\s*OPENAI_BASE_URL\s*=\s*([^\s]+)') { $baseUrl = $Matches[1]; break }
+            if ($line -match '^\s*HEADROOM_PORT\s*=\s*(\d+)') { $baseUrl = "http://127.0.0.1:$($Matches[1])"; break }
+        }
+    }
+}
+
 $headroom = Get-HeadroomProbe $baseUrl -Skip:$SkipRuntimeProbes
 $headroomCommand = Get-CommandInfo 'headroom'
 $headroomBinaryPresent = $headroomCommand.Present -or (Test-Path -LiteralPath (Join-Path $HOME '.local\bin\headroom.exe') -PathType Leaf)
@@ -147,8 +205,8 @@ $components += [pscustomobject]@{ Name = 'headroom'; Status = $headroomStatus; D
 $result = [pscustomobject]@{
     directory = (Get-Location).Path
     profile = $profile
-    harness = if ($claude.Present) { 'claude' } else { 'unknown' }
-    model = Get-SafeModel
+    harness = if ($isCodexProfile) { 'codex' } elseif ($claude.Present) { 'claude' } else { 'unknown' }
+    model = $safeModel
     components = $components
 }
 
@@ -164,3 +222,5 @@ Write-Output "model=$($result.model)"
 foreach ($component in $components) {
     Write-Output ("{0,-8} [{1,-7}] {2}" -f $component.Name, $component.Status, $component.Detail)
 }
+
+
