@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param([string]$ProfileDirectory, [switch]$Json)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'

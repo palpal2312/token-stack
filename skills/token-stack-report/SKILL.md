@@ -1,4 +1,4 @@
-﻿---
+---
 name: token-stack:report
 description: Report observed token savings from RTK, Headroom, and Claude usage counters. Use for savings, compression, token reduction, or token-stack measurement.
 user-invocable: true

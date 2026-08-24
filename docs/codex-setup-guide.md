@@ -1,4 +1,4 @@
-﻿# Kinh nghiệm cài đặt Token Stack cho Codex CLI
+# Kinh nghiệm cài đặt Token Stack cho Codex CLI
 
 Tài liệu đúc kết toàn bộ quy trình, kiến trúc, kinh nghiệm xử lý lỗi và các lưu ý thực chiến khi cài đặt bộ giải pháp **4-Layer Token Stack** cho **Codex CLI** (`C:\Users\ADMIN\.codex`).
 

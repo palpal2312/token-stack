@@ -1,4 +1,4 @@
-﻿# Token-saving stack setup guide
+# Token-saving stack setup guide
 
 Four independent layers, use together:
 

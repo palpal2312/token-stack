@@ -1,4 +1,4 @@
-﻿---
+---
 name: token-stack
 description: Route token-stack work across read-only health checks, three-layer setup, and measured savings reports for Claude Code, Kimi Code, Codex, or Antigravity. Use when checking, setting up, or measuring ponytail, caveman, RTK, or Headroom.
 user-invocable: true

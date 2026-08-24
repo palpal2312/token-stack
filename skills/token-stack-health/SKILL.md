@@ -1,4 +1,4 @@
-﻿---
+---
 name: token-stack:health
 description: Check token-stack health on Windows Claude Code. Use for directory, harness, model, ponytail, caveman, RTK, or Headroom status. Read-only.
 user-invocable: true

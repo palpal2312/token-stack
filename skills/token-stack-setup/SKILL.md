@@ -1,4 +1,4 @@
-﻿---
+---
 name: token-stack:setup
 description: Install and configure ponytail, caveman, RTK, and Headroom for a Claude profile. Use only when setup or repair is requested.
 user-invocable: true

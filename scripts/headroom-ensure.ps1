@@ -1,4 +1,4 @@
-﻿param(
+param(
     [int]$Port = 0,
     [string]$Upstream = $env:HEADROOM_UPSTREAM,
     [string]$DbPath = $env:HEADROOM_DB_PATH
