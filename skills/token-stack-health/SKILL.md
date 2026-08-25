@@ -1,17 +1,17 @@
 ---
 name: token-stack:health
-description: Check token-stack health on Windows (Claude Code / Codex / Kimi). Use for directory, harness, model, ponytail, caveman, RTK, or Headroom status. Read-only.
+description: Check token-stack health on Windows (Claude Code / Codex / Kimi). Inspects harness, model, ponytail, caveman, RTK, Headroom, and optional Layer 5 Memory status. Read-only.
 user-invocable: true
 ---
 
 # Token Stack Health
 
-Run bundled PowerShell checker for full 4-layer status (RTK, Ponytail, Caveman, Headroom):
+Run bundled PowerShell checker for 4 Core Layers + Optional Layer 5 Memory status:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME/.codex/skills/token-stack-health/scripts/token-stack-health.ps1"
 ```
 
-The script is safe and read-only: it probes the local loopback proxy (`/readyz`) to report live `[OK]` status, and never installs, edits settings, or prints secret values.
+The script is safe and read-only: it probes the local loopback proxy (`/readyz`) and checks configured memory providers without modifying settings or printing secret values.
 
-Use `-Json` for machine-readable output. Use `-ProfileDirectory` to explicitly inspect another profile directory.
+Use `-Json` for machine-readable output. Use `-ProfileDirectory` to inspect another profile directory.

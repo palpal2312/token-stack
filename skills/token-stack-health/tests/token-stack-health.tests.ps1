@@ -15,7 +15,9 @@ $script = Join-Path $PSScriptRoot '..\scripts\token-stack-health.ps1'
 $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $script -ProfileDirectory $root -SkipRuntimeProbes -Json
 if ($LASTEXITCODE -ne 0) { throw 'health checker failed' }
 $result = $output | ConvertFrom-Json
-if ($result.components.Count -ne 6) { throw 'expected harness, model, and four layer rows' }
+if ($result.components.Count -ne 7) { throw 'expected harness, model, four core layer rows, and memory row' }
+$memory = $result.components | Where-Object Name -eq 'memory'
+if (-not $memory) { throw 'memory component missing' }
 $ponytail = $result.components | Where-Object Name -eq 'ponytail'
 $caveman = $result.components | Where-Object Name -eq 'caveman'
 if ($ponytail.Status -ne 'OK') { throw 'ponytail fixture should be OK' }

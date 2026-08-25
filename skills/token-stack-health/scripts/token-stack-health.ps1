@@ -203,6 +203,27 @@ $headroomDetail = "installed=$($headroomBinaryPresent.ToString().ToLowerInvarian
 if ($headroom.StatusCode) { $headroomDetail += " http=$($headroom.StatusCode)" }
 $components += [pscustomobject]@{ Name = 'headroom'; Status = $headroomStatus; Detail = $headroomDetail }
 
+# --- Layer 5: Pluggable Memory Layer (Optional) ---
+$memoryProvider = 'none'
+$memoryStatus = 'OPTIONAL'
+$memoryDetail = 'provider=none (4 core layers active)'
+
+$memoraxCmd = Get-CommandInfo 'memorax-code'
+if ($memoraxCmd.Present) {
+    $memoryProvider = 'memorax-code'
+    $memoryStatus = 'OK'
+    $memoryDetail = 'provider=memorax-code binary=present'
+} elseif ($settings -and $settings.PSObject.Properties['mcpServers'] -and $settings.mcpServers.PSObject.Properties['mem0']) {
+    $memoryProvider = 'mem0-mcp'
+    $memoryStatus = 'OK'
+    $memoryDetail = 'provider=mem0-mcp status=configured'
+} elseif (Test-Path -LiteralPath (Join-Path $profile 'memory')) {
+    $memoryProvider = 'local-memory'
+    $memoryStatus = 'OK'
+    $memoryDetail = 'provider=local-memory directory=present'
+}
+$components += [pscustomobject]@{ Name = 'memory'; Status = $memoryStatus; Detail = $memoryDetail }
+
 $result = [pscustomobject]@{
     directory = (Get-Location).Path
     profile = $profile

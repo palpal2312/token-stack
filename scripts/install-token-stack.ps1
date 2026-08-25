@@ -2,6 +2,8 @@
 param(
     [string]$ProfileDirectory,
     [string]$SourceRoot,
+    [ValidateSet('none', 'memorax', 'mem0', 'local')]
+    [string]$MemoryProvider = 'none',
     [switch]$Apply
 )
 
@@ -203,7 +205,7 @@ if (-not $Apply) {
     Write-Output "source=$source"
     $planned | ForEach-Object { Write-Output "skill=$($_.Name) state=$($_.State)" }
     Write-Output "settings=$($settingsExists.ToString().ToLowerInvariant()) plugin_config=will_update_if_apply"
-    Write-Output "headroom_port=$headroomPort upstream=$headroomUpstream env_file=$envFilePath"
+    Write-Output "headroom_port=$headroomPort upstream=$headroomUpstream env_file=$envFilePath memory_provider=$MemoryProvider"
     Write-Output 'apply=false; no changes made'
     exit 0
 }
@@ -302,7 +304,13 @@ try {
     [System.IO.File]::Replace($settingsTemp, $settingsPath, $settingsBackup, $true)
     $settingsReplaced = $true
     Remove-Item -LiteralPath $stagingRoot -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Output "applied=true profile=$profile skills=$($skillNames.Count) headroom_port=$headroomPort upstream=$headroomUpstream backup=created"
+        if ($MemoryProvider -ne 'none') {
+        $memoryScript = Join-Path $source 'scripts\install-memory-layer.ps1'
+        if (Test-Path -LiteralPath $memoryScript) {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $memoryScript -Provider $MemoryProvider -ProfileDirectory $profile -Apply
+        }
+    }
+    Write-Output "applied=true profile=$profile skills=$($skillNames.Count) headroom_port=$headroomPort upstream=$headroomUpstream memory_provider=$MemoryProvider backup=created"
 } catch {
     if (Test-Path -LiteralPath $settingsTemp) { Remove-Item -LiteralPath $settingsTemp -Force -ErrorAction SilentlyContinue }
     if ($settingsReplaced -and (Test-Path -LiteralPath $settingsBackup)) {
