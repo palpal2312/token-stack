@@ -101,29 +101,24 @@ New-Item -ItemType Directory -Path $target -Force | Out-Null
 
 ---
 
-### Bước 4: (Tùy chọn) Cài đặt Layer 5: Pluggable Long-Term Memory
-Sau khi hoàn tất 4 tầng tối ưu token cơ sở, bạn có thể lựa chọn cài đặt tầng lưu trữ bộ nhớ dài hạn để tránh tình trạng "mất trí nhớ giữa các phiên" (Cross-session amnesia):
 
-1. **Lựa chọn 1: MemoraX Code** (`@memorax/memorax-code`):
-   - Quản lý procedure memory và ngữ cảnh dự án dài hạn cho Codex / Claude.
-   - Lệnh cài:
-     ```powershell
-     powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-memory-layer.ps1 -Provider memorax -ProfileDirectory "$HOME\.codex" -Apply
-     ```
-2. **Lựa chọn 2: Mem0 MCP**:
-   - Bộ nhớ đồ thị & vector phân tán qua giao thức MCP.
-   - Lệnh cài:
-     ```powershell
-     powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-memory-layer.ps1 -Provider mem0 -ProfileDirectory "$HOME\.codex" -Apply
-     ```
-3. **Lựa chọn 3: Local Knowledge Memory**:
-   - 100% Offline, lưu trữ ghi chú và kiến trúc vào `$HOME\.codex\memory\`.
-   - Lệnh cài:
-     ```powershell
-     powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-memory-layer.ps1 -Provider local -ProfileDirectory "$HOME\.codex" -Apply
-     ```
-4. **Lựa chọn 4: None (Mặc định)**:
-   - Giữ nguyên 4 tầng tối ưu token thuần túy.
+---
+
+### Bước 4: Cài đặt Layer 0 (Code Topology), Layer 5 (Harvester) & Layer 6 (Context Database)
+
+Hệ thống cung cấp kiến trúc 7 tầng toàn diện:
+1. **Layer 0 (Code Topology)**:
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-code-graph.ps1 -Engine graphify -ProfileDirectory "$HOME\.codex" -Apply
+   ```
+2. **Layer 5 (Knowledge Harvester - MemoraX)**:
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-memory-layer.ps1 -Provider memorax -ProfileDirectory "$HOME\.codex" -Apply
+   ```
+3. **Layer 6 (Context Database Platform - OpenViking / Obsidian)**:
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-context-platform.ps1 -Platform openviking -ProfileDirectory "$HOME\.codex" -Apply
+   ```
 
 ## 3. Tổng Kết 7 Bài Học Kinh Nghiệm & Xử Lý Sự Cố (Crucial Gotchas)
 

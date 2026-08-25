@@ -153,6 +153,27 @@ $components += [pscustomobject]@{ Name = 'harness'; Status = (Get-Status $harnes
 $safeModel = Get-SafeModel $profile
 $components += [pscustomobject]@{ Name = 'model'; Status = if ($safeModel -eq 'unknown') { 'UNKNOWN' } else { 'OK' }; Detail = "configured=$safeModel runtime=external" }
 
+# --- Layer 0: Code Topology ---
+$topologyProvider = 'native'
+$topologyStatus = 'OK'
+$topologyDetail = 'provider=native (grep/find)'
+$graphifyCmd = Get-CommandInfo 'graphify'
+if ($graphifyCmd.Present -or (Test-Path (Join-Path $profile 'skills\graphify')) -or (Test-Path 'graphify-out\graph.json')) {
+    $topologyProvider = 'graphify'
+    $topologyStatus = 'OK'
+    $topologyDetail = 'provider=graphify ast=tree-sitter zero-token=true'
+} elseif ($settings -and $settings.PSObject.Properties['mcpServers'] -and $settings.mcpServers.PSObject.Properties['gitnexus']) {
+    $topologyProvider = 'gitnexus'
+    $topologyStatus = 'OK'
+    $topologyDetail = 'provider=gitnexus-mcp blast-radius=active'
+} elseif ($settings -and $settings.PSObject.Properties['mcpServers'] -and $settings.mcpServers.PSObject.Properties['codegraph']) {
+    $topologyProvider = 'codegraph'
+    $topologyStatus = 'OK'
+    $topologyDetail = 'provider=codegraph-mcp real-time-sync=active'
+}
+$components += [pscustomobject]@{ Name = 'topology'; Status = $topologyStatus; Detail = $topologyDetail }
+
+# --- Layers 1 & 2: Ponytail & Caveman ---
 foreach ($plugin in @('ponytail@ponytail', 'caveman@caveman')) {
     $pluginName = $plugin.Split('@')[0]
     $installed = (Test-PluginInstalled $manifest $plugin) -or (Test-Path (Join-Path $profile "skills\$pluginName"))
@@ -166,6 +187,7 @@ foreach ($plugin in @('ponytail@ponytail', 'caveman@caveman')) {
     }
 }
 
+# --- Layer 3: RTK ---
 $rtk = Get-CommandInfo 'rtk'
 $rtkBinary = Join-Path $env:LOCALAPPDATA 'rtk\rtk.exe'
 $rtkBinaryPresent = Test-Path -LiteralPath $rtkBinary -PathType Leaf
@@ -175,6 +197,7 @@ $components += [pscustomobject]@{
     Detail = "shim=$($rtk.Present.ToString().ToLowerInvariant()) binary=$($rtkBinaryPresent.ToString().ToLowerInvariant()) version=$($rtk.Version)"
 }
 
+# --- Layer 4: Headroom Proxy ---
 $baseUrl = Get-PropertyValue (Get-PropertyValue $settings 'env') 'ANTHROPIC_BASE_URL'
 if (-not $baseUrl) {
     $baseUrl = Get-PropertyValue (Get-PropertyValue $settings 'env') 'OPENAI_BASE_URL'
@@ -203,26 +226,36 @@ $headroomDetail = "installed=$($headroomBinaryPresent.ToString().ToLowerInvarian
 if ($headroom.StatusCode) { $headroomDetail += " http=$($headroom.StatusCode)" }
 $components += [pscustomobject]@{ Name = 'headroom'; Status = $headroomStatus; Detail = $headroomDetail }
 
-# --- Layer 5: Pluggable Memory Layer (Optional) ---
-$memoryProvider = 'none'
-$memoryStatus = 'OPTIONAL'
-$memoryDetail = 'provider=none (4 core layers active)'
-
+# --- Layer 5: Knowledge Harvester (MemoraX) ---
+$harvesterProvider = 'none'
+$harvesterStatus = 'OPTIONAL'
+$harvesterDetail = 'provider=none'
 $memoraxCmd = Get-CommandInfo 'memorax-code'
 if ($memoraxCmd.Present) {
-    $memoryProvider = 'memorax-code'
-    $memoryStatus = 'OK'
-    $memoryDetail = 'provider=memorax-code binary=present'
-} elseif ($settings -and $settings.PSObject.Properties['mcpServers'] -and $settings.mcpServers.PSObject.Properties['mem0']) {
-    $memoryProvider = 'mem0-mcp'
-    $memoryStatus = 'OK'
-    $memoryDetail = 'provider=mem0-mcp status=configured'
-} elseif (Test-Path -LiteralPath (Join-Path $profile 'memory')) {
-    $memoryProvider = 'local-memory'
-    $memoryStatus = 'OK'
-    $memoryDetail = 'provider=local-memory directory=present'
+    $harvesterProvider = 'memorax-code'
+    $harvesterStatus = 'OK'
+    $harvesterDetail = 'provider=memorax-code binary=present'
 }
-$components += [pscustomobject]@{ Name = 'memory'; Status = $memoryStatus; Detail = $memoryDetail }
+$components += [pscustomobject]@{ Name = 'harvester'; Status = $harvesterStatus; Detail = $harvesterDetail }
+
+# --- Layer 6: Context Database Platform (OpenViking / Obsidian / Local / None) ---
+$contextProvider = 'none'
+$contextStatus = 'OPTIONAL'
+$contextDetail = 'provider=none'
+if ($settings -and $settings.PSObject.Properties['mcpServers'] -and $settings.mcpServers.PSObject.Properties['openviking']) {
+    $contextProvider = 'openviking'
+    $contextStatus = 'OK'
+    $contextDetail = 'provider=openviking protocol=viking:// ready=true'
+} elseif (Test-Path -LiteralPath (Join-Path $profile 'obsidian-vault')) {
+    $contextProvider = 'obsidian'
+    $contextStatus = 'OK'
+    $contextDetail = 'provider=obsidian-vault visual-graph=ready'
+} elseif (Test-Path -LiteralPath (Join-Path $profile 'memory')) {
+    $contextProvider = 'local'
+    $contextStatus = 'OK'
+    $contextDetail = 'provider=local-storage flat=ready'
+}
+$components += [pscustomobject]@{ Name = 'contextdb'; Status = $contextStatus; Detail = $contextDetail }
 
 $result = [pscustomobject]@{
     directory = (Get-Location).Path
@@ -242,7 +275,5 @@ Write-Output "profile=$($result.profile)"
 Write-Output "harness=$($result.harness)"
 Write-Output "model=$($result.model)"
 foreach ($component in $components) {
-    Write-Output ("{0,-8} [{1,-7}] {2}" -f $component.Name, $component.Status, $component.Detail)
+    Write-Output ("{0,-9} [{1,-7}] {2}" -f $component.Name, $component.Status, $component.Detail)
 }
-
-

@@ -120,18 +120,22 @@ Each profile **MUST** use its own headroom port **AND** its own `--memory-db-pat
 - **Kimi Code CLI** (different agent, not Claude Code): reads skills from `~/.agents/skills/` â€” junction from the project's `.agents/skills/` with PowerShell `New-Item -ItemType Junction` (Git Bash `mklink /J` gets its args eaten by MSYS). RTK for Kimi: `rtk init --agent kimi` (project-scoped, writes AGENTS.md).
 
 
-## 6. Optional Layer 5: Pluggable Long-Term Memory
 
-While the 4 core layers reduce tokens within active sessions (in-flight), Layer 5 addresses cross-session amnesia by remembering proven solutions, architectural decisions, and project conventions across sessions.
+## 6. The 7-Layer Master Token & Context Architecture
 
-### Providers
+The complete engine spans across all 4 key lifecycle phases:
 
-| Provider | Type | Setup Command |
-|---|---|---|
-| **MemoraX Code** | Cloud/Hybrid Procedure Memory | `.\scripts\install-memory-layer.ps1 -Provider memorax -Apply` |
-| **Mem0** | MCP Graph & Vector Memory | `.\scripts\install-memory-layer.ps1 -Provider mem0 -Apply` |
-| **Local Knowledge** | 100% Offline Markdown/SQLite | `.\scripts\install-memory-layer.ps1 -Provider local -Apply` |
-| **None** | Default (4 core layers only) | `.\scripts\install-memory-layer.ps1 -Provider none` |
+| Layer | Component | Function | Setup Command |
+|---|---|---|---|
+| **Layer 0** | **Graphify / GitNexus / CodeGraph** | AST Code Topology | `.\scripts\install-code-graph.ps1 -Engine graphify -Apply` |
+| **Layer 1** | **Ponytail** | Code Reduction | `.\scripts\install-token-stack.ps1 -Apply` |
+| **Layer 2** | **Caveman** | Word Reduction | `.\scripts\install-token-stack.ps1 -Apply` |
+| **Layer 3** | **RTK** | CLI Output Filter | Configured via shim |
+| **Layer 4** | **Headroom** | Network Context Proxy | `.\scripts\install-token-stack.ps1 -Apply` |
+| **Layer 5** | **MemoraX Code** | Knowledge Harvester | `.\scripts\install-memory-layer.ps1 -Provider memorax -Apply` |
+| **Layer 6** | **OpenViking / Obsidian** | Context Database Platform | `.\scripts\install-context-platform.ps1 -Platform openviking -Apply` |
+
+For detailed architectural specifications, read [`docs/architecture.md`](architecture.md).
 
 ## New-machine checklist
 

@@ -2,8 +2,16 @@
 param(
     [string]$ProfileDirectory,
     [string]$SourceRoot,
-    [ValidateSet('none', 'memorax', 'mem0', 'local')]
-    [string]$MemoryProvider = 'none',
+
+    [ValidateSet('graphify', 'gitnexus', 'codegraph', 'none')]
+    [string]$CodeTopology = 'graphify',
+
+    [ValidateSet('memorax', 'none')]
+    [string]$Harvester = 'memorax',
+
+    [ValidateSet('openviking', 'obsidian', 'local', 'none')]
+    [string]$ContextDatabase = 'openviking',
+
     [switch]$Apply
 )
 
@@ -96,10 +104,6 @@ function Get-SkillState {
     return 'present'
 }
 
-# --- Headroom port isolation ---
-# Each profile MUST use its own headroom port.
-# Upstream is read from the profile's EXISTING ANTHROPIC_BASE_URL before we redirect to headroom.
-
 function Get-OriginalUpstream {
     param($Settings)
     $envProp = $Settings.PSObject.Properties['env']
@@ -107,7 +111,6 @@ function Get-OriginalUpstream {
         $baseProp = $envProp.Value.PSObject.Properties['ANTHROPIC_BASE_URL']
         if ($baseProp -and $baseProp.Value) {
             $val = $baseProp.Value
-            # Skip if already pointing to a headroom proxy (127.0.0.1:87xx)
             if ($val -notmatch 'http://127\.0\.0\.1:87\d\d') {
                 return $val
             }
@@ -205,13 +208,14 @@ if (-not $Apply) {
     Write-Output "source=$source"
     $planned | ForEach-Object { Write-Output "skill=$($_.Name) state=$($_.State)" }
     Write-Output "settings=$($settingsExists.ToString().ToLowerInvariant()) plugin_config=will_update_if_apply"
-    Write-Output "headroom_port=$headroomPort upstream=$headroomUpstream env_file=$envFilePath memory_provider=$MemoryProvider"
+    Write-Output "headroom_port=$headroomPort upstream=$headroomUpstream env_file=$envFilePath"
+    Write-Output "layer0_topology=$CodeTopology layer5_harvester=$Harvester layer6_context_db=$ContextDatabase"
     Write-Output 'apply=false; no changes made'
     exit 0
 }
 
-if (-not $settingsExists) { throw 'settings.json not found; start Claude Code once before applying' }
-if (-not $PSCmdlet.ShouldProcess($profile, 'install token-stack skills, enable plugins, configure headroom')) { exit 0 }
+if (-not $settingsExists) { throw 'settings.json not found; start Claude Code or Codex once before applying' }
+if (-not $PSCmdlet.ShouldProcess($profile, 'install token-stack 7-layer master engine')) { exit 0 }
 
 $runId = [Guid]::NewGuid().ToString('N')
 $stagingRoot = Join-Path $skillsDirectory ".token-stack-install-$runId"
@@ -258,7 +262,7 @@ try {
         [System.IO.File]::WriteAllText($hookDest, $hookContent, [System.Text.UTF8Encoding]::new($false))
     }
 
-    # Register SessionStart hook (Git Bash to avoid Windows EFTYPE error)
+    # Register SessionStart hook
     Ensure-ObjectProperty $settings 'hooks'
     $hookPathStr = ($hookDest -replace '\\', '/')
     $sessionStartHook = @{
@@ -272,7 +276,6 @@ try {
             }
         )
     }
-    # Preserve existing SessionStart hooks, append ours
     $existingHooks = @()
     $hooksProp = $settings.hooks.PSObject.Properties['SessionStart']
     if ($hooksProp -and $hooksProp.Value) {
@@ -304,13 +307,32 @@ try {
     [System.IO.File]::Replace($settingsTemp, $settingsPath, $settingsBackup, $true)
     $settingsReplaced = $true
     Remove-Item -LiteralPath $stagingRoot -Recurse -Force -ErrorAction SilentlyContinue
-        if ($MemoryProvider -ne 'none') {
-        $memoryScript = Join-Path $source 'scripts\install-memory-layer.ps1'
-        if (Test-Path -LiteralPath $memoryScript) {
-            & powershell -NoProfile -ExecutionPolicy Bypass -File $memoryScript -Provider $MemoryProvider -ProfileDirectory $profile -Apply
+
+    # --- Phase: Install Layer 0 Code Topology ---
+    if ($CodeTopology -ne 'none') {
+        $codeGraphScript = Join-Path $source 'scripts\install-code-graph.ps1'
+        if (Test-Path -LiteralPath $codeGraphScript) {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $codeGraphScript -Engine $CodeTopology -ProfileDirectory $profile -Apply
         }
     }
-    Write-Output "applied=true profile=$profile skills=$($skillNames.Count) headroom_port=$headroomPort upstream=$headroomUpstream memory_provider=$MemoryProvider backup=created"
+
+    # --- Phase: Install Layer 5 Knowledge Harvester ---
+    if ($Harvester -ne 'none') {
+        $memoryScript = Join-Path $source 'scripts\install-memory-layer.ps1'
+        if (Test-Path -LiteralPath $memoryScript) {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $memoryScript -Provider $Harvester -ProfileDirectory $profile -Apply
+        }
+    }
+
+    # --- Phase: Install Layer 6 Context Database Platform ---
+    if ($ContextDatabase -ne 'none') {
+        $contextScript = Join-Path $source 'scripts\install-context-platform.ps1'
+        if (Test-Path -LiteralPath $contextScript) {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $contextScript -Platform $ContextDatabase -ProfileDirectory $profile -Apply
+        }
+    }
+
+    Write-Output "applied=true profile=$profile skills=$($skillNames.Count) headroom_port=$headroomPort layer0_topology=$CodeTopology layer5_harvester=$Harvester layer6_context_db=$ContextDatabase backup=created"
 } catch {
     if (Test-Path -LiteralPath $settingsTemp) { Remove-Item -LiteralPath $settingsTemp -Force -ErrorAction SilentlyContinue }
     if ($settingsReplaced -and (Test-Path -LiteralPath $settingsBackup)) {
@@ -322,4 +344,3 @@ try {
     if (Test-Path -LiteralPath $stagingRoot) { Remove-Item -LiteralPath $stagingRoot -Recurse -Force -ErrorAction SilentlyContinue }
     throw
 }
-
