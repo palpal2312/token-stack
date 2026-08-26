@@ -4,18 +4,19 @@ The Complete **7-Layer Master Token & Context Engine** for AI coding CLIs (OpenA
 
 [![Benchmark Status](https://img.shields.io/badge/Benchmark-95.9%25%20Token%20Reduction-brightgreen)](token-stack-benchmark-report.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Vietnamese Docs](https://img.shields.io/badge/Docs-%F0%9F%87%BB%F0%9F%87%B3%20B%E1%BA%A3n%20Ti%E1%BA%BFng%20Vi%E1%BB%87t-red)](README-vi.md)
+[![Vietnamese Docs](https://img.shields.io/badge/Docs-%F0%9F%87%BB%F0%9F%87%B3%20Ti%E1%BA%BFng%20Vi%E1%BB%87t-red)](README-vi.md)
+[![Chinese Docs](https://img.shields.io/badge/Docs-%F0%9F%87%A8%F0%9F%87%B3%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-blue)](README-CN.md)
 
 ---
 
 ## 🌐 Language Navigation
 - [🇬🇧 English (Current)](README.md)
-- [🇻🇳 Bản Tiếng Việt (Vietnamese)](README-vi.md)
+- [🇻🇳 Tiếng Việt (Vietnamese)](README-vi.md)
 - [🇨🇳 简体中文 (Chinese)](README-CN.md)
 
 ---
 
-## 🏗️ The 7-Layer Architecture
+## 🏗️ The 7-Layer Master Architecture
 
 ```text
 +-------------------------------------------------------------------------------------------------------------+
