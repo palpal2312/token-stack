@@ -1,59 +1,51 @@
 ---
 name: token-stack-benchmark
-description: Interactive 4-Step TUI for Token Stack Benchmarking with 7 layers (L0 CodeGraph, L1 Ponytail, L2 Caveman, L3 RTK, L4 Headroom, L5 Memory, L6 Distill). Features Space toggle on all layers L0-L6 and Left/Right Arrow switching for L0 (Graphify/GitNexus/CodeGraph), L5 (MemoraX/MemOS/claude-mem), and L6 (OpenViking/Mnemosyne).
+description: 3-Step Interactive Benchmark Suite for the 7-Layer Token Stack (L0 Graphify, L1 Ponytail, L2 Caveman, L3 RTK, L4 Headroom, L5 MemoraX, L6 OpenViking). Features dataset presentation, layer toggles, N-run mean calculation, Dual Rubric evaluation, and Leave-One-Out Ablation Study across 5 public GitHub scenarios.
 user-invocable: true
 ---
 
-# Token Stack Benchmark Suite (4-Step TUI Wizard)
+# Token Stack Benchmark Suite (3-Step Interactive Workflow)
 
-Interactive terminal UI để đánh giá và đo lường tỷ lệ nén token qua **4 Bước chuẩn hóa** với **7 Lớp Layer Chuẩn (L0 ➔ L6)**:
+Standardized benchmark suite to evaluate token compression ratio, pure logical answer accuracy, and CEI (Context Efficiency Index) across **5 Public Open-Source GitHub Datasets** and **7 Modular Token Stack Layers (L0 ➔ L6)**:
 
-## 🔄 Quy trình 4 Bước TUI
+## 🔄 3-Step Standardized Workflow
 
-### 📋 Bước 1: Chọn Task Examples (Ví dụ tác vụ thực tế)
-- Mặc định chọn sẵn **3 ví dụ** (hoặc người dùng tick/untick tùy ý bằng `[Space]`):
-  1. `[✔] Debug & Fix Type Errors in Monorepo`
-  2. `[✔] Run Full Test Suite & Fix Failing Tests`
-  3. `[✔] Refactor Module & Perform Code Review`
-  4. `[ ] Scaffold New REST API Endpoint & Schema`
-  5. `[ ] Search Codebase & Git Blame Audit`
-  6. `[ ] Deploy Build & Inspect Container Logs`
-  7. `[ ] Full-Cycle Feature Development Pipeline`
+### 📋 Step 1: Public Datasets & Workspace Setup
+- Presents 5 standardized public GitHub benchmark scenarios:
+  1. `Scenario 1: Comprehensive Repository Architecture & Data Flow Survey` ([hagopj13/node-express-boilerplate](https://github.com/hagopj13/node-express-boilerplate))
+  2. `Scenario 2: Database Connection Pool Leak Bugfix` ([gothinkster/node-express-realworld-example-app](https://github.com/gothinkster/node-express-realworld-example-app))
+  3. `Scenario 3: Cross-Session Architecture Standard Recall` ([THUIR/MemoryBench](https://github.com/THUIR/MemoryBench-LeaderBoard))
+  4. `Scenario 4: Multi-Turn Trajectory Distillation (8-Turn Recovery)` ([THUIR/MemoryBench](https://github.com/THUIR/MemoryBench-LeaderBoard))
+  5. `Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data` ([kernc/backtesting.py](https://github.com/kernc/backtesting.py))
+- Initializes and cleans the `benchmark-outputs/` workspace.
 
-### 🧩 Bước 2: Cấu hình 7 Lớp Layer (Bật/Tắt L0➔L6 bằng `[Space]`, Đổi Repo bằng `[← / →]`)
-- **`L0: Code Graph`** — `[✔ ENABLED]` (Bấm `[Space]` để Bật/Tắt). Bấm `[←/→]` để chuyển giữa:
-  * **`Graphify`** *(AST code graph & structural relationship pruning - ~79.7% isolated)*
-  * **`GitNexus`** *(Git commit-aware repo graph & differential context index - ~77.5% isolated)*
-  * **`CodeGraph`** *(Semantic symbols & call-graph dependency network - ~75.2% isolated)*
-- **`L1: Ponytail`** — `[✔ ENABLED]` (Bấm `[Space]` để Bật/Tắt).
-- **`L2: Caveman`** — `[✔ ENABLED]` (Bấm `[Space]` để Bật/Tắt).
-- **`L3: RTK`** — `[✔ ENABLED]` (Bấm `[Space]` để Bật/Tắt).
-- **`L4: Headroom`** — `[✔ ENABLED]` (Bấm `[Space]` để Bật/Tắt).
-- **`L5: Memory Management`** — `[✔ ENABLED]`. Bấm `[Space]` để Bật/Tắt, bấm `[←/→]` để chuyển giữa:
-  * **`MemoraX`** *(Hierarchical 3-tier episodic & semantic memory - ~73.1% isolated)*
-  * **`MemOS`** *(OS-like memory paging & virtual memory slots - ~71.0% isolated)*
-  * **`claude-mem`** *(Lightweight markdown / SQLite persistent memory - ~66.8% isolated)*
-- **`L6: Autonomous Distillation`** — `[✔ ENABLED]`. Bấm `[Space]` để Bật/Tắt, bấm `[←/→]` để chuyển giữa:
-  * **`OpenViking`** *(Autonomous multi-session trajectory distillation - ~74.6% isolated)*
-  * **`Mnemosyne`** *(Deep cognitive memory consolidation & subagent context pruning - ~76.2% isolated)*
+### 🎛️ Step 2: Layer Toggle Configuration (L0 ➔ L6)
+- **`L0: Graphify`** — `[✔ ON]` AST CodeGraph pruning (-91.5% discovery tokens)
+- **`L1: Ponytail`** — `[✔ ON]` Anti-boilerplate & clean standard library enforcement
+- **`L2: Caveman`** — `[✔ ON]` Minimal Git Patch Diff generation (-69.5% diff tokens)
+- **`L3: RTK`** — `[✔ ON]` CLI Token Killer (filters passing test logs & order execution noise)
+- **`L4: Headroom`** — `[✔ ON]` Prompt Cache API Breakpoints (-82.7% long-history tokens)
+- **`L5: MemoraX`** — `[✔ ON]` Episodic & Semantic Memory Slot Recall (-99.3% memory tokens)
+- **`L6: OpenViking`** — `[✔ ON]` Multi-Turn State & Trajectory Distillation (-93.0% debug context)
 
-### ⏱️ Bước 3: Chọn số lần thử nghiệm (Iterations)
-- Mặc định: **`1 lần`** (có thể dùng phím `[↑/↓]`, `[←/→]` hoặc gõ `1..20` để tăng số lần chạy lấy trung bình).
-
-### 📊 Bước 4: Thống Kê Toàn Diện
-1. **Single Layer Isolated Table**: Đo lường hiệu quả đơn lẻ của từng Repo trên nền Base.
-2. **Progressive Cumulative Stack Table**: Có thêm cột **`Impact %`** (tỷ lệ nén so với bước liền trước) và **`Cumul %`** (tỷ lệ nén lũy tiến).
-3. **Task Scenarios Summary Matrix**: Tổng hợp theo từng tác vụ.
+### ⏱️ Step 3: N-Run Iterations & Comprehensive Metrics
+- Computes arithmetic mean across N runs.
+- Renders 3 standardized evaluation tables:
+  1. **Table 1: Single Layer Isolated Efficiency** (individual layer contribution vs raw base)
+  2. **Table 2: Progressive Cumulative Stacking Sequence** (step-by-step layer reduction from L0 to L6)
+  3. **Table 3: Dual Rubric Evaluation** (80 pts Core Functional Specs + 20 pts Proactive Bonus)
 
 ---
 
-## Cách chạy
+## 💻 CLI Usage Commands
 
 ```bash
+# Launch interactive 3-step benchmark TUI
 node .agents/skills/token-stack-benchmark/scripts/benchmark-tui.cjs
+
+# Run full Leave-One-Out Ablation Study (evaluates sensitivity when disabling each layer)
+node .agents/skills/token-stack-benchmark/scripts/benchmark-tui.cjs --ablation
+
+# Run automated 3-iteration benchmark without prompts
+node .agents/skills/token-stack-benchmark/scripts/benchmark-tui.cjs --non-interactive --runs 3
 ```
-Hoặc qua PowerShell:
-```powershell
-powershell -File .agents/skills/token-stack-benchmark/scripts/token-stack-benchmark.ps1
-```
-*(Trong Claude Code, gõ `/token-stack-benchmark`)*.

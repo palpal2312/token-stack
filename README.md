@@ -1,4 +1,4 @@
-# token-stack
+﻿# token-stack
 
 The Complete **7-Layer Master Token & Context Engine** for AI coding CLIs (OpenAI Codex CLI, Claude Code, Cursor, Kimi, Antigravity):
 
@@ -62,32 +62,30 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 - **Layer 5 (Knowledge Harvester)**: `.\scripts\install-memory-layer.ps1 -Provider <memorax|none> -Apply`
 - **Layer 6 (Context Database Platform)**: `.\scripts\install-context-platform.ps1 -Platform <openviking|obsidian|local|none> -Apply`
 
-
 ## Empirical Benchmarks & Evaluation
 
-Run standardized token reduction benchmarks across isolated layers or cumulative 7-layer stacks:
+Run the interactive 3-step standardized benchmark suite across 5 real-world open-source GitHub scenarios:
 
-```powershell
-# Run benchmark on multi-file bugfix (3 iterations mean)
-powershell -NoProfile -ExecutionPolicy Bypass `
-  -File .\skills\token-stack-benchmark\scripts\token-stack-benchmark.ps1 `
-  -Example 01-multi-file-bugfix `
-  -Iterations 3
+```bash
+# Launch 3-Step Interactive Benchmark TUI (Select scenarios, toggle layers L0-L6, N runs)
+node ./skills/token-stack-benchmark/scripts/benchmark-tui.cjs
 
-# Run on large CLI test run excluding Headroom proxy (Layer 4)
-powershell -NoProfile -ExecutionPolicy Bypass `
-  -File .\skills\token-stack-benchmark\scripts\token-stack-benchmark.ps1 `
-  -Example 02-large-cli-test-run `
-  -ExcludeLayers 4 `
-  -Iterations 5
+# Run full Leave-One-Out Ablation Study across all 7 layers & 5 scenarios
+node ./skills/token-stack-benchmark/scripts/benchmark-tui.cjs --ablation
+
+# Run non-interactive 3-run average benchmark
+node ./skills/token-stack-benchmark/scripts/benchmark-tui.cjs --non-interactive --runs 3
 ```
 
-Scenarios are available under [`examples/`](examples/):
-- `01-multi-file-bugfix` (Layer 0 Topology vs blind search)
-- `02-large-cli-test-run` (Layer 3 RTK 1,000+ line log compression)
-- `03-concise-refactor` (Layer 1 Ponytail & Layer 2 Caveman)
-- `04-cross-session-rules` (Layer 5 MemoraX Harvester zero-discovery rule recall)
-- `05-hierarchical-rag-query` (Layer 6 OpenViking 3-tier L0/L1/L2 progressive context)
+### Benchmark Datasets & Public Sources:
+1. **Scenario 1: Codebase Survey** -> [`hagopj13/node-express-boilerplate`](https://github.com/hagopj13/node-express-boilerplate) (`L0: Graphify` -90.0%)
+2. **Scenario 2: RealWorld Bug #104 TDD** -> [`gothinkster/node-express-realworld-example-app`](https://github.com/gothinkster/node-express-realworld-example-app) (`L3: RTK` & `L2: Caveman` -95.1%)
+3. **Scenario 3: Cross-Session Architecture Memory** -> [`THUIR/MemoryBench`](https://github.com/THUIR/MemoryBench-LeaderBoard) (`L5: MemoraX` -99.3%)
+4. **Scenario 4: Multi-Turn Debug Trajectory Distillation** -> [`THUIR/MemoryBench`](https://github.com/THUIR/MemoryBench-LeaderBoard) (`L6: OpenViking` -96.9%)
+5. **Scenario 5: Financial Quant Strategy Backtesting** -> [`kernc/backtesting.py`](https://github.com/kernc/backtesting.py) (`L0: Graphify` & `L3: RTK` -96.1%)
+
+👉 Detailed report: [`token-stack-benchmark-report.md`](token-stack-benchmark-report.md). Local run dossiers are saved in [`benchmark-outputs/`](benchmark-outputs/).
+
 ## Health Verification
 
 Check health and connectivity across all 7 layers:
