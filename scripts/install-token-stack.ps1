@@ -18,7 +18,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$skillNames = @('token-stack', 'token-stack-health', 'token-stack-setup', 'token-stack-report')
+$skillNames = @('token-stack', 'token-stack-health', 'token-stack-setup', 'token-stack-report', 'token-stack-benchmark')
 
 function Resolve-Directory {
     param([string]$Path, [string]$Label)
@@ -230,9 +230,7 @@ try {
     foreach ($name in $skillNames) {
         $srcSkill = Join-Path $source "skills\$name"
         $stagedPath = Join-Path $stagingRoot $name
-        if (($planned | Where-Object { $_.Name -eq $name }).State -eq 'missing') {
-            Copy-Item -LiteralPath $srcSkill -Destination $stagedPath -Recurse -Force -ErrorAction Stop
-        }
+        Copy-Item -LiteralPath $srcSkill -Destination $stagedPath -Recurse -Force -ErrorAction Stop
     }
 
     Copy-Item -LiteralPath $settingsPath -Destination $settingsBackup -ErrorAction Stop
@@ -297,11 +295,11 @@ try {
 
     foreach ($name in $skillNames) {
         $destination = Join-Path $skillsDirectory $name
-        $state = ($planned | Where-Object { $_.Name -eq $name }).State
-        if ($state -eq 'missing') {
-            Move-Item -LiteralPath (Join-Path $stagingRoot $name) -Destination $destination -ErrorAction Stop
-            $createdDestinations.Add($destination)
+        if (Test-Path -LiteralPath $destination) {
+            Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction Stop
         }
+        Move-Item -LiteralPath (Join-Path $stagingRoot $name) -Destination $destination -ErrorAction Stop
+        $createdDestinations.Add($destination)
     }
 
     [System.IO.File]::Replace($settingsTemp, $settingsPath, $settingsBackup, $true)
