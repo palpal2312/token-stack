@@ -62,6 +62,32 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 - **Layer 5 (Knowledge Harvester)**: `.\scripts\install-memory-layer.ps1 -Provider <memorax|none> -Apply`
 - **Layer 6 (Context Database Platform)**: `.\scripts\install-context-platform.ps1 -Platform <openviking|obsidian|local|none> -Apply`
 
+
+## Empirical Benchmarks & Evaluation
+
+Run standardized token reduction benchmarks across isolated layers or cumulative 7-layer stacks:
+
+```powershell
+# Run benchmark on multi-file bugfix (3 iterations mean)
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\skills\token-stack-benchmark\scripts\token-stack-benchmark.ps1 `
+  -Example 01-multi-file-bugfix `
+  -Iterations 3
+
+# Run on large CLI test run excluding Headroom proxy (Layer 4)
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File .\skills\token-stack-benchmark\scripts\token-stack-benchmark.ps1 `
+  -Example 02-large-cli-test-run `
+  -ExcludeLayers 4 `
+  -Iterations 5
+```
+
+Scenarios are available under [`examples/`](examples/):
+- `01-multi-file-bugfix` (Layer 0 Topology vs blind search)
+- `02-large-cli-test-run` (Layer 3 RTK 1,000+ line log compression)
+- `03-concise-refactor` (Layer 1 Ponytail & Layer 2 Caveman)
+- `04-cross-session-rules` (Layer 5 MemoraX Harvester zero-discovery rule recall)
+- `05-hierarchical-rag-query` (Layer 6 OpenViking 3-tier L0/L1/L2 progressive context)
 ## Health Verification
 
 Check health and connectivity across all 7 layers:

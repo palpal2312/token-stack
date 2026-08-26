@@ -15,6 +15,7 @@ Provides access to the 7-Layer Token & Context Engine:
 - **Layer 6**: Context Database Platform (`OpenViking`, `Obsidian Vault`)
 
 ## Sub-Skills
+- `token-stack:benchmark` -> Run isolated and cumulative token savings benchmarks across standardized scenarios.
 - `token-stack:health` -> Run live health probes across all 7 layers.
 - `token-stack:setup` -> Configure and install components into profiles.
 - `token-stack:report` -> Generate token savings analytics.
