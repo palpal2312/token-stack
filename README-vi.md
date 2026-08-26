@@ -5,13 +5,13 @@
 [![Trạng Thái Benchmark](https://img.shields.io/badge/Benchmark-Gi%E1%BA%A3m%2095.9%25%20Tokens-brightgreen)](token-stack-benchmark-report.md)
 [![Giấy Phép: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![English Docs](https://img.shields.io/badge/Docs-%F0%9F%87%AC%F0%9F%87%A7%20English%20Docs-blue)](README.md)
+[![Chinese Docs](https://img.shields.io/badge/Docs-%F0%9F%87%A8%F0%9F%87%B3%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-blue)](README-zh.md)
 
 ---
 
-## 🌐 Chuyển Đổi Ngôn Ngữ (Language Navigation)
-- [🇬🇧 English Version](README.md)
-- [🇻🇳 Bản Tiếng Việt (Hiện tại)](README-vi.md)
-- [🇨🇳 简体中文 (Tiếng Trung)](README-CN.md)
+## 🌐 Chuyển Đổi Ngôn Ngữ / Language Navigation / 语言导航
+| [🇬🇧 English Version](README.md) | [🇻🇳 Bản Tiếng Việt (Hiện tại)](README-vi.md) | [🇨🇳 简体中文 (Bản Tiếng Trung)](README-zh.md) |
+|:---:|:---:|:---:|
 
 ---
 

@@ -5,14 +5,13 @@ The Complete **7-Layer Master Token & Context Engine** for AI coding CLIs (OpenA
 [![Benchmark Status](https://img.shields.io/badge/Benchmark-95.9%25%20Token%20Reduction-brightgreen)](token-stack-benchmark-report.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Vietnamese Docs](https://img.shields.io/badge/Docs-%F0%9F%87%BB%F0%9F%87%B3%20Ti%E1%BA%BFng%20Vi%E1%BB%87t-red)](README-vi.md)
-[![Chinese Docs](https://img.shields.io/badge/Docs-%F0%9F%87%A8%F0%9F%87%B3%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-blue)](README-CN.md)
+[![Chinese Docs](https://img.shields.io/badge/Docs-%F0%9F%87%A8%F0%9F%87%B3%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-blue)](README-zh.md)
 
 ---
 
-## 🌐 Language Navigation
-- [🇬🇧 English (Current)](README.md)
-- [🇻🇳 Tiếng Việt (Vietnamese)](README-vi.md)
-- [🇨🇳 简体中文 (Chinese)](README-CN.md)
+## 🌐 Language Navigation / Chuyển Đổi Ngôn Ngữ / 语言导航
+| [🇬🇧 English (Current)](README.md) | [🇻🇳 Tiếng Việt (Vietnamese)](README-vi.md) | [🇨🇳 简体中文 (Chinese)](README-zh.md) |
+|:---:|:---:|:---:|
 
 ---
 
