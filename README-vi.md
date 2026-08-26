@@ -11,6 +11,7 @@
 ## 🌐 Chuyển Đổi Ngôn Ngữ (Language Navigation)
 - [🇬🇧 English Version](README.md)
 - [🇻🇳 Bản Tiếng Việt (Hiện tại)](README-vi.md)
+- [🇨🇳 简体中文 (Tiếng Trung)](README-CN.md)
 
 ---
 

@@ -11,6 +11,7 @@ The Complete **7-Layer Master Token & Context Engine** for AI coding CLIs (OpenA
 ## 🌐 Language Navigation
 - [🇬🇧 English (Current)](README.md)
 - [🇻🇳 Bản Tiếng Việt (Vietnamese)](README-vi.md)
+- [🇨🇳 简体中文 (Chinese)](README-CN.md)
 
 ---
 
