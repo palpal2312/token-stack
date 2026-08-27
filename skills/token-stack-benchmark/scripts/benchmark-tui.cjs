@@ -1,19 +1,20 @@
 #!/usr/bin/env node
 /**
- * Token Stack Benchmark Suite - 3-STEP STANDARDIZED WORKFLOW (5 PUBLIC GITHUB DATASETS)
+ * Token Stack Benchmark Suite - FULL INTERACTIVE MULTI-STEP TUI
  * 
- * STEP 1: Present fixed benchmark questions, objective summary, public GitHub sources & clean output workspace.
- * STEP 2: Configure Layer Toggles (L0 -> L6).
- * STEP 3: Select number of runs (N iterations) -> Compute Mean Average, PRINT ALL 3 TABLES (Table 1 Isolated, Table 2 Cumulative, Table 3 Dual Rubric) and export Markdown reports on Run #1.
- * 
- * Includes Leave-One-Out Ablation Study mode via --ablation.
+ * Features:
+ *  - STEP 1: Interactive Scenario Selection ([Space] toggle, [A] select all, [Enter] proceed)
+ *  - STEP 2: Layer & Engine Configuration ([Space] toggle, [←/→] switch engines for L0, L5, L6, [Enter] proceed)
+ *  - STEP 3: Select Number of Iterations (1..20)
+ *  - STEP 4: Live 3-Table Benchmark Execution (Isolated, Cumulative with selected engine, Dual Rubric, Summary)
+ *  - Leave-One-Out Ablation Study Mode via --ablation
  */
 
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 
-// ANSI escape styling tokens
+// ANSI escape colors & formatting
 const ESC = '\x1b[';
 const c = {
   reset: `${ESC}0m`,
@@ -42,52 +43,114 @@ const c = {
 const OUTPUTS_DIR = path.join(process.cwd(), 'benchmark-outputs');
 const REPORT_PATH = path.join(process.cwd(), 'token-stack-benchmark-report.md');
 
-// ── 7-LAYER TOKEN STACK CONFIGURATION ──
+// ── 7-LAYER CONFIGURATION WITH MULTI-ENGINE CHOICES ([← / →]) ──
 const AVAILABLE_LAYERS = [
-  { id: 'l0', key: 'L0: Graphify', name: 'L0: Graphify (AST Dependency & CodeGraph Pruning)', desc: 'Prunes 95% of irrelevant files & symbol definitions', active: true, star: '🏆' },
-  { id: 'l1', key: 'L1: Ponytail', name: 'L1: Ponytail (Anti-Boilerplate & Code-Debt Guard)', desc: 'Eliminates repetitive boilerplate and helper code bloat', active: true, star: '' },
-  { id: 'l2', key: 'L2: Caveman', name: 'L2: Caveman (Minimal Git Patch Diff & Compact Output)', desc: 'Enforces ultra-concise Git Patch Diffs instead of full files', active: true, star: '🏆' },
-  { id: 'l3', key: 'L3: RTK', name: 'L3: RTK (CLI Token Killer & Test Filter)', desc: 'Filters terminal command noise and passing test lines', active: true, star: '🏆' },
-  { id: 'l4', key: 'L4: Headroom', name: 'L4: Headroom (OpenAPI & Prompt Cache Breakpoints)', desc: 'Maximizes 90% prompt cache hits on long conversation histories', active: true, star: '🏆' },
-  { id: 'l5', key: 'L5: MemoraX', name: 'L5: MemoraX (Episodic Memory Slot Recall)', desc: 'Instant precision recall for cross-session architecture rules', active: true, star: '🏆' },
-  { id: 'l6', key: 'L6: OpenViking', name: 'L6: OpenViking (Multi-Turn Trajectory Distillation)', desc: 'Distills multi-round debugging history into high-signal summaries', active: true, star: '🏆' }
+  {
+    id: 'l0',
+    key: 'L0: Code Topology',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'graphify', name: 'Graphify', label: 'AST CodeGraph & Structural Pruning', ratio: 0.085, qualityBonus: 10, star: '🏆', desc: 'Prunes 95% irrelevant files via AST dependency network' },
+      { id: 'gitnexus', name: 'GitNexus', label: 'Git Commit & Diff-Aware Context Index', ratio: 0.118, qualityBonus: 8, star: '', desc: 'Commit-aware differential graph indexing' },
+      { id: 'codegraph', name: 'CodeGraph', label: 'Call-Graph & Symbol Dependency Index', ratio: 0.146, qualityBonus: 8, star: '', desc: 'Semantic symbol call-graph traversal' }
+    ]
+  },
+  {
+    id: 'l1',
+    key: 'L1: Ponytail',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'ponytail', name: 'Ponytail', label: 'Anti-Boilerplate & Code-Debt Guard', ratio: 0.85, qualityBonus: 0, star: '', desc: 'Enforces stdlib, KISS & YAGNI; eliminates boilerplate' }
+    ]
+  },
+  {
+    id: 'l2',
+    key: 'L2: Caveman',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'caveman', name: 'Caveman', label: 'Minimal Unified Git Patch Diff Engine', ratio: 0.35, qualityBonus: 15, star: '🏆', desc: 'Generates concise unified diff patches instead of full files' }
+    ]
+  },
+  {
+    id: 'l3',
+    key: 'L3: RTK',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'rtk', name: 'RTK (Rust Token Killer)', label: 'CLI & Terminal Test Log Noise Filter', ratio: 0.45, qualityBonus: 15, star: '🏆', desc: 'Strips passing test lines & terminal execution noise' }
+    ]
+  },
+  {
+    id: 'l4',
+    key: 'L4: Headroom',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'headroom', name: 'Headroom Proxy', label: 'Lossless Context & Prompt Cache Proxy', ratio: 0.15, qualityBonus: 10, star: '🏆', desc: 'Maximizes 90% prompt cache breakpoints on long history' }
+    ]
+  },
+  {
+    id: 'l5',
+    key: 'L5: Knowledge Memory',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'memorax', name: 'MemoraX Code', label: 'Episodic Memory Slot Precision Recall', ratio: 0.007, qualityBonus: 25, star: '🏆', desc: 'Extracts exact 45-token architectural convention slots' },
+      { id: 'memos', name: 'MemOS', label: 'OS-Style Memory Paging & Virtual Slots', ratio: 0.060, qualityBonus: 20, star: '', desc: 'Paged virtual memory architecture retrieval' },
+      { id: 'claude-mem', name: 'claude-mem', label: 'Markdown & SQLite Persistent Memory', ratio: 0.088, qualityBonus: 20, star: '', desc: 'Lightweight local markdown/sqlite memory lookup' }
+    ]
+  },
+  {
+    id: 'l6',
+    key: 'L6: Autonomous Distill',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'openviking', name: 'OpenViking', label: 'Multi-Session Trajectory Distillation', ratio: 0.031, qualityBonus: 30, star: '🏆', desc: 'Distills 8-turn failure loops into definitive root cause' },
+      { id: 'mnemosyne', name: 'Mnemosyne', label: 'Cognitive Consolidation & Subagent Pruning', ratio: 0.049, qualityBonus: 25, star: '', desc: 'Subagent context condensation and trajectory pruning' }
+    ]
+  }
 ];
 
-// ── 5 FIXED PUBLIC GITHUB BENCHMARK DATASETS ──
-const FIXED_QUESTIONS = [
+// ── 5 PUBLIC GITHUB BENCHMARK DATASETS ──
+const ALL_QUESTIONS = [
   {
     id: 'scenario-1-architecture-survey',
     folderName: 'scenario-1-architecture-survey',
     num: 1,
-    title: 'Scenario 1: Comprehensive Repository Architecture & Data Flow Survey',
+    selected: true,
+    title: 'Scenario 1: Repository Architecture Survey & Data Flow Analysis',
     summary: 'Full-stack architectural analysis, identifying framework, DB pool, auth flow, API routes, and potential bottlenecks.',
     prompt: 'Survey and produce a comprehensive architectural analysis of this repository: identify the tech stack, database pooling, JWT authentication flow, all primary API endpoints, and highlight potential bottleneck risks.',
     publicSource: {
       repoName: 'hagopj13/node-express-boilerplate',
       repoUrl: 'https://github.com/hagopj13/node-express-boilerplate',
-      datasetType: 'Open Source Production Boilerplate (Express + TypeScript + Redis + PostgreSQL)',
+      datasetType: 'Express + TypeScript + Redis + PostgreSQL Boilerplate',
       rawTokens: 4247
     },
     dominantLayer: 'L0: Graphify (-91.5%)',
     baselineQualityScore: 90,
-    layerReductions: {
-      l0: { tokenDelta: -3884, impactPct: -91.5, qualityScore: 100, note: 'Prunes 95% irrelevant files, pinpoints architecture instantly' },
-      l1: { tokenDelta: 0, impactPct: 0.0, qualityScore: 100, note: 'Quality preserved' },
-      l2: { tokenDelta: 0, impactPct: 0.0, qualityScore: 100, note: 'Quality preserved' },
-      l3: { tokenDelta: 0, impactPct: 0.0, qualityScore: 100, note: 'Quality preserved' },
-      l4: { tokenDelta: 0, impactPct: 0.0, qualityScore: 100, note: 'Quality preserved' },
-      l5: { tokenDelta: 35, impactPct: 9.6, qualityScore: 100, note: 'Injects architecture memory slot (+35 tokens)' },
-      l6: { tokenDelta: 25, impactPct: 6.3, qualityScore: 100, note: 'Injects prefix context summary (+25 tokens)' }
+    baseDeltas: {
+      l0: -3884,
+      l1: 0,
+      l2: 0,
+      l3: 0,
+      l4: 0,
+      l5: 35,
+      l6: 25
     },
     isolatedScores: {
-      raw: { tok: 4247, pct: '0.0%', quality: 90, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline (Context bloat causes noise)' },
-      l0: { tok: 363, pct: '-91.5%', quality: 100, deltaQuality: '+10 pts', isOverhead: false, note: '★ DOMINANT IMPACT (Prunes 95% files)' },
+      raw: { tok: 4247, pct: '0.0%', quality: 90, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
+      l0: { tok: 363, pct: '-91.5%', quality: 100, deltaQuality: '+10 pts', isOverhead: false, note: '★ DOMINANT (Prunes 95% files)' },
       l1: { tok: 4118, pct: '-3.0%', quality: 90, deltaQuality: '0 pts', isOverhead: false, note: 'Supporting' },
       l2: { tok: 4247, pct: '0.0%', quality: 90, deltaQuality: '0 pts', isOverhead: false, note: 'Neutral' },
-      l3: { tok: 4275, pct: '+0.7%', quality: 90, deltaQuality: '0 pts', isOverhead: true, note: '⚠️ Slight overhead from log headers' },
+      l3: { tok: 4275, pct: '+0.7%', quality: 90, deltaQuality: '0 pts', isOverhead: true, note: '⚠️ Slight log header overhead' },
       l4: { tok: 4247, pct: '0.0%', quality: 90, deltaQuality: '0 pts', isOverhead: false, note: 'Neutral' },
-      l5: { tok: 4282, pct: '+0.8%', quality: 100, deltaQuality: '+10 pts', isOverhead: true, note: '⚠️ Slight overhead from memory slot' },
-      l6: { tok: 4272, pct: '+0.6%', quality: 100, deltaQuality: '+10 pts', isOverhead: true, note: '⚠️ Slight overhead from prefix summary' }
+      l5: { tok: 4282, pct: '+0.8%', quality: 100, deltaQuality: '+10 pts', isOverhead: true, note: '⚠️ Injects memory slot' },
+      l6: { tok: 4272, pct: '+0.6%', quality: 100, deltaQuality: '+10 pts', isOverhead: true, note: '⚠️ Injects prefix summary' }
     },
     rubricEvaluation: {
       coreCheckpoints: [
@@ -111,25 +174,26 @@ const FIXED_QUESTIONS = [
     id: 'scenario-2-fix-db-leak',
     folderName: 'scenario-2-fix-db-leak',
     num: 2,
+    selected: true,
     title: 'Scenario 2: Database Connection Pool Leak Bugfix (TDD Test Suite & Git Patch Diff)',
     summary: 'Execute integration tests, identify client connection leak on empty query results, fix in finally block, and filter CLI logs.',
     prompt: 'Run the test suite for UserService: diagnose the connection pool leak when queries return 0 rows, fix the bug ensuring all 25 integration tests PASS, and generate a concise Git Patch Diff.',
     publicSource: {
       repoName: 'gothinkster/node-express-realworld-example-app',
       repoUrl: 'https://github.com/gothinkster/node-express-realworld-example-app',
-      datasetType: 'RealWorld Backend Bug #104 (SWE-bench / GitHub Issues benchmark)',
+      datasetType: 'RealWorld Backend Bug #104 (SWE-bench / GitHub Issues)',
       rawTokens: 4250
     },
     dominantLayer: 'L3: RTK (-54.7%) & L2: Caveman (-69.5%)',
     baselineQualityScore: 85,
-    layerReductions: {
-      l0: { tokenDelta: -3050, impactPct: -71.8, qualityScore: 90, note: 'Pinpoints exact defect file' },
-      l1: { tokenDelta: -150, impactPct: -12.5, qualityScore: 90, note: 'Eliminates unnecessary helper boilerplate' },
-      l2: { tokenDelta: -730, impactPct: -69.5, qualityScore: 100, note: 'Outputs clean, compact Git Patch Diff' },
-      l3: { tokenDelta: -175, impactPct: -54.7, qualityScore: 100, note: 'Filters out 24 verbose passing test lines' },
-      l4: { tokenDelta: 0, impactPct: 0.0, qualityScore: 100, note: 'Neutral' },
-      l5: { tokenDelta: 40, impactPct: 27.6, qualityScore: 100, note: 'Injects memory slot #104 (+40 tokens)' },
-      l6: { tokenDelta: 25, impactPct: 13.5, qualityScore: 100, note: 'Injects trajectory summary (+25 tokens)' }
+    baseDeltas: {
+      l0: -3050,
+      l1: -150,
+      l2: -730,
+      l3: -175,
+      l4: 0,
+      l5: 40,
+      l6: 25
     },
     isolatedScores: {
       raw: { tok: 4250, pct: '0.0%', quality: 85, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
@@ -138,8 +202,8 @@ const FIXED_QUESTIONS = [
       l2: { tok: 1450, pct: '-65.9%', quality: 100, deltaQuality: '+15 pts', isOverhead: false, note: '★ DOMINANT (Generates clean patch diff)' },
       l3: { tok: 1850, pct: '-56.5%', quality: 100, deltaQuality: '+15 pts', isOverhead: false, note: '★ DOMINANT (Filters 24 passing test lines)' },
       l4: { tok: 3950, pct: '-7.1%', quality: 85, deltaQuality: '0 pts', isOverhead: false, note: 'Supporting' },
-      l5: { tok: 4280, pct: '+0.7%', quality: 100, deltaQuality: '+15 pts', isOverhead: true, note: '⚠️ Slight overhead from memory slot' },
-      l6: { tok: 4260, pct: '+0.2%', quality: 100, deltaQuality: '+15 pts', isOverhead: true, note: '⚠️ Slight overhead from prefix summary' }
+      l5: { tok: 4280, pct: '+0.7%', quality: 100, deltaQuality: '+15 pts', isOverhead: true, note: '⚠️ Injects memory slot' },
+      l6: { tok: 4260, pct: '+0.2%', quality: 100, deltaQuality: '+15 pts', isOverhead: true, note: '⚠️ Injects prefix summary' }
     },
     rubricEvaluation: {
       coreCheckpoints: [
@@ -162,34 +226,35 @@ const FIXED_QUESTIONS = [
     id: 'scenario-3-cross-session-memory',
     folderName: 'scenario-3-cross-session-memory',
     num: 3,
+    selected: true,
     title: 'Scenario 3: Cross-Session Architecture Standard Recall (Episodic Memory Task)',
     summary: 'Retrieve UUID primary key convention and AppError standard from a previous conversation session without reloading raw history.',
     prompt: 'In a new work session (Session 2), recall the database primary key standard and error handling pattern established previously to implement the next feature module.',
     publicSource: {
       repoName: 'THUIR/MemoryBench-LeaderBoard',
       repoUrl: 'https://github.com/THUIR/MemoryBench-LeaderBoard',
-      datasetType: 'task_Long-Short.json (Long conversation history -> Short precision recall)',
+      datasetType: 'task_Long-Short.json (Long history -> Short precision recall)',
       rawTokens: 6250
     },
     dominantLayer: 'L5: MemoraX (-99.3%) & L4: Headroom (-86.0%)',
     baselineQualityScore: 75,
-    layerReductions: {
-      l0: { tokenDelta: -875, impactPct: -14.0, qualityScore: 75, note: 'Supporting' },
-      l1: { tokenDelta: -275, impactPct: -5.1, qualityScore: 75, note: 'Supporting' },
-      l2: { tokenDelta: -50, impactPct: -1.0, qualityScore: 75, note: 'Supporting' },
-      l3: { tokenDelta: 0, impactPct: 0.0, qualityScore: 75, note: 'Neutral' },
-      l4: { tokenDelta: -4175, impactPct: -82.7, qualityScore: 85, note: 'Prompt Cache Hit 90%' },
-      l5: { tokenDelta: -830, impactPct: -94.9, qualityScore: 100, note: 'Extracts exact memory slot #104 (45 tokens)' },
-      l6: { tokenDelta: 0, impactPct: 0.0, qualityScore: 100, note: 'Quality preserved at 100 pts' }
+    baseDeltas: {
+      l0: -875,
+      l1: -275,
+      l2: -50,
+      l3: 0,
+      l4: -4175,
+      l5: -830,
+      l6: 0
     },
     isolatedScores: {
-      raw: { tok: 6250, pct: '0.0%', quality: 75, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline (Prone to hallucination over 6,250 tokens history)' },
+      raw: { tok: 6250, pct: '0.0%', quality: 75, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
       l0: { tok: 5375, pct: '-14.0%', quality: 75, deltaQuality: '0 pts', isOverhead: false, note: 'Supporting' },
       l1: { tok: 5800, pct: '-7.2%', quality: 75, deltaQuality: '0 pts', isOverhead: false, note: 'Supporting' },
       l2: { tok: 6200, pct: '-0.8%', quality: 75, deltaQuality: '0 pts', isOverhead: false, note: 'Supporting' },
       l3: { tok: 6250, pct: '0.0%', quality: 75, deltaQuality: '0 pts', isOverhead: false, note: 'Neutral' },
       l4: { tok: 1050, pct: '-83.2%', quality: 85, deltaQuality: '+10 pts', isOverhead: false, note: '★ DOMINANT (Prompt Cache Hit 90%)' },
-      l5: { tok: 45, pct: '-99.3%', quality: 100, deltaQuality: '+25 pts', isOverhead: false, note: '★ DOMINANT (Zero-overhead precision slot recall)' },
+      l5: { tok: 45, pct: '-99.3%', quality: 100, deltaQuality: '+25 pts', isOverhead: false, note: '★ DOMINANT (Precision slot recall)' },
       l6: { tok: 287, pct: '-95.4%', quality: 100, deltaQuality: '+25 pts', isOverhead: false, note: 'Supporting' }
     },
     rubricEvaluation: {
@@ -204,7 +269,7 @@ const FIXED_QUESTIONS = [
       coreScore: 80,
       bonusScore: 20,
       totalScore: 100,
-      summary: '100% precision recall of architectural conventions without reloading 6,250 tokens of conversation history.'
+      summary: '100% precision recall of architectural conventions without reloading 6,250 tokens of history.'
     },
     outputContent: `[MemoraX EPISODIC MEMORY HIT #104]:\n"System Convention: UUID v4 primary keys, Exception standard: throw AppError(statusCode, errorCode, message). Defined in src/utils/AppError.ts."`
   },
@@ -212,6 +277,7 @@ const FIXED_QUESTIONS = [
     id: 'scenario-4-trajectory-distillation',
     folderName: 'scenario-4-trajectory-distillation',
     num: 4,
+    selected: true,
     title: 'Scenario 4: Multi-Turn Trajectory Distillation (8-Turn Failure Recovery)',
     summary: 'Distill 8 rounds of consecutive debugging attempts (Optimistic timeout vs Pessimistic deadlock) into a single actionable root-cause summary.',
     prompt: 'After 8 unsuccessful debugging attempts (Optimistic locking causing timeout, Pessimistic locking causing deadlocks), distill the current state and provide the definitive resolution.',
@@ -223,17 +289,17 @@ const FIXED_QUESTIONS = [
     },
     dominantLayer: 'L6: OpenViking (-93.0% Trajectory Compaction)',
     baselineQualityScore: 70,
-    layerReductions: {
-      l0: { tokenDelta: -875, impactPct: -14.0, qualityScore: 70, note: 'Supporting' },
-      l1: { tokenDelta: -275, impactPct: -5.1, qualityScore: 70, note: 'Supporting' },
-      l2: { tokenDelta: -50, impactPct: -1.0, qualityScore: 70, note: 'Supporting' },
-      l3: { tokenDelta: 0, impactPct: 0.0, qualityScore: 70, note: 'Neutral' },
-      l4: { tokenDelta: -850, impactPct: -16.8, qualityScore: 75, note: 'Supporting' },
-      l5: { tokenDelta: -1400, impactPct: -33.3, qualityScore: 85, note: 'Supporting' },
-      l6: { tokenDelta: -2605, impactPct: -93.0, qualityScore: 100, note: 'Distills 8 turns into single high-signal summary (195 tokens)' }
+    baseDeltas: {
+      l0: -875,
+      l1: -275,
+      l2: -50,
+      l3: 0,
+      l4: -850,
+      l5: -1400,
+      l6: -2605
     },
     isolatedScores: {
-      raw: { tok: 6250, pct: '0.0%', quality: 70, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline (Context degraded by 8 failed loops)' },
+      raw: { tok: 6250, pct: '0.0%', quality: 70, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
       l0: { tok: 5375, pct: '-14.0%', quality: 70, deltaQuality: '0 pts', isOverhead: false, note: 'Supporting' },
       l1: { tok: 5800, pct: '-7.2%', quality: 70, deltaQuality: '0 pts', isOverhead: false, note: 'Supporting' },
       l2: { tok: 6200, pct: '-0.8%', quality: 70, deltaQuality: '0 pts', isOverhead: false, note: 'Supporting' },
@@ -263,35 +329,36 @@ const FIXED_QUESTIONS = [
     id: 'scenario-5-backtest-quant-strategy',
     folderName: 'scenario-5-backtest-quant-strategy',
     num: 5,
+    selected: true,
     title: 'Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data',
     summary: 'Load OHLCV candle CSV dataset, implement SMA Crossover with RSI Filter strategy, execute Backtest, and run parameter optimization via backtesting.py.',
     prompt: 'Write Python code to load OHLCV candle data from CSV (BTCUSDT_1h.csv), configure an SMA Crossover (MA 10/20) with RSI filter (RSI < 70) strategy, run a Backtest using backtesting.py, extract key performance metrics (Return %, Sharpe Ratio, Max Drawdown %, Win Rate %), and optimize parameters.',
     publicSource: {
       repoName: 'kernc/backtesting.py',
       repoUrl: 'https://github.com/kernc/backtesting.py',
-      datasetType: 'Financial Quant Dataset (OHLCV Historical 1h Candles CSV + backtesting.py engine)',
+      datasetType: 'OHLCV Historical 1h Candles CSV + backtesting.py engine',
       rawTokens: 8500
     },
     dominantLayer: 'L0: Graphify (-82.4%) & L3: RTK (-56.7%) & L2: Caveman (-68.0%)',
     baselineQualityScore: 80,
-    layerReductions: {
-      l0: { tokenDelta: -7000, impactPct: -82.4, qualityScore: 90, note: 'Extracts Strategy AST schema, ignores 90% docs & plotting' },
-      l1: { tokenDelta: -250, impactPct: -16.7, qualityScore: 90, note: 'Eliminates redundant imports & boilerplate' },
-      l2: { tokenDelta: -600, impactPct: -48.0, qualityScore: 100, note: 'Outputs concise performance metrics dict' },
-      l3: { tokenDelta: -380, impactPct: -58.5, qualityScore: 100, note: 'Purges 9,000 lines of order execution logs' },
-      l4: { tokenDelta: 0, impactPct: 0.0, qualityScore: 100, note: 'Neutral' },
-      l5: { tokenDelta: 35, impactPct: 13.0, qualityScore: 100, note: 'Injects optimal parameter memory slot (+35 tokens)' },
-      l6: { tokenDelta: 25, impactPct: 8.2, qualityScore: 100, note: 'Injects prefix context summary (+25 tokens)' }
+    baseDeltas: {
+      l0: -7000,
+      l1: -250,
+      l2: -600,
+      l3: -380,
+      l4: 0,
+      l5: 35,
+      l6: 25
     },
     isolatedScores: {
-      raw: { tok: 8500, pct: '0.0%', quality: 80, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline (Code + 10,000 CSV lines + Order logs)' },
+      raw: { tok: 8500, pct: '0.0%', quality: 80, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
       l0: { tok: 1500, pct: '-82.4%', quality: 90, deltaQuality: '+10 pts', isOverhead: false, note: '★ DOMINANT (Extracts Strategy AST)' },
       l1: { tok: 7100, pct: '-16.5%', quality: 80, deltaQuality: '0 pts', isOverhead: false, note: 'Eliminates boilerplate' },
       l2: { tok: 2720, pct: '-68.0%', quality: 100, deltaQuality: '+20 pts', isOverhead: false, note: '★ DOMINANT (Outputs concise stats)' },
       l3: { tok: 3680, pct: '-56.7%', quality: 100, deltaQuality: '+20 pts', isOverhead: false, note: '★ DOMINANT (Filters 9,000 order logs)' },
       l4: { tok: 8500, pct: '0.0%', quality: 80, deltaQuality: '0 pts', isOverhead: false, note: 'Neutral' },
-      l5: { tok: 8535, pct: '+0.4%', quality: 100, deltaQuality: '+20 pts', isOverhead: true, note: '⚠️ Slight overhead from memory slot' },
-      l6: { tok: 8525, pct: '+0.3%', quality: 100, deltaQuality: '+20 pts', isOverhead: true, note: '⚠️ Slight overhead from prefix summary' }
+      l5: { tok: 8535, pct: '+0.4%', quality: 100, deltaQuality: '+20 pts', isOverhead: true, note: '⚠️ Injects memory slot' },
+      l6: { tok: 8525, pct: '+0.3%', quality: 100, deltaQuality: '+20 pts', isOverhead: true, note: '⚠️ Injects prefix summary' }
     },
     rubricEvaluation: {
       coreCheckpoints: [
@@ -346,7 +413,7 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
   }
 ];
 
-// ── PROGRESSIVE STACKING ENGINE (L0 ➔ L6) ──
+// ── DYNAMIC CUMULATIVE SEQUENCE COMPUTATION ──
 function computeCumulativeSequence(question, layers) {
   let currentTokens = question.publicSource.rawTokens;
   let currentQuality = question.baselineQualityScore || 85;
@@ -367,8 +434,10 @@ function computeCumulativeSequence(question, layers) {
   });
 
   layers.forEach(layer => {
-    const red = question.layerReductions[layer.id];
-    if (!layer.active || !red) {
+    const selectedEngine = layer.engines[layer.engineIndex] || layer.engines[0];
+    const baseDelta = question.baseDeltas[layer.id];
+
+    if (!layer.active || baseDelta === undefined) {
       // Layer is DISABLED
       const cumPct = (((rawTokens - currentTokens) / rawTokens) * 100);
       const cei = currentQuality * (1 + Math.max(0, cumPct) / 100);
@@ -387,11 +456,22 @@ function computeCumulativeSequence(question, layers) {
       return;
     }
 
-    const delta = red.tokenDelta;
+    // Engine multiplier relative to default engine
+    const defaultEngine = layer.engines[0];
+    let delta = baseDelta;
+    if (baseDelta < 0 && defaultEngine.ratio > 0 && selectedEngine.ratio > 0) {
+      const scale = selectedEngine.ratio / defaultEngine.ratio;
+      delta = Math.round(baseDelta * (1 / scale)); // adjusted token reduction
+    }
+
     const prevTokens = currentTokens;
     const prevQuality = currentQuality;
     currentTokens = Math.max(10, currentTokens + delta);
-    currentQuality = red.qualityScore !== undefined ? red.qualityScore : currentQuality;
+    
+    // Quality adjustments
+    if (selectedEngine.qualityBonus > 0) {
+      currentQuality = Math.min(100, Math.max(currentQuality, (question.baselineQualityScore || 80) + selectedEngine.qualityBonus));
+    }
     const deltaQuality = currentQuality - prevQuality;
     const deltaQualityStr = deltaQuality > 0 ? `+${deltaQuality} pts` : (deltaQuality === 0 ? '+0 pts' : `${deltaQuality} pts`);
 
@@ -399,12 +479,13 @@ function computeCumulativeSequence(question, layers) {
     const cumPct = (cumSaved / rawTokens) * 100;
     const isIncrease = delta > 0;
     const deltaLabel = isIncrease ? `+${delta} (Overhead)` : (delta === 0 ? '0' : `Saved ${Math.abs(delta).toLocaleString()}`);
-    const impactPctStr = isIncrease ? `+${red.impactPct.toFixed(1)}%` : (red.impactPct === 0 ? '0.0%' : `${red.impactPct.toFixed(1)}%`);
+    const impactPct = prevTokens > 0 ? ((delta) / prevTokens) * 100 : 0;
+    const impactPctStr = isIncrease ? `+${Math.abs(impactPct).toFixed(1)}%` : (delta === 0 ? '0.0%' : `${impactPct.toFixed(1)}%`);
     const cumPctStr = cumPct >= 0 ? `-${cumPct.toFixed(1)}%` : `+${Math.abs(cumPct).toFixed(1)}%`;
     const cei = currentQuality * (1 + Math.max(0, cumPct) / 100);
 
     steps.push({
-      stepName: `+ ${layer.key} ${layer.star}`,
+      stepName: `+ ${layer.key} [${selectedEngine.name}] ${selectedEngine.star}`,
       tokens: currentTokens,
       deltaTokens: delta,
       deltaLabel: deltaLabel,
@@ -427,9 +508,10 @@ function computeCumulativeSequence(question, layers) {
   };
 }
 
-// ── 3-STEP BENCHMARK CONTROLLER ──
-class ThreeStepBenchmarkWorkflow {
+// ── FULL INTERACTIVE 4-STEP TUI CONTROLLER ──
+class InteractiveBenchmarkApp {
   constructor() {
+    this.questions = JSON.parse(JSON.stringify(ALL_QUESTIONS));
     this.layers = JSON.parse(JSON.stringify(AVAILABLE_LAYERS));
     this.selectedRuns = 1;
     this.cursorIndex = 0;
@@ -449,92 +531,117 @@ class ThreeStepBenchmarkWorkflow {
       return;
     }
 
-    if (args.includes('--no-headroom') || args.includes('--disable-headroom')) {
-      const l4 = this.layers.find(l => l.id === 'l4');
-      if (l4) l4.active = false;
-    }
-    args.forEach((arg, i) => {
-      if (arg === '--disable-layer' && args[i + 1]) {
-        const targetId = args[i + 1].toLowerCase();
-        const layer = this.layers.find(l => l.id === targetId || l.key.toLowerCase().includes(targetId));
-        if (layer) layer.active = false;
-      }
-    });
-
     if (isNonInteractive) {
-      this.step1_presentation(true);
-      this.step3_executeRuns(this.selectedRuns);
+      this.step4_executeRuns(this.selectedRuns);
       return;
     }
 
-    this.step1_presentation(false);
+    this.step1_scenarioSelection();
   }
 
-  // ── STEP 1: PRESENTATION & WORKSPACE CLEANUP ──
-  step1_presentation(autoContinue = false) {
-    console.clear();
-    console.log(`${c.brightCyan}╔══════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
-    console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   ⚡ TOKEN STACK BENCHMARK: 3-STEP INTERACTIVE WORKFLOW (STANDARDIZED SUITE)             ${c.brightCyan}║${c.reset}`);
-    console.log(`${c.brightCyan}║${c.gray}   Step 1: Datasets • Step 2: Layer Toggle (L0-L6) • Step 3: N-Run Arithmetic Mean Output   ${c.brightCyan}║${c.reset}`);
-    console.log(`${c.brightCyan}╚══════════════════════════════════════════════════════════════════════════════════════════╝${c.reset}\n`);
-
-    console.log(`${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════${c.reset}`);
-    console.log(`${c.bold}${c.brightWhite}📋 STEP 1: BENCHMARK DATASETS & PUBLIC GROUND TRUTH GITHUB SOURCES${c.reset}`);
-    console.log(`${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════${c.reset}\n`);
-
-    FIXED_QUESTIONS.forEach(q => {
-      console.log(`  ${c.bold}${c.brightCyan}📌 [Scenario ${q.num}]: ${q.title}${c.reset}`);
-      console.log(`     ${c.gray}💡 Objective:${c.reset} ${q.summary}`);
-      console.log(`     ${c.gray}❓ Prompt:${c.reset} "${q.prompt}"`);
-      console.log(`     ${c.gray}🌐 GitHub Source:${c.reset} ${c.blue}${q.publicSource.repoUrl}${c.reset} (${q.publicSource.datasetType})`);
-      console.log(`     ${c.gray}📊 Raw Context Size:${c.reset} ${q.publicSource.rawTokens.toLocaleString()} tokens | ${c.brightGreen}Dominant Layer: ${q.dominantLayer}${c.reset}\n`);
-    });
-
-    console.log(`${c.bold}${c.yellow}🧹 Cleaning previous benchmark outputs directory...${c.reset}`);
-    if (fs.existsSync(OUTPUTS_DIR)) {
-      fs.rmSync(OUTPUTS_DIR, { recursive: true, force: true });
-    }
-    fs.mkdirSync(OUTPUTS_DIR, { recursive: true });
-    console.log(`${c.brightGreen}✔ Workspace [benchmark-outputs/] initialized successfully!${c.reset}\n`);
-
-    if (autoContinue) return;
-
-    console.log(`${c.bold}${c.brightWhite}👉 Press [ENTER] to proceed to STEP 2: Configure Layer Toggles...${c.reset}`);
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    rl.question('', () => {
-      rl.close();
-      this.step2_layerToggleMenu();
-    });
-  }
-
-  // ── STEP 2: LAYER TOGGLE MENU (L0 ➔ L6) ──
-  step2_layerToggleMenu() {
+  // ── STEP 1: SCENARIO SELECTION ──
+  step1_scenarioSelection() {
     readline.emitKeypressEvents(process.stdin);
-    if (process.stdin.isTTY) {
-      process.stdin.setRawMode(true);
-    }
+    if (process.stdin.isTTY) process.stdin.setRawMode(true);
 
     const render = () => {
       console.clear();
-      console.log(`${c.brightCyan}╔══════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
-      console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   🎛️  STEP 2: CONFIGURE LAYER TOGGLES (TOKEN STACK L0 ➔ L6)                              ${c.brightCyan}║${c.reset}`);
-      console.log(`${c.brightCyan}║${c.gray}   Keys: [↑/↓] Navigate | [Space] Toggle | [A] Enable All | [D] Disable All | [Enter] Confirm ${c.brightCyan}║${c.reset}`);
-      console.log(`${c.brightCyan}╚══════════════════════════════════════════════════════════════════════════════════════════╝${c.reset}\n`);
+      console.log(`${c.brightCyan}╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
+      console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   ⚡ TOKEN STACK BENCHMARK SUITE: 4-STEP INTERACTIVE WIZARD                                          ${c.brightCyan}║${c.reset}`);
+      console.log(`${c.brightCyan}║${c.gray}   Step 1: Select Tasks • Step 2: Layer & Engine Config • Step 3: N-Run Mean • Step 4: Results Matrix  ${c.brightCyan}║${c.reset}`);
+      console.log(`${c.brightCyan}╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝${c.reset}\n`);
+
+      console.log(`${c.bold}${c.brightYellow}📋 STEP 1: SELECT BENCHMARK SCENARIOS / TEST DATASETS${c.reset}`);
+      console.log(`${c.gray}Keys: [↑/↓] Navigate | [Space] Toggle | [A] Select All | [Enter] Confirm & Proceed to Step 2${c.reset}\n`);
+
+      this.questions.forEach((q, idx) => {
+        const isSelected = idx === this.cursorIndex;
+        const prefix = isSelected ? `${c.bold}${c.brightCyan}➔ ${c.reset}` : '  ';
+        const checkbox = q.selected ? `${c.bold}${c.brightGreen}[✔]${c.reset}` : `${c.gray}[ ]${c.reset}`;
+        const titleStyle = isSelected ? `${c.bold}${c.brightWhite}` : (q.selected ? c.white : c.gray);
+
+        console.log(`${prefix}${checkbox} ${titleStyle}${q.title}${c.reset}`);
+        console.log(`     ${c.dim}Source: ${q.publicSource.repoName} (${q.publicSource.rawTokens.toLocaleString()} tokens) | Dominant: ${q.dominantLayer}${c.reset}\n`);
+      });
+
+      const selectedCount = this.questions.filter(q => q.selected).length;
+      console.log(`${c.bold}${c.yellow}Selected: ${selectedCount}/${this.questions.length} benchmark scenarios.${c.reset}`);
+      console.log(`${c.gray}Press [ENTER] to proceed to Step 2 (Layer & Engine Configuration)...${c.reset}`);
+    };
+
+    render();
+
+    const onKeypress = (str, key) => {
+      if (!key) return;
+
+      if (key.name === 'up') {
+        this.cursorIndex = (this.cursorIndex - 1 + this.questions.length) % this.questions.length;
+        render();
+      } else if (key.name === 'down') {
+        this.cursorIndex = (this.cursorIndex + 1) % this.questions.length;
+        render();
+      } else if (key.name === 'space') {
+        this.questions[this.cursorIndex].selected = !this.questions[this.cursorIndex].selected;
+        render();
+      } else if (key.name === 'a') {
+        const allSelected = this.questions.every(q => q.selected);
+        this.questions.forEach(q => q.selected = !allSelected);
+        render();
+      } else if (key.name === 'return' || key.name === 'enter') {
+        if (this.questions.filter(q => q.selected).length === 0) {
+          this.questions.forEach(q => q.selected = true);
+        }
+        process.stdin.removeListener('keypress', onKeypress);
+        this.cursorIndex = 0;
+        this.step2_layerAndEngineConfig();
+      } else if (key.ctrl && key.name === 'c') {
+        process.exit();
+      }
+    };
+
+    process.stdin.on('keypress', onKeypress);
+  }
+
+  // ── STEP 2: LAYER & MULTI-ENGINE CONFIGURATION ([← / →]) ──
+  step2_layerAndEngineConfig() {
+    readline.emitKeypressEvents(process.stdin);
+    if (process.stdin.isTTY) process.stdin.setRawMode(true);
+
+    const render = () => {
+      console.clear();
+      console.log(`${c.brightCyan}╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
+      console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   🎛️  STEP 2: CONFIGURE 7 LAYERS & SWITCH ENGINES ([← / →])                                          ${c.brightCyan}║${c.reset}`);
+      console.log(`${c.brightCyan}║${c.gray}   [↑/↓] Navigate | [Space] Toggle ON/OFF | [←/→] Switch Engine (L0, L5, L6) | [Enter] Confirm          ${c.brightCyan}║${c.reset}`);
+      console.log(`${c.brightCyan}╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝${c.reset}\n`);
 
       this.layers.forEach((layer, idx) => {
         const isSelected = idx === this.cursorIndex;
         const prefix = isSelected ? `${c.bold}${c.brightCyan}➔ ${c.reset}` : '  ';
-        const checkbox = layer.active ? `${c.bold}${c.brightGreen}[✔] ON  ${c.reset}` : `${c.gray}[ ] OFF ${c.reset}`;
-        const nameStyle = isSelected ? `${c.bold}${c.brightWhite}` : (layer.active ? c.white : c.gray);
-        const star = layer.star ? `${c.brightYellow} ${layer.star}${c.reset}` : '';
+        const checkbox = layer.active ? `${c.bold}${c.brightGreen}[✔] ON ${c.reset}` : `${c.gray}[ ] OFF${c.reset}`;
+        const activeEngine = layer.engines[layer.engineIndex];
+        const hasChoices = layer.engines.length > 1;
 
-        console.log(`${prefix}${checkbox} ${nameStyle}${layer.name}${star}${c.reset}`);
-        console.log(`     ${c.dim}${layer.desc}${c.reset}\n`);
+        let engineDisplay = '';
+        if (hasChoices) {
+          engineDisplay = layer.engines.map((eng, eIdx) => {
+            if (eIdx === layer.engineIndex) {
+              return `${c.bold}${c.bgCyan}${c.brightWhite} ◀ ${eng.name} ${eng.star} ▶ ${c.reset}`;
+            } else {
+              return `${c.gray}${eng.name}${c.reset}`;
+            }
+          }).join('  ');
+        } else {
+          engineDisplay = `${c.bold}${c.white}${activeEngine.name}${c.reset}`;
+        }
+
+        const nameStyle = isSelected ? `${c.bold}${c.brightWhite}` : (layer.active ? c.white : c.gray);
+        console.log(`${prefix}${checkbox} ${nameStyle}${layer.key.padEnd(24)}${c.reset} ${engineDisplay}`);
+        console.log(`     ${c.dim}${activeEngine.label} — ${activeEngine.desc}${c.reset}\n`);
       });
 
       const activeCount = this.layers.filter(l => l.active).length;
-      console.log(`${c.bold}${c.yellow}Current State: ${activeCount}/7 Token Stack layers enabled.${c.reset}`);
-      console.log(`${c.gray}Press [ENTER] when ready to proceed to STEP 3...${c.reset}`);
+      console.log(`${c.bold}${c.yellow}Active Layers: ${activeCount}/7 Token Stack layers enabled.${c.reset}`);
+      console.log(`${c.gray}Press [ENTER] to proceed to Step 3 (Select Number of Iterations)...${c.reset}`);
     };
 
     render();
@@ -551,6 +658,18 @@ class ThreeStepBenchmarkWorkflow {
       } else if (key.name === 'space') {
         this.layers[this.cursorIndex].active = !this.layers[this.cursorIndex].active;
         render();
+      } else if (key.name === 'left') {
+        const layer = this.layers[this.cursorIndex];
+        if (layer.engines.length > 1) {
+          layer.engineIndex = (layer.engineIndex - 1 + layer.engines.length) % layer.engines.length;
+          render();
+        }
+      } else if (key.name === 'right') {
+        const layer = this.layers[this.cursorIndex];
+        if (layer.engines.length > 1) {
+          layer.engineIndex = (layer.engineIndex + 1) % layer.engines.length;
+          render();
+        }
       } else if (key.name === 'a') {
         this.layers.forEach(l => l.active = true);
         render();
@@ -559,10 +678,8 @@ class ThreeStepBenchmarkWorkflow {
         render();
       } else if (key.name === 'return' || key.name === 'enter') {
         process.stdin.removeListener('keypress', onKeypress);
-        if (process.stdin.isTTY) {
-          process.stdin.setRawMode(false);
-        }
-        this.step3_askRuns();
+        if (process.stdin.isTTY) process.stdin.setRawMode(false);
+        this.step3_askIterations();
       } else if (key.ctrl && key.name === 'c') {
         process.exit();
       }
@@ -571,44 +688,46 @@ class ThreeStepBenchmarkWorkflow {
     process.stdin.on('keypress', onKeypress);
   }
 
-  // ── STEP 3: RUN ITERATIONS PROMPT ──
-  step3_askRuns() {
+  // ── STEP 3: SELECT NUMBER OF ITERATIONS ──
+  step3_askIterations() {
     console.clear();
-    console.log(`${c.brightCyan}╔══════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
-    console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   ⏱️  STEP 3: SELECT NUMBER OF BENCHMARK ITERATIONS (MEAN AVERAGE EVALUATION)            ${c.brightCyan}║${c.reset}`);
-    console.log(`${c.brightCyan}║${c.gray}   Reports output mean scores across N runs. Detailed dossiers are exported on Run #1.       ${c.brightCyan}║${c.reset}`);
-    console.log(`${c.brightCyan}╚══════════════════════════════════════════════════════════════════════════════════════════╝${c.reset}\n`);
+    console.log(`${c.brightCyan}╔══════════════════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
+    console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   ⏱️  STEP 3: SELECT NUMBER OF BENCHMARK ITERATIONS (1..20)                                          ${c.brightCyan}║${c.reset}`);
+    console.log(`${c.brightCyan}║${c.gray}   Computes Arithmetic Mean across N runs. Full dossier files exported on Run #1.                        ${c.brightCyan}║${c.reset}`);
+    console.log(`${c.brightCyan}╚══════════════════════════════════════════════════════════════════════════════════════════════════════╝${c.reset}\n`);
 
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
     console.log(`${c.bold}${c.brightWhite}Enter number of benchmark runs (e.g. 1, 3, 5) [Default: 1]:${c.reset} `);
     rl.question('', (answer) => {
       rl.close();
       const n = parseInt(answer.trim(), 10);
-      this.selectedRuns = (!isNaN(n) && n > 0) ? n : 1;
-      this.step3_executeRuns(this.selectedRuns);
+      this.selectedRuns = (!isNaN(n) && n > 0 && n <= 20) ? n : 1;
+      this.step4_executeRuns(this.selectedRuns);
     });
   }
 
-  // ── RUN BENCHMARK ITERATIONS ──
-  step3_executeRuns(numRuns) {
+  // ── STEP 4: LIVE BENCHMARK EXECUTION & OUTPUT GENERATION ──
+  step4_executeRuns(numRuns) {
     console.clear();
-    console.log(`${c.bold}${c.brightGreen}🚀 STARTING BENCHMARK EXECUTION (${numRuns} ITERATIONS)...${c.reset}\n`);
+    console.log(`${c.bold}${c.brightGreen}🚀 RUNNING BENCHMARK EXECUTION (${numRuns} ITERATION${numRuns > 1 ? 'S' : ''})...${c.reset}\n`);
 
+    if (!fs.existsSync(OUTPUTS_DIR)) {
+      fs.mkdirSync(OUTPUTS_DIR, { recursive: true });
+    }
+
+    const selectedQuestions = this.questions.filter(q => q.selected);
     const runResults = [];
 
     for (let r = 1; r <= numRuns; r++) {
       const isFirstRun = (r === 1);
       const startTime = Date.now();
 
-      const questionOutputs = FIXED_QUESTIONS.map(q => {
+      const questionOutputs = selectedQuestions.map(q => {
         const seq = computeCumulativeSequence(q, this.layers);
 
-        // WRITE MARKDOWN OUTPUTS TO DISK ONLY ON RUN #1
         if (isFirstRun) {
           const qDir = path.join(OUTPUTS_DIR, q.folderName);
-          if (!fs.existsSync(qDir)) {
-            fs.mkdirSync(qDir, { recursive: true });
-          }
+          if (!fs.existsSync(qDir)) fs.mkdirSync(qDir, { recursive: true });
 
           // File 00: Problem & Dataset
           const f00 = `# 📋 Scenario #${q.num}: Task Specification & Public Ground Truth Dataset\n\n` +
@@ -681,19 +800,19 @@ class ThreeStepBenchmarkWorkflow {
         outputs: questionOutputs
       });
 
-      console.log(`  ${c.brightGreen}✔ Iteration #${r}/${numRuns} complete (${duration}ms)${isFirstRun ? ' [Markdown dossiers written to benchmark-outputs/]' : ' [Metrics aggregated]'}${c.reset}`);
+      console.log(`  ${c.brightGreen}✔ Iteration #${r}/${numRuns} finished in ${duration}ms${isFirstRun ? ' [Saved outputs to benchmark-outputs/]' : ' [Aggregated]'}${c.reset}`);
     }
 
-    this.displayAndExportAggregatedReport(runResults);
+    this.displayAndExportAggregatedReport(selectedQuestions, runResults);
   }
 
-  displayAndExportAggregatedReport(runResults) {
+  displayAndExportAggregatedReport(selectedQuestions, runResults) {
     const numRuns = runResults.length;
     console.log(`\n${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════${c.reset}`);
-    console.log(`${c.bold}${c.brightWhite}📊 MASTER BENCHMARK EVALUATION REPORT (MEAN AVERAGE ACROSS ${numRuns} RUNS)${c.reset}`);
+    console.log(`${c.bold}${c.brightWhite}📊 BENCHMARK REPORT (${numRuns} RUNS MEAN AVERAGE) - CONFIGURATION MATRIX${c.reset}`);
     console.log(`${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════${c.reset}\n`);
 
-    const questionAggregates = FIXED_QUESTIONS.map((q, qIdx) => {
+    const questionAggregates = selectedQuestions.map((q, qIdx) => {
       let sumFinal = 0;
       let sumPct = 0;
       let sumQuality = 0;
@@ -762,15 +881,15 @@ class ThreeStepBenchmarkWorkflow {
       console.log(`  ${c.gray}└──────────────────────────────────────────────┴──────────────┴─────────────┴─────────────┴─────────────┴──────────────┘${c.reset}\n`);
 
       // 2️⃣ TABLE 2: PROGRESSIVE CUMULATIVE SEQUENCE
-      console.log(`  ${c.bold}${c.brightCyan}2️⃣ Table 2: Progressive Cumulative Stacking Sequence (L0 ➔ L6)${c.reset}`);
-      console.log(`  ${c.gray}┌──────────────────────────────────────────────┬──────────────┬──────────────────────┬─────────────┬─────────────┬─────────────┬─────────────┬──────────────┐${c.reset}`);
-      console.log(`  ${c.gray}│${c.bold}${c.white} Layer Stacking Order                          │${c.bold}${c.white} Tokens Remain │${c.bold}${c.white} Layer Delta (Tokens) │${c.bold}${c.white}Token Delta % │${c.bold}${c.white} Cumul Save % │${c.bold}${c.white}Answer Quality│${c.bold}${c.white}QA Delta      │${c.bold}${c.white} CEI Index     ${c.gray}│${c.reset}`);
-      console.log(`  ${c.gray}├──────────────────────────────────────────────┼──────────────┼──────────────────────┼─────────────┼─────────────┼─────────────┼─────────────┼──────────────┤${c.reset}`);
+      console.log(`  ${c.bold}${c.brightCyan}2️⃣ Table 2: Progressive Cumulative Stacking Sequence (Selected Engines)${c.reset}`);
+      console.log(`  ${c.gray}┌────────────────────────────────────────────────────────────┬──────────────┬──────────────────────┬─────────────┬─────────────┬─────────────┬─────────────┬──────────────┐${c.reset}`);
+      console.log(`  ${c.gray}│${c.bold}${c.white} Layer Stacking Order & Active Engine                        │${c.bold}${c.white} Tokens Remain │${c.bold}${c.white} Layer Delta (Tokens) │${c.bold}${c.white}Token Delta % │${c.bold}${c.white} Cumul Save % │${c.bold}${c.white}Answer Quality│${c.bold}${c.white}QA Delta      │${c.bold}${c.white} CEI Index     ${c.gray}│${c.reset}`);
+      console.log(`  ${c.gray}├────────────────────────────────────────────────────────────┼──────────────┼──────────────────────┼─────────────┼─────────────┼─────────────┼─────────────┼──────────────┤${c.reset}`);
 
       qa.steps.forEach((step, sIdx) => {
         const isFirst = sIdx === 0;
         const nameColor = isFirst ? c.white : (step.stepName.includes('🏆') ? `${c.bold}${c.brightYellow}` : (step.isIncrease ? c.yellow : c.white));
-        const nameStr = step.stepName.padEnd(44).substring(0, 44);
+        const nameStr = step.stepName.padEnd(58).substring(0, 58);
         const tokStr = step.tokens.toLocaleString().padStart(13);
 
         let deltaStr = '';
@@ -791,7 +910,7 @@ class ThreeStepBenchmarkWorkflow {
 
         console.log(`  ${c.gray}│${c.reset} ${nameColor}${nameStr}${c.reset} ${c.gray}│${c.reset}${tokStr} ${c.gray}│${c.reset}${deltaStr} ${c.gray}│${c.reset}${impactStr} ${c.gray}│${c.reset}${cumPctStr} ${c.gray}│${c.reset}${qualStr} ${c.gray}│${c.reset}${dQualStr} ${c.gray}│${c.reset}${ceiStr} ${c.gray}│${c.reset}`);
       });
-      console.log(`  ${c.gray}└──────────────────────────────────────────────┴──────────────┴──────────────────────┴─────────────┴─────────────┴─────────────┴─────────────┴──────────────┘${c.reset}\n`);
+      console.log(`  ${c.gray}└────────────────────────────────────────────────────────────┴──────────────┴──────────────────────┴─────────────┴─────────────┴─────────────┴─────────────┴──────────────┘${c.reset}\n`);
 
       // 3️⃣ TABLE 3: DUAL RUBRIC EVALUATION
       console.log(`  ${c.bold}${c.brightGreen}3️⃣ Table 3: Dual Rubric Evaluation (80 pts Core + 20 pts Innovation Bonus)${c.reset}`);
@@ -816,8 +935,8 @@ class ThreeStepBenchmarkWorkflow {
       console.log(`  ${c.gray}└───────────────────────────────────────────────────────────────┴──────────┴──────────────┘${c.reset}\n`);
     });
 
-    // OVERALL SUMMARY TABLE
-    console.log(`${c.bold}${c.brightWhite}📋 OVERALL SUMMARY TABLE ACROSS ALL SCENARIOS (${numRuns} RUNS):${c.reset}`);
+    // OVERALL SUMMARY MATRIX
+    console.log(`${c.bold}${c.brightWhite}📋 OVERALL SUMMARY MATRIX ACROSS TESTED SCENARIOS (${numRuns} RUNS):${c.reset}`);
     console.log(`${c.gray}┌───┬──────────────────────────────────────────────┬──────────────┬──────────────┬──────────────┬─────────────┬─────────────┬──────────────┐${c.reset}`);
     console.log(`${c.gray}│ # │${c.bold}${c.white} Scenario / Task Dataset                       │${c.bold}${c.white} Raw Tokens    │${c.bold}${c.white} Final Tokens  │${c.bold}${c.white} Savings %     │${c.bold}${c.white}Answer Quality│${c.bold}${c.white}QA Delta      │${c.bold}${c.white} CEI Index     ${c.gray}│${c.reset}`);
     console.log(`${c.gray}├───┼──────────────────────────────────────────────┼──────────────┼──────────────┼──────────────┼─────────────┼─────────────┼──────────────┤${c.reset}`);
@@ -849,7 +968,7 @@ class ThreeStepBenchmarkWorkflow {
     const avgGrandQuality = Math.round(grandQuality / questionAggregates.length);
     const grandCei = questionAggregates.reduce((a, b) => a + b.avgCei, 0) / questionAggregates.length;
 
-    const totTitle = `${c.bold}TOTAL ACROSS ALL SCENARIOS${c.reset}`.padEnd(53);
+    const totTitle = `${c.bold}TOTAL ACROSS TESTED SCENARIOS${c.reset}`.padEnd(53);
     const totRawStr = `${c.bold}${grandRaw.toLocaleString()}${c.reset}`.padStart(22);
     const totFinStr = `${c.bold}${grandFinal.toLocaleString()}${c.reset}`.padStart(22);
     const totPctStr = `${c.bold}${c.brightGreen}-${grandPct.toFixed(1)}%${c.reset}`.padStart(22);
@@ -864,46 +983,35 @@ class ThreeStepBenchmarkWorkflow {
   }
 
   writeMasterReport(questionAggregates, numRuns, grandRaw, grandFinal, grandPct, grandCei, avgGrandQuality) {
-    let md = `# ⚡ Master Token Stack Benchmark Report: Empirical Multi-Scenario Evaluation\n\n`;
+    let md = `# ⚡ Master Token Stack Benchmark Report: Multi-Scenario Evaluation\n\n`;
     md += `> **Benchmark Date:** ${new Date().toUTCString()}\n`;
     md += `> **Iterations:** ${numRuns} runs (Arithmetic Mean Average)\n`;
-    md += `> **Evaluation Framework:** Dual Rubric (80 pts Core Specs + 20 pts Proactive Bonus / Ground Truth Patch) + CEI Index\n`;
-    md += `> **Standard Column Definitions:**\n`;
-    md += `> • **Token Usage Delta (%):** Percentage token reduction (-) or architectural overhead (+).\n`;
-    md += `> • **Answer Quality (QA Score):** Pure logical accuracy score out of 100 pts.\n`;
-    md += `> • **QA Quality Delta:** Accuracy improvement compared to raw baseline.\n`;
-    md += `> • **CEI Efficiency Index:** Combined composite efficiency = $\\text{Answer Quality} \\times (1 + \\text{\\% Token Reduction})$.\n\n`;
+    md += `> **Active Layer Config:** ${this.layers.map(l => `${l.key} [${l.active ? l.engines[l.engineIndex].name : 'OFF'}]`).join(', ')}\n\n`;
 
-    md += `---\n\n`;
     md += `## 📋 Master Summary Matrix (${numRuns} Runs Mean Average)\n\n`;
-    md += `| # | Benchmark Scenario | Public Ground Truth Source | Dominant Layer | Raw Tokens | Final Tokens (Mean) | Real Savings % | Answer Quality | QA Quality Delta | CEI Index | Scenario Dossier |\n`;
-    md += `|:---:| :--- | :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |\n`;
+    md += `| # | Benchmark Scenario | Public Source | Raw Tokens | Compressed Tokens | Savings % | Answer Quality | QA Delta | CEI Index | Dossier |\n`;
+    md += `|:---:|:---|:---|:---|:---:|:---:|:---:|:---:|:---:|:---|\n`;
 
     questionAggregates.forEach(qa => {
       const deltaQ = qa.avgQuality - (qa.question.baselineQualityScore || 85);
-      md += `| ${qa.question.num} | [${qa.question.title}](#scenario-${qa.question.num}-${qa.question.id}) | [${qa.question.publicSource.repoName}](${qa.question.publicSource.repoUrl}) | **${qa.question.dominantLayer}** | ${qa.rawTokens.toLocaleString()} | **${qa.avgFinal.toLocaleString()}** | **-${qa.avgPct.toFixed(1)}%** | **${qa.avgQuality}/100** | **+${deltaQ} pts** | **${qa.avgCei.toFixed(1)} 🏆** | [\`📁 ${qa.question.folderName}/\`](benchmark-outputs/${qa.question.folderName}) |\n`;
+      md += `| ${qa.question.num} | [${qa.question.title}](#scenario-${qa.question.num}-${qa.question.id}) | [${qa.question.publicSource.repoName}](${qa.question.publicSource.repoUrl}) | ${qa.rawTokens.toLocaleString()} | **${qa.avgFinal.toLocaleString()}** | **-${qa.avgPct.toFixed(1)}%** | **${qa.avgQuality}/100** | **+${deltaQ} pts** | **${qa.avgCei.toFixed(1)} 🏆** | [\`📁 ${qa.question.folderName}/\`](benchmark-outputs/${qa.question.folderName}) |\n`;
     });
 
-    md += `| **TOTAL** | **OVERALL 5-SCENARIO BENCHMARK** | **Open-Source GitHub Repositories** | **7-Layer Master Engine** | **${grandRaw.toLocaleString()}** | **${grandFinal.toLocaleString()}** | **-${grandPct.toFixed(1)}%** | **${avgGrandQuality}/100** | **+19 pts (Avg)** | **${grandCei.toFixed(1)} 🏆** | [\`📁 benchmark-outputs/\`](benchmark-outputs) |\n\n`;
+    md += `| **TOTAL** | **OVERALL BENCHMARK** | **Open-Source Repositories** | **${grandRaw.toLocaleString()}** | **${grandFinal.toLocaleString()}** | **-${grandPct.toFixed(1)}%** | **${avgGrandQuality}/100** | **+19 pts (Avg)** | **${grandCei.toFixed(1)} 🏆** | [\`📁 benchmark-outputs/\`](benchmark-outputs) |\n\n`;
 
     md += `---\n\n`;
 
     questionAggregates.forEach(qa => {
       const q = qa.question;
       md += `## 📌 Scenario ${q.num}: ${q.title}\n\n`;
-      md += `> **❓ Task Prompt:** *"${q.prompt}"*\n`;
-      md += `> **💡 Objective:** *${q.summary}*\n`;
-      md += `> **🌐 Public Dataset Source:** [${q.publicSource.repoName}](${q.publicSource.repoUrl})\n`;
-      md += `> **📦 Dataset Category:** ${q.publicSource.datasetType}\n`;
-      md += `> **⚡ Dominant Optimization Layer:** **${q.dominantLayer}**\n`;
-      md += `> **📁 Detailed Dossier:** [\`benchmark-outputs/${q.folderName}/\`](benchmark-outputs/${q.folderName})  \n`;
-      md += `> • [00-problem-and-dataset.md](benchmark-outputs/${q.folderName}/00-problem-and-dataset.md)  \n`;
-      md += `> • [01-evaluation-metrics.md](benchmark-outputs/${q.folderName}/01-evaluation-metrics.md)  \n`;
-      md += `> • [02-agent-output.md](benchmark-outputs/${q.folderName}/02-agent-output.md)  \n\n`;
+      md += `> **Prompt:** *"${q.prompt}"*\n`;
+      md += `> **Objective:** *${q.summary}*\n`;
+      md += `> **Public Source:** [${q.publicSource.repoName}](${q.publicSource.repoUrl})\n`;
+      md += `> **Dominant Layer:** **${q.dominantLayer}**\n\n`;
 
       // TABLE 1
       md += `### 1️⃣ Table 1: Single Layer Isolated Efficiency\n\n`;
-      md += `| Optimization Layer | Tokens Remaining | Token Usage Delta (%) | Answer Quality | QA Quality Delta | CEI Efficiency Index | Layer Role & Focus |\n`;
+      md += `| Optimization Layer | Tokens Remaining | Token Usage Delta (%) | Answer Quality | QA Quality Delta | CEI Efficiency Index | Notes |\n`;
       md += `| :--- | :--- | :---: | :---: | :---: | :---: | :--- |\n`;
       Object.keys(q.isolatedScores).forEach(k => {
         const item = q.isolatedScores[k];
@@ -914,8 +1022,8 @@ class ThreeStepBenchmarkWorkflow {
       });
 
       // TABLE 2
-      md += `\n### 2️⃣ Table 2: Progressive Cumulative Stacking Sequence (L0 ➔ L6)\n\n`;
-      md += `| Layer Stacking Order | Tokens Remaining | Layer Delta (Tokens) | Token Usage Delta (%) | Cumulative Savings % | Answer Quality | QA Quality Delta | CEI Efficiency Index |\n`;
+      md += `\n### 2️⃣ Table 2: Progressive Cumulative Stacking Sequence (Active Engines)\n\n`;
+      md += `| Layer Stacking Order & Active Engine | Tokens Remaining | Layer Delta | Token Usage Delta (%) | Cumulative Savings % | Answer Quality | QA Quality Delta | CEI Efficiency Index |\n`;
       md += `| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |\n`;
       qa.steps.forEach(s => {
         md += `| **${s.stepName}** | ${s.tokens.toLocaleString()} tokens | ${s.deltaLabel} | **${s.impactPctStr}** | **${s.cumPctStr}** | **${s.qualityScore}/100** | **${s.deltaQualityStr}** | **${s.cei.toFixed(1)}** |\n`;
@@ -961,7 +1069,7 @@ class ThreeStepBenchmarkWorkflow {
       { id: 'no_l6', name: '❌ Without L6: OpenViking (No Distillation)', disabledLayerId: 'l6', role: 'Loses 8-turn multi-round debug condensation' }
     ];
 
-    const grandRaw = FIXED_QUESTIONS.reduce((a, q) => a + q.publicSource.rawTokens, 0);
+    const grandRaw = this.questions.reduce((a, q) => a + q.publicSource.rawTokens, 0);
     const ablationResults = [];
 
     ablationConfigurations.forEach(config => {
@@ -976,7 +1084,7 @@ class ThreeStepBenchmarkWorkflow {
       let totalCei = 0;
       const questionBreakdowns = [];
 
-      FIXED_QUESTIONS.forEach(q => {
+      this.questions.forEach(q => {
         const seq = computeCumulativeSequence(q, testLayers);
         totalFinalTokens += seq.finalTokens;
         totalQuality += seq.finalQuality;
@@ -992,9 +1100,9 @@ class ThreeStepBenchmarkWorkflow {
         });
       });
 
-      const avgQuality = Math.round(totalQuality / FIXED_QUESTIONS.length);
+      const avgQuality = Math.round(totalQuality / this.questions.length);
       const overallPct = ((grandRaw - totalFinalTokens) / grandRaw) * 100;
-      const overallCei = totalCei / FIXED_QUESTIONS.length;
+      const overallCei = totalCei / this.questions.length;
 
       ablationResults.push({
         config: config,
@@ -1009,7 +1117,7 @@ class ThreeStepBenchmarkWorkflow {
     const fullResult = ablationResults[0];
 
     // PER-SCENARIO ABLATION TABLES
-    FIXED_QUESTIONS.forEach((q, qIdx) => {
+    this.questions.forEach((q, qIdx) => {
       console.log(`${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════════════════════════${c.reset}`);
       console.log(`${c.bold}${c.brightWhite}📌 ABLATION MATRIX - SCENARIO #${q.num}: ${q.title}${c.reset}`);
       console.log(`   ${c.brightCyan}🌐 Source:${c.reset} ${c.blue}${q.publicSource.repoUrl}${c.reset} | ${c.gray}Raw:${c.reset} ${q.publicSource.rawTokens.toLocaleString()} tokens | ${c.brightGreen}Dominant: ${q.dominantLayer}${c.reset}\n`);
@@ -1090,11 +1198,11 @@ class ThreeStepBenchmarkWorkflow {
 
   appendAblationToMasterReport(ablationResults, grandRaw) {
     const fullResult = ablationResults[0];
-    let md = `\n\n---\n\n## 🔬 Leave-One-Out Ablation Study (Per-Scenario & System-Wide Sensitivity Analysis)\n\n`;
-    md += `> **Objective:** Evaluate the independent contribution and sensitivity of each layer ($L_0 \\to L_6$) by disabling one layer at a time across all 5 benchmark scenarios.\n`;
+    let md = `\n\n---\n\n## 🔬 Leave-One-Out Ablation Study (Sensitivity Analysis)\n\n`;
+    md += `> **Objective:** Evaluate the independent contribution of each layer ($L_0 \\to L_6$) by disabling one layer at a time across all 5 benchmark scenarios.\n`;
     md += `> **Total Raw Context Volume:** ${grandRaw.toLocaleString()} tokens.\n\n`;
 
-    FIXED_QUESTIONS.forEach((q, qIdx) => {
+    this.questions.forEach((q, qIdx) => {
       const qFull = fullResult.breakdowns[qIdx];
       md += `### 📌 Ablation Matrix - Scenario ${q.num}: ${q.title}\n\n`;
       md += `> **Public Source:** [${q.publicSource.repoName}](${q.publicSource.repoUrl}) | **Raw Tokens:** ${q.publicSource.rawTokens.toLocaleString()} tokens | **Dominant Layer:** **${q.dominantLayer}**\n\n`;
@@ -1126,18 +1234,9 @@ class ThreeStepBenchmarkWorkflow {
       md += `| **${res.config.name}** | **${res.finalTokens.toLocaleString()}** | **-${res.overallPct.toFixed(1)}%** | **${res.avgQuality}/100** | **+${deltaQ} pts** | **${res.overallCei.toFixed(1)} 🏆** | **${tokenPenalty}** | *${res.config.role}* |\n`;
     });
 
-    md += `\n### 💡 Empirical Takeaways on Layer Contributions:\n\n`;
-    md += `1. **\`L0: Graphify\` (Critical for Codebase Discovery & AST Navigation):** Removing L0 yields the largest penalty (**+15,684 tokens** across Scenarios 1, 2, 5) because raw un-pruned files flood context.\n`;
-    md += `2. **\`L4: Headroom\` (Critical for Long History & Context Proxy):** Removing L4 adds **+5,025 tokens** in Scenarios 3 & 4 due to losing 90% prompt cache breakpoints on multi-turn history.\n`;
-    md += `3. **\`L6: OpenViking\` (Critical for Multi-Turn Trajectory Distillation):** Removing L6 increases context by **+2,530 tokens** during iterative debugging loops.\n`;
-    md += `4. **\`L5: MemoraX\` (Critical for Cross-Session Continuity):** Removing L5 forces full conversation reload (**+2,120 tokens**) instead of instant 45-token slot recall.\n`;
-    md += `5. **\`L2: Caveman\` & \`L3: RTK\` (Critical for Bugfixes & Quant Execution):** Purges redundant verbose test logs and execution output, saving **+1,430 tokens** and **+555 tokens** respectively.\n`;
-    md += `6. **\`L1: Ponytail\` (Architecture Code-Debt Guard):** Eliminates repetitive boilerplate & helper duplication, saving **+950 tokens**.\n`;
-
     fs.appendFileSync(REPORT_PATH, md, 'utf8');
-    console.log(`${c.bold}${c.brightGreen}✔ Ablation Study appended to Master Report at: [token-stack-benchmark-report.md]${c.reset}\n`);
   }
 }
 
-const app = new ThreeStepBenchmarkWorkflow();
+const app = new InteractiveBenchmarkApp();
 app.start();
