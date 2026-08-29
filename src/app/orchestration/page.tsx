@@ -129,9 +129,10 @@ export default function OrchestrationPage() {
   const lifecycleStates = tracks.map(
     (track) => lanes.find((l) => l.lane === LANE_IDS[track])?.currentState,
   );
-  // WORKING = running a task; ACTIVE = Orca called, lane has not answered yet.
+  // WORKING = running a task. ACTIVE = lane alive and answering when called —
+  // any reported lifecycle state except IDLE (DISPATCHED/RUNNING/HOLD/DONE).
   const laneWorking = lifecycleStates.filter((s) => s === "RUNNING").length;
-  const laneActive = lifecycleStates.filter((s) => s === "DISPATCHED").length;
+  const laneActive = lifecycleStates.filter((s) => s && s !== "IDLE").length;
 
   // Roadmap counts sprints from Orca run-manifests; falls back to journal task counters.
   const roadmap = sprint
