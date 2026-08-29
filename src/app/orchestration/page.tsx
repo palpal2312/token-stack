@@ -58,19 +58,19 @@ const COLUMN_STYLES: Record<
   { column: string; label: string; card: string }
 > = {
   todo: {
-    column: "bg-slate-100 border-slate-200",
-    label: "text-slate-500",
-    card: "bg-white border-slate-300 text-slate-700",
+    column: "bg-slate-100 border-slate-300",
+    label: "bg-slate-400 text-white",
+    card: "bg-white border-slate-300 border-l-4 border-l-slate-400 text-slate-900",
   },
   "in-progress": {
-    column: "bg-sky-100 border-sky-300",
-    label: "text-sky-800",
-    card: "bg-sky-200 border-sky-400 text-sky-900",
+    column: "bg-blue-50 border-blue-300",
+    label: "bg-blue-600 text-white",
+    card: "bg-white border-blue-300 border-l-4 border-l-blue-600 text-slate-900",
   },
   done: {
-    column: "bg-emerald-100 border-emerald-300",
-    label: "text-emerald-800",
-    card: "bg-emerald-200 border-emerald-400 text-emerald-900",
+    column: "bg-green-50 border-green-300",
+    label: "bg-green-700 text-white",
+    card: "bg-white border-green-300 border-l-4 border-l-green-700 text-slate-900",
   },
 };
 
@@ -128,7 +128,7 @@ export default function OrchestrationPage() {
                     key={column}
                     className={`rounded border ${style.column} p-3 min-h-[120px]`}
                   >
-                    <h3 className={`text-xs font-medium mb-2 ${style.label}`}>
+                    <h3 className={`text-xs font-semibold mb-2 inline-block px-2 py-0.5 rounded ${style.label}`}>
                       {COLUMN_LABELS[column]} ({cards.length})
                     </h3>
                     <div className="space-y-3">
