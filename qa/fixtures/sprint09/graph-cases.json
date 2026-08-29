@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0.0",
+  "contract": "s09",
+  "contractVersion": 1,
+  "contractSha256": {
+    "s09-contract.md": "2750f2f71b14ba03c92ffa151f1dfcc8df01b5efcd4f2ed7b2f977eec830a8ec",
+    "s09-contract.json": "96d9dadbe711a38f0d161ccf62c88c2bcbb9fc548e2bffe75a3349f74f8d59d6"
+  },
+  "lane": "controlled-delivery",
+  "job": "S09-C2-CONTROLLED-DELIVERY",
+  "cases": [
+    "graph-bounds-nodes-128-rejected-at-129",
+    "graph-bounds-depth-32-rejected-at-33",
+    "graph-bounds-loop-iterations-100-rejected-at-101",
+    "unbounded-cycle-rejected-bounded-loop-edge-passes",
+    "unknown-node-type-duplicate-id-missing-ref-rejected",
+    "cancellation-fence-required-fail-closed",
+    "retry-fallback-must-reference-real-nodes",
+    "undeclared-merge-queue-resource-rejected",
+    "graph-hash-pin-drift-fails-closed",
+    "deterministic-hash-key-order-independent",
+    "deterministic-compilation-idempotent-replay-single-job-per-node",
+    "parent-task-authority-run-opened-under-parentTaskId",
+    "durable-auditable-child-attempts-event-sourced-history",
+    "checkpoint-policy-records-every-n-completed-nodes",
+    "bounded-loop-exits-on-condition-and-fails-at-bound",
+    "retry-then-success-and-fallback-after-exhaustion",
+    "budget-exhaustion-fails-run-and-fences-retries",
+    "crash-resume-replay-orphans-in-flight-never-reruns-succeeded",
+    "run-id-conflict-different-parent-or-graph-fails-closed",
+    "cancellation-fences-child-attempts-no-post-cancel-writes",
+    "merge-queue-single-writer-cas-lease-expiry-recovery",
+    "merge-queue-serializes-concurrent-runs-no-overlap"
+  ],
+  "limits": {
+    "max_graph_nodes": 128,
+    "max_graph_depth": 32,
+    "max_loop_iterations": 100
+  },
+  "controls": {
+    "legacy_writer": "disabled",
+    "phase_21": "blocked",
+    "execution_authority": "parent_task",
+    "shared_migrations": "untouched",
+    "shared_dto_registration": "untouched",
+    "api_routes": "untouched",
+    "community_intake": "untouched",
+    "master": "untouched"
+  }
+}
