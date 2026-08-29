@@ -88,6 +88,29 @@ const fmtFull = (time?: string): string => {
   return `${d.toLocaleDateString("en-CA", { timeZone: BOARD_TZ })} ${clock(d)} +07`;
 };
 
+/** Small "re-fetch state + request a fresh report" button for one board seat. */
+function RefreshButton({
+  target,
+  busy,
+  onRefresh,
+}: {
+  target: string;
+  busy: boolean;
+  onRefresh: (target: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => onRefresh(target)}
+      title={`re-fetch board state + send the report prompt to ${target}`}
+      className="text-xs rounded border border-[var(--line)] bg-[var(--bg-mid)] px-2 py-1 text-[var(--cream-dim)] hover:text-[var(--cream)] hover:border-[var(--gold)] disabled:opacity-50"
+    >
+      {busy ? "…" : "↻ refresh"}
+    </button>
+  );
+}
+
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
   const [cards, setCards] = useState<BoardCard[]>([]);
@@ -97,8 +120,11 @@ export default function OrchestrationPage() {
   const [notes, setNotes] = useState<MasterNote[]>([]);
   const [lastWrite, setLastWrite] = useState<NonNullable<ApiEnvelope["result"]>["lastWrite"]>(null);
 
+  const [busy, setBusy] = useState<string | null>(null);
+  const [pingMsg, setPingMsg] = useState<string | null>(null);
+
   // Single GET: lanes + derived cards + sprint roadmap + notes come back together.
-  useEffect(() => {
+  const load = () => {
     fetch("/api/orchestration/state")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((envelope: ApiEnvelope) => {
@@ -114,7 +140,32 @@ export default function OrchestrationPage() {
         setGeneratedAt(envelope.result.generatedAt);
       })
       .catch((reason: unknown) => setError(String((reason as Error).message ?? reason)));
-  }, []);
+  };
+  useEffect(load, []);
+
+  // Refresh button: ping the seat's agent to answer the report prompts, then
+  // re-fetch the board so the new notes show up as soon as they land.
+  const refresh = async (target: string) => {
+    setBusy(target);
+    try {
+      const res = await fetch("/api/orchestration/ping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target }),
+      });
+      const env = (await res.json().catch(() => null)) as { error?: { code?: string } } | null;
+      setPingMsg(
+        res.ok
+          ? `prompt lấy tình hình mới đã gửi tới ${target} — board cập nhật khi ${target} nộp báo cáo`
+          : `ping failed: ${env?.error?.code ?? `HTTP ${res.status}`}`,
+      );
+    } catch (err) {
+      setPingMsg(`ping failed: ${String(err)}`);
+    } finally {
+      load();
+      setBusy(null);
+    }
+  };
 
   // MASTER card: roadmap + lane counters derived from the journal.
   const taskLanes = lanes.filter((l) => !LANE_ID_SET.has(l.lane));
@@ -162,11 +213,16 @@ export default function OrchestrationPage() {
         </p>
       </header>
 
+      {pingMsg && <p className="text-xs text-[var(--gold)] mb-4">{pingMsg}</p>}
+
       {error && <p className="text-[var(--plum)] mb-4">failed to load state: {error}</p>}
 
       {/* MASTER card — sprint rollup + master-written directives */}
       <section className="rounded border border-[var(--line)] bg-[var(--bg-card)] shadow p-5 mb-6">
-        <h2 className="text-lg font-bold text-center mb-4 text-[var(--gold)]">MASTER</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-[var(--gold)]">MASTER</h2>
+          <RefreshButton target="master" busy={busy === "master"} onRefresh={refresh} />
+        </div>
         <div className="space-y-3 text-sm">
           <p>
             <span className="font-semibold text-[var(--gold-soft)]">ROAD MAP - SPRINT:</span>{" "}
@@ -220,7 +276,12 @@ export default function OrchestrationPage() {
             key={card.track}
             className="rounded border border-[var(--line)] bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3"
           >
-            <div className="text-sm font-semibold text-[var(--cream-soft)]">{TRACK_LABELS[card.track]}</div>
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-semibold text-[var(--cream-soft)]">
+                {TRACK_LABELS[card.track]}
+              </div>
+              <RefreshButton target={card.laneId} busy={busy === card.laneId} onRefresh={refresh} />
+            </div>
             <div className={`text-2xl font-bold ${STATUS_STYLE[card.status] ?? "text-[var(--cream)]"}`}>
               {card.status}
             </div>

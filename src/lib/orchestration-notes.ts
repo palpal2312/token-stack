@@ -3,7 +3,7 @@
  * and the read-only state endpoint so a single GET carries the whole picture.
  */
 
-import { existsSync, mkdirSync, readFileSync, appendFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, appendFileSync, writeFileSync } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
@@ -44,4 +44,29 @@ export function appendNote(note: MasterNote): void {
   withJournalLock(file, {}, () => {
     appendFileSync(file, `${JSON.stringify(note)}\n`, "utf8");
   });
+}
+
+/** A pending "send a fresh report" request for one board seat. */
+export interface BoardPing {
+  target: string;
+  time: string;
+  from: string;
+}
+
+export function pingPath(target: string): string {
+  const base = process.env.AGENTIC_OS_HOME ?? path.join(os.homedir(), ".agentic-os");
+  return path.join(base, "orchestration-pings", `${target}.json`);
+}
+
+/**
+ * Drops/refreshes the pending-report request file for one board seat. One
+ * file per seat (last click wins), so no journal lock is needed; the seat's
+ * lane-report hook surfaces it and clears it once the report lands.
+ */
+export function writePing(target: string): BoardPing {
+  const ping: BoardPing = { target, time: new Date().toISOString(), from: "board" };
+  const file = pingPath(target);
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(ping)}\n`, "utf8");
+  return ping;
 }
