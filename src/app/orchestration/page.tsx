@@ -38,10 +38,18 @@ const STATUS_STYLE: Record<string, string> = {
   HOLD_TIME: "text-sky-700",
 };
 
+interface MasterNote {
+  time: string;
+  text: string;
+}
+
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notes, setNotes] = useState<MasterNote[]>([]);
+  const [draft, setDraft] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetch("/api/orchestration/state")
@@ -56,6 +64,32 @@ export default function OrchestrationPage() {
       })
       .catch((reason: unknown) => setError(String((reason as Error).message ?? reason)));
   }, []);
+
+  useEffect(() => {
+    fetch("/api/orchestration/note")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((envelope: { result?: { notes: MasterNote[] } }) => {
+        setNotes(envelope.result?.notes ?? []);
+      })
+      .catch(() => {});
+  }, []);
+
+  const submitNote = () => {
+    if (!draft.trim() || saving) return;
+    setSaving(true);
+    fetch("/api/orchestration/note", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ text: draft.trim() }),
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((envelope: { result?: { notes: MasterNote[] } }) => {
+        setNotes(envelope.result?.notes ?? []);
+        setDraft("");
+      })
+      .catch(() => setError("failed to save note"))
+      .finally(() => setSaving(false));
+  };
 
   const tracks: BoardTrack[] = ["A", "B", "C"];
 
@@ -128,6 +162,39 @@ export default function OrchestrationPage() {
       {lanes.length === 0 && !error && (
         <p className="text-sm text-slate-500 mt-6">no lanes in the journal yet.</p>
       )}
+
+      {/* Master write card — controller note / directive */}
+      <section className="mt-6 rounded border bg-white shadow-sm p-4">
+        <h2 className="text-sm font-semibold text-slate-700 mb-2">Master note</h2>
+        <textarea
+          className="w-full rounded border border-slate-300 p-2 text-sm"
+          rows={2}
+          maxLength={500}
+          placeholder="Write a note / directive for the lanes…"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+        />
+        <div className="flex items-center justify-between mt-2">
+          <button
+            className="rounded bg-slate-800 text-white text-sm px-3 py-1.5 disabled:opacity-50"
+            disabled={!draft.trim() || saving}
+            onClick={submitNote}
+          >
+            {saving ? "Saving…" : "Save note"}
+          </button>
+          <span className="text-xs text-slate-400">{notes.length} note{notes.length === 1 ? "" : "s"}</span>
+        </div>
+        {notes.length > 0 && (
+          <ol className="mt-3 space-y-1 text-sm">
+            {[...notes].reverse().map((note, index) => (
+              <li key={`${note.time}-${index}`} className="flex gap-2">
+                <span className="text-slate-400 shrink-0">{note.time?.slice(0, 19).replace("T", " ")}</span>
+                <span className="text-slate-700">{note.text}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
     </main>
   );
 }
