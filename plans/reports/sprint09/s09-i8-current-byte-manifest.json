@@ -1,0 +1,53 @@
+{
+  "manifest": "s09-current-byte-close",
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-08-29T20:47:00+07:00",
+  "generatedBy": "palpal2312/admin (integration owner), orca task_9df1b65dc848",
+  "authority": "none",
+  "authorityNote": "Advisory current-byte record only. This manifest issues no GO/NO-GO and carries no acceptance authority; the independent S09 arbiter remains the sole verdict authority and must re-evaluate current bytes.",
+  "nonSelfReferential": true,
+  "selfNote": "This manifest does not list or hash itself. The frozen package member plans/reports/orchestrate-260826-sprint08-10/s09-contract/current-byte-manifest.json is BLOCKED from modification and is not included (self-hash pattern belongs to the frozen contract package).",
+  "head": {
+    "commit": "3f50462d07b8bdb57d187b3b478e0d8126dd6cdd",
+    "tree": "4c0192d40a55016b25ea4f80ac2b766f534436de"
+  },
+  "controls": {
+    "legacy_writer": "disabled",
+    "phase_21": "blocked",
+    "execution_authority": "parent_task",
+    "shared_registration_owner": "palpal2312/admin"
+  },
+  "frozenContract": {
+    "arbiterPins": {
+      "s09-contract.md": "2750f2f71b14ba03c92ffa151f1dfcc8df01b5efcd4f2ed7b2f977eec830a8ec",
+      "s09-contract.json": "96d9dadbe711a38f0d161ccf62c88c2bcbb9fc548e2bffe75a3349f74f8d59d6"
+    },
+    "currentBytes": {
+      "plans/reports/orchestrate-260826-sprint08-10/s09-contract/s09-contract.md": "2750f2f71b14ba03c92ffa151f1dfcc8df01b5efcd4f2ed7b2f977eec830a8ec",
+      "plans/reports/orchestrate-260826-sprint08-10/s09-contract/s09-contract.json": "96d9dadbe711a38f0d161ccf62c88c2bcbb9fc548e2bffe75a3349f74f8d59d6"
+    },
+    "currentBytesMatchArbiterPins": true,
+    "trackedInGit": false,
+    "trackedNote": "Contract package lives untracked in the master coordinator checkout; bytes recomputed from disk match the frozen arbiter pins exactly."
+  },
+  "promotedPaths": {
+    "go/internal/localdb/community/s09_intake.go": { "sha256": "27bdd44be6a148ec1d67d57abadc555ba1f6600e890692dbe87843642dc31e51", "promotion": "38c754c6f907ffb5b5f90ddfa626e54d8dee904e (S09-I3)" },
+    "go/internal/localdb/community/s09_intake_test.go": { "sha256": "196385e746390c33ab51d803ec0a3a6ecd98186a5f40574344350f6f5805e2e1", "promotion": "38c754c6f907ffb5b5f90ddfa626e54d8dee904e (S09-I3)" },
+    "qa/fixtures/sprint09/intake-cases.json": { "sha256": "432852253750254b5d7911bd70a58bf37afd8e4ca7c5b7eb3252f74de6b81531", "promotion": "38c754c6f907ffb5b5f90ddfa626e54d8dee904e (S09-I3)" },
+    "src/lib/llmops/workflow.ts": { "sha256": "eaca3f85577d97b3175eec3617e41a6342d1dc4e6b54066bdea836e9ac24331f", "promotion": "137887a2c0447709901bdf4f3d62bd220d8c0727 (S09-I4)" },
+    "src/lib/__tests__/workflow-graph.test.ts": { "sha256": "1946287ccb12a429bd7bb25cc9ef9445d5da3120fb6674876ccbd084fe2ff3e5", "promotion": "137887a2c0447709901bdf4f3d62bd220d8c0727 (S09-I4)" },
+    "qa/fixtures/sprint09/graph-cases.json": { "sha256": "6b4fcd09987061b798a60d99b21062b2f69e0937c84fce7f56294211bee42a62", "promotion": "137887a2c0447709901bdf4f3d62bd220d8c0727 (S09-I4)" },
+    "go/internal/localdb/community/s09_snapshot.go": { "sha256": "195afc71e38dd0cc0f74f58f9a892758e6165e1aeff31229eabee8bc0a48dd25", "promotion": "2be18dc56006ac2b473367268ad28cbd862e4fd1 (S09-I5)" },
+    "go/internal/localdb/community/s09_snapshot_test.go": { "sha256": "784059681c64666a77460870aca23e7a5c82d7a4b2060e0365b9179130118cfa", "promotion": "2be18dc56006ac2b473367268ad28cbd862e4fd1 (S09-I5)" },
+    "qa/fixtures/sprint09/snapshot-cases.json": { "sha256": "c554e78ba7e538cad89bcbb43b029fefb59eb50359441e71ab34f68e3abde515", "promotion": "2be18dc56006ac2b473367268ad28cbd862e4fd1 (S09-I5)" }
+  },
+  "promotedPathsMatchHeadBlobs": true,
+  "privacyScan": {
+    "scope": "nine promoted product/fixture paths",
+    "patterns": ["prompt", "conversation", "user_story", "raw_log", "secret", "token", "credential", "personal_data", "exact_private_identifier"],
+    "result": "pass",
+    "detail": "Matches occur only in s09_intake.go / s09_intake_test.go / intake-cases.json as forbidden-field rejection tables, secret-shape detectors, and negative-test case names (14 total); zero matches in the controlled-delivery and snapshot-return paths; no forbidden field is persisted as payload anywhere in the promoted set."
+  },
+  "sprint08": "closed-and-untouched",
+  "arbiter": "independent; final arbiter must re-evaluate current bytes; this manifest is evidence input, not a verdict"
+}
