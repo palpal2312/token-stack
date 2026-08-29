@@ -23,6 +23,8 @@
 #     -Body (@{ text = "ran focused tests; all green"; field = "run"; lane = "lane-a"; writer = "lane-a" } | ConvertTo-Json)
 #   - Read everything in ONE call: GET http://127.0.0.1:3740/api/orchestration/state
 #     returns lanes + events + sprint roadmap + notes + lastWrite (who wrote last).
+#     Append ?compact=1 for the token-cheap summary (cards + situation/close +
+#     lastWrite, short keys) — use it for routine polling, full only when needed.
 #
 # Writer identity + queueing:
 #   - -Writer names who appends (redacted label, never an account/secret);

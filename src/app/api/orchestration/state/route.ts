@@ -60,6 +60,40 @@ export async function GET(request: Request) {
     }
   }
 
+  // ?compact=1: token-cheap summary for machine readers — short keys, no raw
+  // events/timelines/note history. Clocks are HH:mm:ss UTC slices.
+  if (new URL(request.url).searchParams.has("compact")) {
+    const latestText = (field: string) =>
+      [...notes].reverse().find((n) => (n.field ?? "situation") === field)?.text ?? null;
+    return NextResponse.json({
+      schemaVersion: 1,
+      result: {
+        at: new Date().toISOString(),
+        lw: lastWrite && {
+          w: lastWrite.writer,
+          k: lastWrite.kind,
+          t: lastWrite.time.slice(11, 19),
+        },
+        sprint: deriveSprintRoadmap(),
+        situation: latestText("situation"),
+        close: latestText("close"),
+        cards: deriveBoardCards(lanes, notes).map((c) => ({
+          t: c.track,
+          s: c.status,
+          d: c.counters.done,
+          a: c.counters.active,
+          p: c.counters.pending,
+          m: c.memo ?? null,
+          run: c.run ?? null,
+          next: c.next ?? null,
+          w: c.lastWrite?.writer ?? null,
+          lt: c.lastWrite?.time?.slice(11, 19) ?? null,
+        })),
+      },
+      error: null,
+    });
+  }
+
   return NextResponse.json({
     schemaVersion: 1,
     requestId: crypto.randomUUID(),
