@@ -1,0 +1,531 @@
+// Package runlearning records privacy-safe terminal-run facts and derives
+// deterministic, content-free learning projections. It has no execution or
+// publication authority.
+package runlearning
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+)
+
+const SchemaVersion = "1.0.0"
+const MigrationID = "s08c_001"
+
+type Provenance struct {
+	Producer           string    `json:"producer"`
+	SourceRecordIDs    []string  `json:"sourceRecordIds"`
+	DerivationRevision string    `json:"derivationRevision"`
+	ObservedAt         time.Time `json:"observedAt"`
+}
+type Envelope struct {
+	SchemaVersion  string     `json:"schemaVersion"`
+	RecordID       string     `json:"recordId"`
+	IdempotencyKey string     `json:"idempotencyKey"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	Provenance     Provenance `json:"provenance"`
+	RedactionClass string     `json:"redactionClass"`
+	PolicyRevision string     `json:"policyRevision"`
+}
+
+type TerminalRun struct {
+	RunID, TerminalState                                                                   string
+	StartedAt, FinishedAt                                                                  time.Time
+	ActiveDurationMS, BlockedDurationMS                                                    int64
+	RetryCount, ReworkCount                                                                int
+	ReviewOutcome, EstimateRevision, ActualRevision                                        string
+	EstimatedElapsedMS, EstimatedSequentialWorkMS, ActualSequentialWorkMS                  int64
+	ForecastResultID, EstimatorRevision, PolicyRevision                                    string
+	EstimatedLaneUtilization, ActualLaneUtilization, PredictedAcceptance, ActualAcceptance float64
+	IntervalLowerMS, IntervalUpperMS                                                       int64
+}
+
+type RunLearningRecord struct {
+	Envelope
+	RunID                     string    `json:"runId"`
+	TerminalState             string    `json:"terminalState"`
+	StartedAt                 time.Time `json:"startedAt"`
+	FinishedAt                time.Time `json:"finishedAt"`
+	ActiveDurationMS          int64     `json:"activeDurationMs"`
+	BlockedDurationMS         int64     `json:"blockedDurationMs"`
+	RetryCount                int       `json:"retryCount"`
+	ReworkCount               int       `json:"reworkCount"`
+	ReviewOutcome             string    `json:"reviewOutcome"`
+	EstimateRevision          string    `json:"estimateRevision"`
+	ActualRevision            string    `json:"actualRevision"`
+	EstimatedElapsedMS        int64     `json:"estimatedElapsedMs"`
+	EstimatedSequentialWorkMS int64     `json:"estimatedSequentialWorkMs"`
+	ActualSequentialWorkMS    int64     `json:"actualSequentialWorkMs"`
+	ForecastResultID          string    `json:"forecastResultId"`
+	EstimatorRevision         string    `json:"estimatorRevision"`
+	EstimatedLaneUtilization  float64   `json:"estimatedLaneUtilization"`
+	PredictedAcceptance       float64   `json:"predictedAcceptance"`
+	ActualAcceptance          float64   `json:"actualAcceptance"`
+	IntervalLowerMS           int64     `json:"intervalLowerMs"`
+	IntervalUpperMS           int64     `json:"intervalUpperMs"`
+}
+type UsefulLaneRange struct{ Min, Max int }
+type FeatureInput struct {
+	TaskCohort, ConfigurationCohort       string
+	SequentialWorkMS, CriticalPathMS      int64
+	UsefulLaneRange                       UsefulLaneRange
+	ReviewRetryAllowance                  int
+	ResourceClass                         string
+	CostMicros                            int64
+	SampleSize                            int
+	Uncertainty                           float64
+	DistributionStatus, FeatureSetVersion string
+}
+type ForecastFeatureRecord struct {
+	Envelope
+	RunLearningRecordID        string          `json:"runLearningRecordId"`
+	FeatureSetVersion          string          `json:"featureSetVersion"`
+	TaskCohort                 string          `json:"taskCohort"`
+	ConfigurationCohort        string          `json:"configurationCohort"`
+	SequentialWorkBucket       string          `json:"sequentialWorkBucket"`
+	CriticalPathBucket         string          `json:"criticalPathBucket"`
+	UsefulLaneRange            UsefulLaneRange `json:"usefulLaneRange"`
+	ReviewRetryAllowanceBucket string          `json:"reviewRetryAllowanceBucket"`
+	ResourceClass              string          `json:"resourceClass"`
+	CostBucket                 string          `json:"costBucket"`
+	SampleSize                 int             `json:"sampleSize"`
+	Uncertainty                float64         `json:"uncertainty"`
+	DistributionStatus         string          `json:"distributionStatus"`
+	EstimatorRevision          string          `json:"estimatorRevision"`
+}
+type CandidateInput struct {
+	CandidateVersion, AllowlistRevision, Cohort, TimeWindow, SelectionBiasLimit string
+	Metrics                                                                     map[string]float64
+}
+type ContributionCandidate struct {
+	Envelope
+	ForecastFeatureRecordID string             `json:"forecastFeatureRecordId"`
+	CandidateVersion        string             `json:"candidateVersion"`
+	ConsentState            string             `json:"consentState"`
+	AllowlistRevision       string             `json:"allowlistRevision"`
+	Cohort                  string             `json:"cohort"`
+	Metrics                 map[string]float64 `json:"metrics"`
+	SampleSize              int                `json:"sampleSize"`
+	Uncertainty             float64            `json:"uncertainty"`
+	TimeWindow              string             `json:"timeWindow"`
+	SelectionBiasLimit      string             `json:"selectionBiasLimit"`
+	EstimatorRevision       string             `json:"estimatorRevision"`
+}
+type CalibrationError struct {
+	Envelope
+	CalibrationVersion, ForecastResultID, RunLearningRecordID, EstimatorRevision       string
+	ElapsedTimeError, SequentialWorkError                                              int64
+	IntervalCovered                                                                    bool
+	LaneUtilizationError, RetryReworkMissRate, AcceptanceCalibration, AllocationRegret float64
+	SampleSize                                                                         int
+	Uncertainty                                                                        float64
+}
+
+type SafeError struct {
+	SchemaVersion, ErrorCode, RuleClass, FieldPointer string
+	Retryable                                         bool
+	PolicyRevision, CorrelationID                     string
+}
+
+func (e *SafeError) Error() string { return fmt.Sprintf("%s at %s", e.ErrorCode, e.FieldPointer) }
+
+var terminalStates = map[string]bool{"succeeded": true, "failed": true, "cancelled": true, "stopped": true}
+var forbidden = regexp.MustCompile(`(?i)(prompt|instruction|conversation|message|transcript|userstory|sourcecode|code|patch|diff|repository|repo|project|remoteurl|branch|commit|workspace|filepath|filename|path|terminal|console|trace|exception|log|secret|apikey|password|privatekey|session|authheader|credential|token|cookie|provideraccount|capability|dispatch|name|email|phone|address|ip|device|userid|conversationid|terminalid|taskid)`)
+var contentFreeLabel = regexp.MustCompile(`^[a-z0-9]+(?:[-/][a-z0-9]+)*$`)
+var contentFreeWindow = regexp.MustCompile(`^[1-9][0-9]*(?:m|h|d|w)$`)
+var privateValueShape = regexp.MustCompile(`(?i)(https?://|git@|[a-z]:[\\/]|(?:^|[[:space:]])[/~]|\.\.?[/\\]|[[:alnum:]._%+-]+@[[:alnum:].-]+\.[a-z]{2,}|\b(?:\d{1,3}\.){3}\d{1,3}\b|-----begin|bearer[[:space:]]|api[_-]?key|password|secret|credential|token|prompt|conversation|transcript|user[_-]?story|source[_-]?code|patch|diff|repository|repo|project|workspace|terminal|console|trace|exception|log|private[_-]?key|session|cookie|capability|dispatch[_-]?capability|user[_-]?id|conversation[_-]?id|terminal[_-]?id|task[_-]?id|dispatch[_-]?id)`)
+
+func norm(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r >= 'A' && r <= 'Z' {
+			return r + 32
+		}
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, s)
+}
+func hash(v any) string {
+	b, _ := json.Marshal(v)
+	h := sha256.Sum256(b)
+	return hex.EncodeToString(h[:])
+}
+func envelope(kind string, key any, at time.Time, policy string, sources []string) Envelope {
+	id := hash(struct {
+		Kind string
+		Key  any
+	}{kind, key})
+	return Envelope{SchemaVersion: SchemaVersion, RecordID: id[:32], IdempotencyKey: id, CreatedAt: at.UTC(), Provenance: Provenance{"runlearning", append([]string(nil), sources...), "s08c-1", at.UTC()}, RedactionClass: "content-free", PolicyRevision: policy}
+}
+
+func ValidatePrivacy(v any, policy string) error { return walk(reflect.ValueOf(v), "$", policy) }
+func walk(v reflect.Value, ptr, policy string) error {
+	if !v.IsValid() {
+		return nil
+	}
+	if v.Kind() == reflect.Interface || v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			return nil
+		}
+		return walk(v.Elem(), ptr, policy)
+	}
+	switch v.Kind() {
+	case reflect.Map:
+		for _, k := range v.MapKeys() {
+			name := fmt.Sprint(k.Interface())
+			if forbidden.MatchString(norm(name)) {
+				return safe("FORBIDDEN_FIELD", "private-content", ptr+"/"+name, policy)
+			}
+			if err := walk(v.MapIndex(k), ptr+"/"+name, policy); err != nil {
+				return err
+			}
+		}
+	case reflect.Struct:
+		t := v.Type()
+		for i := 0; i < v.NumField(); i++ {
+			name := strings.Split(t.Field(i).Tag.Get("json"), ",")[0]
+			if name == "" {
+				name = t.Field(i).Name
+			}
+			if forbidden.MatchString(norm(name)) {
+				return safe("FORBIDDEN_FIELD", "private-content", ptr+"/"+name, policy)
+			}
+			if err := walk(v.Field(i), ptr+"/"+name, policy); err != nil {
+				return err
+			}
+		}
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < v.Len(); i++ {
+			if err := walk(v.Index(i), fmt.Sprintf("%s/%d", ptr, i), policy); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+func safe(code, class, ptr, policy string) *SafeError {
+	h := sha256.Sum256([]byte(code + "|" + ptr + "|" + policy))
+	return &SafeError{SchemaVersion: SchemaVersion, ErrorCode: code, RuleClass: class, FieldPointer: ptr, Retryable: false, PolicyRevision: policy, CorrelationID: hex.EncodeToString(h[:8])}
+}
+func bucket(n int64) string {
+	switch {
+	case n < 60_000:
+		return "lt-1m"
+	case n < 300_000:
+		return "1m-5m"
+	case n < 1_800_000:
+		return "5m-30m"
+	case n < 7_200_000:
+		return "30m-2h"
+	default:
+		return "gte-2h"
+	}
+}
+func countBucket(n int) string {
+	switch {
+	case n == 0:
+		return "0"
+	case n <= 2:
+		return "1-2"
+	default:
+		return "3+"
+	}
+}
+func costBucket(n int64) string {
+	switch {
+	case n <= 0:
+		return "none"
+	case n < 100000:
+		return "low"
+	case n < 1000000:
+		return "medium"
+	default:
+		return "high"
+	}
+}
+
+type Store struct {
+	mu           sync.Mutex
+	journal      *os.File
+	runs         map[string]RunLearningRecord
+	features     map[string]ForecastFeatureRecord
+	candidates   map[string]ContributionCandidate
+	calibrations map[string]CalibrationError
+}
+
+func NewStore() *Store {
+	return &Store{runs: map[string]RunLearningRecord{}, features: map[string]ForecastFeatureRecord{}, candidates: map[string]ContributionCandidate{}, calibrations: map[string]CalibrationError{}}
+}
+
+// OpenStore rebuilds projections from an append-only local journal. Each
+// successful mutation is synced before it is returned to the caller.
+func OpenStore(path string) (*Store, error) {
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return nil, err
+	}
+	b, err := os.ReadFile(path)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
+	lastNewline := bytes.LastIndexByte(b, '\n')
+	complete := b
+	if len(b) > 0 && lastNewline != len(b)-1 {
+		if lastNewline < 0 {
+			complete = nil
+		} else {
+			complete = b[:lastNewline+1]
+		}
+	}
+	s := NewStore()
+	for _, line := range bytes.Split(complete, []byte{'\n'}) {
+		if len(bytes.TrimSpace(line)) == 0 {
+			continue
+		}
+		var snap Snapshot
+		if err := json.Unmarshal(line, &snap); err != nil {
+			return nil, fmt.Errorf("rebuild durable run learning state: %w", err)
+		}
+		s, err = Rebuild(snap)
+		if err != nil {
+			return nil, err
+		}
+	}
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return nil, err
+	}
+	if err := f.Truncate(int64(len(complete))); err != nil {
+		f.Close()
+		return nil, err
+	}
+	if _, err := f.Seek(0, 2); err != nil {
+		f.Close()
+		return nil, err
+	}
+	s.journal = f
+	return s, nil
+}
+
+func (s *Store) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.journal == nil {
+		return nil
+	}
+	err := s.journal.Close()
+	s.journal = nil
+	return err
+}
+
+func (s *Store) persistLocked() error {
+	if s.journal == nil {
+		return nil
+	}
+	b, err := json.Marshal(s.snapshotLocked())
+	if err != nil {
+		return err
+	}
+	b = append(b, '\n')
+	if _, err := s.journal.Write(b); err != nil {
+		return err
+	}
+	return s.journal.Sync()
+}
+func (s *Store) RecordTerminalRun(r TerminalRun) (RunLearningRecord, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !terminalStates[r.TerminalState] || r.RunID == "" || r.FinishedAt.Before(r.StartedAt) {
+		return RunLearningRecord{}, safe("PROVENANCE_INVALID", "terminal-run", "$", r.PolicyRevision)
+	}
+	// Hash every approved fact so an exact crash replay succeeds while a replay
+	// that attempts to rewrite any immutable actual or lineage fact conflicts.
+	key := hash(r)
+	if old, ok := s.runs[r.RunID]; ok {
+		if old.IdempotencyKey == key {
+			return old, nil
+		}
+		return RunLearningRecord{}, safe("IDEMPOTENCY_CONFLICT", "immutable-run", "$/runId", r.PolicyRevision)
+	}
+	e := envelope("run", key, r.FinishedAt, r.PolicyRevision, nil)
+	e.IdempotencyKey = key
+	out := RunLearningRecord{e, r.RunID, r.TerminalState, r.StartedAt.UTC(), r.FinishedAt.UTC(), r.ActiveDurationMS, r.BlockedDurationMS, r.RetryCount, r.ReworkCount, r.ReviewOutcome, r.EstimateRevision, r.ActualRevision, r.EstimatedElapsedMS, r.EstimatedSequentialWorkMS, r.ActualSequentialWorkMS, r.ForecastResultID, r.EstimatorRevision, r.EstimatedLaneUtilization, r.PredictedAcceptance, r.ActualAcceptance, r.IntervalLowerMS, r.IntervalUpperMS}
+	s.runs[r.RunID] = out
+	if err := s.persistLocked(); err != nil {
+		delete(s.runs, r.RunID)
+		return RunLearningRecord{}, err
+	}
+	return out, nil
+}
+func (s *Store) DeriveFeature(r RunLearningRecord, in FeatureInput) (ForecastFeatureRecord, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	keyData := struct {
+		RID    string
+		In     FeatureInput
+		Est    string
+		Policy string
+	}{r.RecordID, in, r.EstimatorRevision, r.PolicyRevision}
+	e := envelope("feature", keyData, r.FinishedAt, r.PolicyRevision, []string{r.RecordID})
+	out := ForecastFeatureRecord{e, r.RecordID, in.FeatureSetVersion, in.TaskCohort, in.ConfigurationCohort, bucket(in.SequentialWorkMS), bucket(in.CriticalPathMS), in.UsefulLaneRange, countBucket(in.ReviewRetryAllowance), in.ResourceClass, costBucket(in.CostMicros), in.SampleSize, in.Uncertainty, in.DistributionStatus, r.EstimatorRevision}
+	if old, ok := s.features[e.IdempotencyKey]; ok {
+		return old, nil
+	}
+	s.features[e.IdempotencyKey] = out
+	if err := s.persistLocked(); err != nil {
+		delete(s.features, e.IdempotencyKey)
+		return ForecastFeatureRecord{}, err
+	}
+	return out, nil
+}
+
+var allowedMetrics = map[string]bool{"elapsedTimeMs": true, "sequentialWorkMs": true, "retryCount": true, "reworkCount": true, "laneUtilization": true, "intervalCovered": true}
+
+func (s *Store) DeriveCandidate(f ForecastFeatureRecord, in CandidateInput) (ContributionCandidate, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := ValidatePrivacy(in, f.PolicyRevision); err != nil {
+		return ContributionCandidate{}, err
+	}
+	for k := range in.Metrics {
+		if !allowedMetrics[k] {
+			return ContributionCandidate{}, safe("FORBIDDEN_FIELD", "unknown-field", "$/metrics/"+k, f.PolicyRevision)
+		}
+	}
+	if err := validateCandidateValues(in, f.PolicyRevision); err != nil {
+		return ContributionCandidate{}, err
+	}
+	metrics := map[string]float64{}
+	keys := make([]string, 0, len(in.Metrics))
+	for k := range in.Metrics {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		metrics[k] = in.Metrics[k]
+	}
+	keyData := struct {
+		FID                                      string
+		Version, Allowlist, Cohort, Window, Bias string
+		Metrics                                  map[string]float64
+	}{f.RecordID, in.CandidateVersion, in.AllowlistRevision, in.Cohort, in.TimeWindow, in.SelectionBiasLimit, metrics}
+	e := envelope("candidate", keyData, f.CreatedAt, f.PolicyRevision, []string{f.RecordID})
+	out := ContributionCandidate{e, f.RecordID, in.CandidateVersion, "local-only", in.AllowlistRevision, in.Cohort, metrics, f.SampleSize, f.Uncertainty, in.TimeWindow, in.SelectionBiasLimit, f.EstimatorRevision}
+	if old, ok := s.candidates[e.IdempotencyKey]; ok {
+		return old, nil
+	}
+	s.candidates[e.IdempotencyKey] = out
+	if err := s.persistLocked(); err != nil {
+		delete(s.candidates, e.IdempotencyKey)
+		return ContributionCandidate{}, err
+	}
+	return out, nil
+}
+
+func validateCandidateValues(in CandidateInput, policy string) error {
+	values := []struct {
+		pointer string
+		value   string
+		window  bool
+	}{
+		{"$/candidateVersion", in.CandidateVersion, false},
+		{"$/allowlistRevision", in.AllowlistRevision, false},
+		{"$/cohort", in.Cohort, false},
+		{"$/timeWindow", in.TimeWindow, true},
+		{"$/selectionBiasLimit", in.SelectionBiasLimit, false},
+	}
+	for _, item := range values {
+		validShape := contentFreeLabel.MatchString(item.value)
+		if item.window {
+			validShape = contentFreeWindow.MatchString(item.value)
+		}
+		if !validShape || privateValueShape.MatchString(item.value) || forbidden.MatchString(norm(item.value)) {
+			return safe("FORBIDDEN_FIELD", "private-content", item.pointer, policy)
+		}
+	}
+	return nil
+}
+func (s *Store) RecordCalibration(r RunLearningRecord, laneActual float64, retryMiss, regret, uncertainty float64) (CalibrationError, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if r.ForecastResultID == "" {
+		return CalibrationError{}, errors.New("calibration requires forecast lineage")
+	}
+	keyData := struct{ RID, Forecast, Actual string }{r.RecordID, r.ForecastResultID, r.ActualRevision}
+	e := envelope("calibration", keyData, r.FinishedAt, r.PolicyRevision, []string{r.RecordID, r.ForecastResultID})
+	elapsed := r.FinishedAt.Sub(r.StartedAt).Milliseconds() - r.EstimatedElapsedMS
+	out := CalibrationError{e, "1.0.0", r.ForecastResultID, r.RecordID, r.EstimatorRevision, elapsed, r.ActualSequentialWorkMS - r.EstimatedSequentialWorkMS, r.FinishedAt.Sub(r.StartedAt).Milliseconds() >= r.IntervalLowerMS && r.FinishedAt.Sub(r.StartedAt).Milliseconds() <= r.IntervalUpperMS, laneActual - r.EstimatedLaneUtilization, retryMiss, r.ActualAcceptance - r.PredictedAcceptance, regret, 1, uncertainty}
+	if old, ok := s.calibrations[e.IdempotencyKey]; ok {
+		return old, nil
+	}
+	s.calibrations[e.IdempotencyKey] = out
+	if err := s.persistLocked(); err != nil {
+		delete(s.calibrations, e.IdempotencyKey)
+		return CalibrationError{}, err
+	}
+	return out, nil
+}
+
+type Snapshot struct {
+	Runs         []RunLearningRecord
+	Features     []ForecastFeatureRecord
+	Candidates   []ContributionCandidate
+	Calibrations []CalibrationError
+}
+
+func (s *Store) Snapshot() Snapshot {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.snapshotLocked()
+}
+
+func (s *Store) snapshotLocked() Snapshot {
+	o := Snapshot{}
+	for _, v := range s.runs {
+		o.Runs = append(o.Runs, v)
+	}
+	for _, v := range s.features {
+		o.Features = append(o.Features, v)
+	}
+	for _, v := range s.candidates {
+		o.Candidates = append(o.Candidates, v)
+	}
+	for _, v := range s.calibrations {
+		o.Calibrations = append(o.Calibrations, v)
+	}
+	sort.Slice(o.Runs, func(i, j int) bool { return o.Runs[i].RecordID < o.Runs[j].RecordID })
+	sort.Slice(o.Features, func(i, j int) bool { return o.Features[i].RecordID < o.Features[j].RecordID })
+	sort.Slice(o.Candidates, func(i, j int) bool { return o.Candidates[i].RecordID < o.Candidates[j].RecordID })
+	sort.Slice(o.Calibrations, func(i, j int) bool { return o.Calibrations[i].RecordID < o.Calibrations[j].RecordID })
+	return o
+}
+func Rebuild(s Snapshot) (*Store, error) {
+	out := NewStore()
+	for _, v := range s.Runs {
+		if _, ok := out.runs[v.RunID]; ok {
+			return nil, safe("IDEMPOTENCY_CONFLICT", "immutable-run", "$/runId", v.PolicyRevision)
+		}
+		out.runs[v.RunID] = v
+	}
+	for _, v := range s.Features {
+		out.features[v.IdempotencyKey] = v
+	}
+	for _, v := range s.Candidates {
+		out.candidates[v.IdempotencyKey] = v
+	}
+	for _, v := range s.Calibrations {
+		out.calibrations[v.IdempotencyKey] = v
+	}
+	return out, nil
+}
