@@ -14,13 +14,11 @@
 # Protocol for a one-GET picture (token-cheap for the master):
 #   - Lane start/hold/end + lane memo: append events here; the -Summary is the
 #     lane's memo and shows on its card.
-#   - Master fills "CURRENTLY SITUATION" / "HOW TO CLOSE THIS SPRINT" via:
-#     Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3740/api/orchestration/note `
-#       -ContentType 'application/json' `
-#       -Body (@{ text = "sprint status line"; field = "situation" } | ConvertTo-Json)
-#   - Lanes fill their card's "Last run journal" / "Next action / Block" the same
-#     way, with field run|next plus lane (lane-a|lane-b|lane-c):
-#     -Body (@{ text = "ran focused tests; all green"; field = "run"; lane = "lane-a"; writer = "lane-a" } | ConvertTo-Json)
+#   - The dashboard API is GET-only: there is no HTTP write endpoint. Master
+#     card "CURRENTLY SITUATION" / "HOW TO CLOSE THIS SPRINT" and lane card
+#     "Last run journal" / "Next action / Block" lines are historical notes
+#     data served read-only; all new state is written ONLY as controller
+#     JSONL events via this script.
 #   - Read everything in ONE call: GET http://127.0.0.1:3740/api/orchestration/state
 #     returns lanes + events + sprint roadmap + notes + lastWrite (who wrote last).
 #     Append ?compact=1 for the token-cheap summary (cards + situation/close +
