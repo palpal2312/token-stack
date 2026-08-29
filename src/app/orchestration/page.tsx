@@ -8,7 +8,7 @@ import {
   BoardTrack,
   columnForState,
   trackForLane,
-} from "@/lib/orchestration-state";
+} from "@/lib/orchestration-board";
 import type { OrchestrationLaneView } from "@/lib/orchestration-state";
 
 interface ApiEnvelope {

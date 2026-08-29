@@ -6,11 +6,10 @@ import * as path from "node:path";
 
 import {
   ALLOWED_TRANSITIONS,
-  columnForState,
   OrchestrationEvent,
   OrchestrationStateStore,
-  trackForLane,
 } from "../orchestration-state";
+import { columnForState, trackForLane } from "../orchestration-board";
 
 function tempStore(t: { after: (fn: () => void) => void }): OrchestrationStateStore {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "orch-state-"));
