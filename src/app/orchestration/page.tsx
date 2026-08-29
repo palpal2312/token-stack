@@ -124,6 +124,10 @@ export default function OrchestrationPage() {
   const latestNote = (field: NoteField): MasterNote | undefined =>
     [...notes].reverse().find((n) => (n.field ?? "situation") === field);
 
+  const fmtTime = (time?: string): string => (time ?? "").slice(0, 16).replace("T", " ");
+  // Most recent master note = last write shown on the MASTER card.
+  const lastNote = notes.length > 0 ? notes[notes.length - 1] : undefined;
+
   return (
     <main className="p-6 max-w-4xl mx-auto text-[var(--cream)]">
       <header className="mb-5">
@@ -169,13 +173,18 @@ export default function OrchestrationPage() {
                   )}
                   {note && (
                     <span className="text-xs text-[var(--cream-mute)] ml-2">
-                      {note.time?.slice(0, 16).replace("T", " ")}
+                      {fmtTime(note.time)}
                     </span>
                   )}
                 </div>
               </div>
             );
           })}
+          {lastNote && (
+            <div className="text-xs text-[var(--cream-mute)]">
+              last write: {lastNote.writer ?? "master"} · {fmtTime(lastNote.time)}
+            </div>
+          )}
         </div>
       </section>
 
@@ -195,8 +204,11 @@ export default function OrchestrationPage() {
           const counters = laneCounters(trackTaskLanes.map((l) => l.currentState));
           const status = deriveCardStatus(counters, lifecycleEvent?.currentState);
           const holdDetail = lifecycleEvent?.prerequisite;
-          // Lane memo = summary of the lane's latest lifecycle event.
-          const laneNote = lifecycleEvent?.timeline[lifecycleEvent.timeline.length - 1]?.summary;
+          // Lane memo = summary of the lane's latest lifecycle event; its
+          // writer/time is the card's last-write line.
+          const lastLifecycleEvent =
+            lifecycleEvent?.timeline[lifecycleEvent.timeline.length - 1];
+          const laneNote = lastLifecycleEvent?.summary;
 
           return (
             <div
@@ -236,6 +248,13 @@ export default function OrchestrationPage() {
                   <div className="text-[11px] text-[var(--cream-dim)]">pending</div>
                 </div>
               </div>
+
+              {lastLifecycleEvent && (
+                <div className="text-xs text-[var(--cream-mute)]">
+                  last write: {lastLifecycleEvent.writer ?? "controller"} ·{" "}
+                  {fmtTime(lifecycleEvent?.lastEventAt)}
+                </div>
+              )}
             </div>
           );
         })}
