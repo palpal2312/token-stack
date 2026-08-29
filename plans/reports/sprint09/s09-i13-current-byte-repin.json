@@ -1,0 +1,40 @@
+{
+  "manifest": "s09-i13-current-byte-repin",
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-08-30T04:38:50+07:00",
+  "generatedBy": "palpal2312/admin, task_e54651c89edf",
+  "authority": "none",
+  "authorityNote": "Advisory current-byte evidence only. No GO/NO-GO is issued; the independent S09 arbiter remains the sole verdict authority and must re-evaluate current bytes.",
+  "input": {
+    "head": "e0233d395bd4ad8bd50ca1dff643c5b35604876b",
+    "tree": "d6819bd6a27a77857e62f57bced1abdd046a5181"
+  },
+  "controls": {
+    "legacy_writer": "disabled",
+    "phase_21": "blocked",
+    "orchestration_api": "GET-only; no POST ping writer"
+  },
+  "supersession": {
+    "supersedes": "S09-I8 current-byte pins as current-byte evidence only",
+    "reason": "The dashboard evolved after I8 and I12 subsequently removed the legacy POST ping writer and its client controls. The I8 bytes are therefore historical promotion evidence, not the current bytes at this input HEAD."
+  },
+  "pinnedPaths": {
+    "go/internal/localdb/community/s09_intake.go": "71a00ff5846e718233faab4e94beed7bf4813263f1d8c392bcdc8b37627a2e79",
+    "go/internal/localdb/community/s09_intake_test.go": "67ba96442110abf325d924f8bd0bffcbd65ad44bbdaa41ab7408a28622df3555",
+    "qa/fixtures/sprint09/intake-cases.json": "8216bcedbf43cb5d21ea395178c55154cd199dc9b239ab18a6419de681cd5f32",
+    "src/lib/llmops/workflow.ts": "34b4da2598a815e3378c6a174c848376683cb505b06dea20028538969a2ced21",
+    "src/lib/__tests__/workflow-graph.test.ts": "35eb7128473e8f0566495450217c67b2183229323e82309e3140b18c1ee0f76e",
+    "qa/fixtures/sprint09/graph-cases.json": "dedbaa6f82cfeb6f50ad2c76678d7cd4eb7198868da5e73b7965fee3613c3574",
+    "go/internal/localdb/community/s09_snapshot.go": "6d9248d288388867fff7a5658f373f93308638b1bb8720d86fbac4ab6f40edf9",
+    "go/internal/localdb/community/s09_snapshot_test.go": "1427e5e343527f5ff32dfdebbbcb24b1a389b03d06c362ce34c34ef6ce5359c1",
+    "qa/fixtures/sprint09/snapshot-cases.json": "49afa797f07afa625f71778a8fbb6d793500479679d1a652b9217af6c79faea2"
+  },
+  "frozenContractPackage": {
+    "status": "not present in this non-coordinator worktree; not broadened or recreated",
+    "paths": [
+      "plans/reports/orchestrate-260826-sprint08-10/s09-contract/s09-contract.md",
+      "plans/reports/orchestrate-260826-sprint08-10/s09-contract/s09-contract.json"
+    ],
+    "note": "I8 records these as untracked coordinator-checkout artifacts. This repin deliberately covers only the nine tracked I8 promoted paths."
+  }
+}
