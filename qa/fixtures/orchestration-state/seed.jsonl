@@ -1,0 +1,23 @@
+{"lane":"contract","task":"S09-CONTRACT-V1-ARBITER","transition":"QUEUED","time":"2026-08-28T03:00:00.000Z","summary":"contract package queued for independent arbitration"}
+{"lane":"contract","task":"S09-CONTRACT-V1-ARBITER","transition":"DISPATCHED","time":"2026-08-28T03:10:00.000Z","summary":"arbiter dispatched read-only"}
+{"lane":"contract","task":"S09-CONTRACT-V1-ARBITER","transition":"RUNNING","time":"2026-08-28T04:00:00.000Z","summary":"current-byte verification running"}
+{"lane":"contract","task":"S09-CONTRACT-V1-ARBITER","transition":"DONE","time":"2026-08-28T05:30:00.000Z","evidencePath":"plans/reports/orchestrate-260826-sprint08-10/s09-contract/s09-contract.md","evidenceSha256":"2750f2f71b14ba03c92ffa151f1dfcc8df01b5efcd4f2ed7b2f977eec830a8ec","summary":"independent arbiter recorded GO without unresolved findings"}
+{"lane":"integration-baseline","task":"S09-I2-BASELINE-REGISTRATION","transition":"QUEUED","time":"2026-08-28T06:00:00.000Z","summary":"baseline registration queued"}
+{"lane":"integration-baseline","task":"S09-I2-BASELINE-REGISTRATION","transition":"DISPATCHED","time":"2026-08-28T06:05:00.000Z","summary":"registration dispatched"}
+{"lane":"integration-baseline","task":"S09-I2-BASELINE-REGISTRATION","transition":"RUNNING","time":"2026-08-28T06:30:00.000Z","summary":"byte-identity reconciliation running"}
+{"lane":"integration-baseline","task":"S09-I2-BASELINE-REGISTRATION","transition":"DONE","time":"2026-08-29T02:00:00.000Z","evidencePath":"plans/reports/sprint09/s09-i2-guarded-baseline-promotion-receipt.md","evidenceSha256":"f12342e5a408417c1ee158aba663c30055a19491268f04c9b50fc32361e0307f","summary":"guarded baseline promotion verified on master"}
+{"lane":"community","task":"S09-C1-COMMUNITY-INTAKE","transition":"QUEUED","time":"2026-08-28T06:00:00.000Z","summary":"intake lane queued"}
+{"lane":"community","task":"S09-C1-COMMUNITY-INTAKE","transition":"DISPATCHED","time":"2026-08-28T06:10:00.000Z","summary":"intake implementation dispatched"}
+{"lane":"community","task":"S09-C1-COMMUNITY-INTAKE","transition":"RUNNING","time":"2026-08-28T07:00:00.000Z","summary":"privacy-safe intake implementation running"}
+{"lane":"community","task":"S09-C1-COMMUNITY-INTAKE","transition":"DONE","time":"2026-08-29T03:00:00.000Z","evidencePath":"go/internal/localdb/community/s09_intake.go","evidenceSha256":"27bdd44be6a148ec1d67d57abadc555ba1f6600e890692dbe87843642dc31e51","summary":"intake gates verified and promoted to master"}
+{"lane":"controlled-delivery","task":"S09-C2-CONTROLLED-DELIVERY","transition":"QUEUED","time":"2026-08-28T06:00:00.000Z","summary":"graph delivery lane queued"}
+{"lane":"controlled-delivery","task":"S09-C2-CONTROLLED-DELIVERY","transition":"DISPATCHED","time":"2026-08-28T06:15:00.000Z","summary":"graph implementation dispatched"}
+{"lane":"controlled-delivery","task":"S09-C2-CONTROLLED-DELIVERY","transition":"RUNNING","time":"2026-08-28T08:00:00.000Z","summary":"typed workflow graph running"}
+{"lane":"controlled-delivery","task":"S09-C2-CONTROLLED-DELIVERY","transition":"WAITING_ON","time":"2026-08-29T02:30:00.000Z","prerequisite":"guarded promotion","summary":"landed candidate awaiting type-check fix"}
+{"lane":"controlled-delivery","task":"S09-C2-CONTROLLED-DELIVERY","transition":"RUNNING","time":"2026-08-29T03:00:00.000Z","summary":"stale candidate rolled back; fixed bytes re-promoted"}
+{"lane":"controlled-delivery","task":"S09-C2-CONTROLLED-DELIVERY","transition":"DONE","time":"2026-08-29T03:40:00.000Z","evidencePath":"src/lib/llmops/workflow.ts","evidenceSha256":"eaca3f85577d97b3175eec3617e41a6342d1dc4e6b54066bdea836e9ac24331f","summary":"controlled-delivery promotion verified on master"}
+{"lane":"snapshot-return","task":"S09-C3-SNAPSHOT-RETURN","transition":"QUEUED","time":"2026-08-28T07:00:00.000Z","summary":"snapshot return lane queued"}
+{"lane":"snapshot-return","task":"S09-C3-SNAPSHOT-RETURN","transition":"DISPATCHED","time":"2026-08-28T07:20:00.000Z","summary":"snapshot implementation dispatched"}
+{"lane":"snapshot-return","task":"S09-C3-SNAPSHOT-RETURN","transition":"RUNNING","time":"2026-08-29T04:00:00.000Z","summary":"signed snapshot return running"}
+{"lane":"snapshot-return","task":"S09-C3-SNAPSHOT-RETURN","transition":"WAITING_ON","time":"2026-08-29T06:20:00.000Z","prerequisite":"I5 receipt and master-byte re-pin","summary":"promotion landed; delta of promoted bytes versus source pin awaiting documentation"}
+{"lane":"dto-drift","task":"S09-I6-CONTRACTS-TS-REVERT","transition":"QUEUED","time":"2026-08-29T06:25:00.000Z","prerequisite":"after I5","summary":"scoped revert of shared barrel approved; queued behind snapshot promotion"}
