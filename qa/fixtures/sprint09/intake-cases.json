@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0.0",
+  "contract": "s09",
+  "contractVersion": 1,
+  "contractSha256": {
+    "s09-contract.md": "2750f2f71b14ba03c92ffa151f1dfcc8df01b5efcd4f2ed7b2f977eec830a8ec",
+    "s09-contract.json": "96d9dadbe711a38f0d161ccf62c88c2bcbb9fc548e2bffe75a3349f74f8d59d6"
+  },
+  "lane": "community-intake",
+  "job": "S09-C1-COMMUNITY-INTAKE",
+  "cases": [
+    "consent-required-403-before-persistence",
+    "hashed-actor-workspace-401-on-raw-identifiers",
+    "provenance-required-invalid-payload",
+    "quarantine-first-no-direct-accept",
+    "forbidden-field-negative-all-13-classes-nested-payload-and-envelope",
+    "secret-shaped-values-rejected-bearer-pem-jwt-apikey",
+    "contract-carrier-fields-sourceClass-sourceRecordIds-criticalPathBucket-pass",
+    "non-allowlisted-source-class-rejected",
+    "dedupe-exact-replay-returns-original-single-audit",
+    "idempotency-conflict-409-different-payload",
+    "crash-rebuild-journal-restores-state-and-dedupe",
+    "reversible-moderation-reject-delete-export-with-audit-trail",
+    "export-exact-normalized-payload-hash-match-no-state-mutation",
+    "tombstoned-export-fails-closed-restore-reverses-delete",
+    "normalized-incident-and-evaluation-facts-accepted",
+    "poisoned-signature-private-shape-policy-rejected",
+    "size-limit-413-fail-closed",
+    "no-raw-payload-promotion-into-s09-candidate"
+  ],
+  "controls": {
+    "legacy_writer": "disabled",
+    "phase_21": "blocked",
+    "authority": "advisory-only",
+    "publication": "disabled",
+    "shared_migrations": "untouched",
+    "shared_dto_registration": "untouched"
+  }
+}
