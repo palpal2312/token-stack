@@ -27,6 +27,8 @@ const LANE_IDS: Record<BoardTrack, string> = {
   C: "lane-c",
 };
 
+const LANE_ID_SET = new Set(Object.values(LANE_IDS));
+
 const STATUS_STYLE: Record<string, string> = {
   ACTIVE: "text-blue-700",
   DONE: "text-emerald-700",
@@ -41,15 +43,35 @@ const STATUS_STYLE: Record<string, string> = {
 interface MasterNote {
   time: string;
   text: string;
+  /** Which MASTER-card line this note fills. Legacy notes default to situation. */
+  field?: string;
 }
+
+type NoteField = "situation" | "close";
+
+const NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[] = [
+  {
+    key: "situation",
+    label: "CURRENTLY SITUATION",
+    placeholder: "(master agent will fill this)",
+  },
+  {
+    key: "close",
+    label: "HOW TO CLOSE THIS SPRINT",
+    placeholder: "(master agent will fill this)",
+  },
+];
 
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<MasterNote[]>([]);
-  const [draft, setDraft] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [drafts, setDrafts] = useState<Record<NoteField, string>>({
+    situation: "",
+    close: "",
+  });
+  const [saving, setSaving] = useState<NoteField | null>(null);
 
   useEffect(() => {
     fetch("/api/orchestration/state")
@@ -74,24 +96,39 @@ export default function OrchestrationPage() {
       .catch(() => {});
   }, []);
 
-  const submitNote = () => {
-    if (!draft.trim() || saving) return;
-    setSaving(true);
+  const submitNote = (field: NoteField) => {
+    const text = drafts[field].trim();
+    if (!text || saving) return;
+    setSaving(field);
     fetch("/api/orchestration/note", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text: draft.trim() }),
+      body: JSON.stringify({ text, field }),
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((envelope: { result?: { notes: MasterNote[] } }) => {
         setNotes(envelope.result?.notes ?? []);
-        setDraft("");
+        setDrafts((prev) => ({ ...prev, [field]: "" }));
       })
       .catch(() => setError("failed to save note"))
-      .finally(() => setSaving(false));
+      .finally(() => setSaving(null));
   };
 
   const tracks: BoardTrack[] = ["A", "B", "C"];
+
+  // MASTER card: roadmap + lane counters derived from the journal.
+  const taskLanes = lanes.filter((l) => !LANE_ID_SET.has(l.lane));
+  const counter = laneCounters(taskLanes.map((l) => l.currentState));
+  const lifecycleStates = tracks.map(
+    (track) => lanes.find((l) => l.lane === LANE_IDS[track])?.currentState,
+  );
+  const laneWorking = lifecycleStates.filter((s) => s === "RUNNING").length;
+  const laneActive = lifecycleStates.filter(
+    (s) => s === "RUNNING" || (s ?? "").startsWith("HOLD_"),
+  ).length;
+
+  const latestNote = (field: NoteField): MasterNote | undefined =>
+    [...notes].reverse().find((n) => (n.field ?? "situation") === field);
 
   return (
     <main className="p-6 max-w-4xl mx-auto">
@@ -110,14 +147,68 @@ export default function OrchestrationPage() {
 
       {error && <p className="text-rose-700 mb-4">failed to load state: {error}</p>}
 
+      {/* MASTER card — sprint rollup + master-written directives */}
+      <section className="rounded border bg-white shadow-sm p-5 mb-6">
+        <h2 className="text-lg font-bold text-center mb-4">MASTER</h2>
+        <div className="space-y-3 text-sm">
+          <p>
+            <span className="font-semibold">ROAD MAP - SPRINT:</span>{" "}
+            {counter.active} (currently doing) / {counter.done} (done) /{" "}
+            {taskLanes.length} (total)
+          </p>
+          <p>
+            <span className="font-semibold">LANE:</span> {laneWorking} (working) |{" "}
+            {laneActive} (active) | {tracks.length} (total)
+          </p>
+          {NOTE_FIELDS.map((field) => {
+            const note = latestNote(field.key);
+            return (
+              <div key={field.key}>
+                <p>
+                  <span className="font-semibold">{field.label}:</span>{" "}
+                  {note ? (
+                    <span>{note.text}</span>
+                  ) : (
+                    <span className="italic text-slate-400">{field.placeholder}</span>
+                  )}
+                  {note && (
+                    <span className="text-xs text-slate-400 ml-2">
+                      {note.time?.slice(0, 16).replace("T", " ")}
+                    </span>
+                  )}
+                </p>
+                <div className="flex gap-2 mt-1">
+                  <input
+                    className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm"
+                    maxLength={500}
+                    placeholder={`write ${field.label.toLowerCase()}…`}
+                    value={drafts[field.key]}
+                    onChange={(event) =>
+                      setDrafts((prev) => ({ ...prev, [field.key]: event.target.value }))
+                    }
+                  />
+                  <button
+                    className="rounded bg-slate-800 text-white px-3 py-1 text-sm disabled:opacity-50"
+                    disabled={!drafts[field.key].trim() || saving !== null}
+                    onClick={() => submitNote(field.key)}
+                  >
+                    {saving === field.key ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {tracks.map((track) => {
           const laneId = LANE_IDS[track];
           const lifecycleEvent = lanes.find((l) => l.lane === laneId);
-          const taskLanes = lanes.filter(
+          const trackTaskLanes = lanes.filter(
             (l) => l.lane !== laneId && trackForLane(l.lane) === track,
           );
-          const counters = laneCounters(taskLanes.map((l) => l.currentState));
+          const counters = laneCounters(trackTaskLanes.map((l) => l.currentState));
           const status = deriveCardStatus(counters, lifecycleEvent?.currentState);
           const holdDetail = lifecycleEvent?.prerequisite;
 
@@ -162,39 +253,6 @@ export default function OrchestrationPage() {
       {lanes.length === 0 && !error && (
         <p className="text-sm text-slate-500 mt-6">no lanes in the journal yet.</p>
       )}
-
-      {/* Master write card — controller note / directive */}
-      <section className="mt-6 rounded border bg-white shadow-sm p-4">
-        <h2 className="text-sm font-semibold text-slate-700 mb-2">Master note</h2>
-        <textarea
-          className="w-full rounded border border-slate-300 p-2 text-sm"
-          rows={2}
-          maxLength={500}
-          placeholder="Write a note / directive for the lanes…"
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        <div className="flex items-center justify-between mt-2">
-          <button
-            className="rounded bg-slate-800 text-white text-sm px-3 py-1.5 disabled:opacity-50"
-            disabled={!draft.trim() || saving}
-            onClick={submitNote}
-          >
-            {saving ? "Saving…" : "Save note"}
-          </button>
-          <span className="text-xs text-slate-400">{notes.length} note{notes.length === 1 ? "" : "s"}</span>
-        </div>
-        {notes.length > 0 && (
-          <ol className="mt-3 space-y-1 text-sm">
-            {[...notes].reverse().map((note, index) => (
-              <li key={`${note.time}-${index}`} className="flex gap-2">
-                <span className="text-slate-400 shrink-0">{note.time?.slice(0, 19).replace("T", " ")}</span>
-                <span className="text-slate-700">{note.text}</span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
     </main>
   );
 }
