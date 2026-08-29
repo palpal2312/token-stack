@@ -49,7 +49,7 @@ const STATUS_STYLE: Record<string, string> = {
   HOLD_TIME: "text-[var(--cream-dim)]",
 };
 
-type NoteField = "situation" | "close";
+type NoteField = "situation" | "close" | "run" | "next";
 
 const NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[] = [
   {
@@ -61,6 +61,20 @@ const NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[] = [
     key: "close",
     label: "HOW TO CLOSE THIS SPRINT",
     placeholder: "(master agent will fill this)",
+  },
+];
+
+// Lane card lines, filled by the lane agent via the note API (field run/next + lane).
+const LANE_NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[] = [
+  {
+    key: "run",
+    label: "Last run journal",
+    placeholder: "(lane agent will fill this)",
+  },
+  {
+    key: "next",
+    label: "Next action / Block",
+    placeholder: "(lane agent will fill this)",
   },
 ];
 
@@ -123,6 +137,9 @@ export default function OrchestrationPage() {
 
   const latestNote = (field: NoteField): MasterNote | undefined =>
     [...notes].reverse().find((n) => (n.field ?? "situation") === field);
+
+  const latestLaneNote = (laneId: string, field: NoteField): MasterNote | undefined =>
+    [...notes].reverse().find((n) => n.lane === laneId && n.field === field);
 
   // Last-write stamps show clock only; note boxes keep date + HH:mm.
   const fmtTime = (time?: string): string => (time ?? "").slice(11, 19);
@@ -249,6 +266,29 @@ export default function OrchestrationPage() {
                   <div className="text-[11px] text-[var(--cream-dim)]">pending</div>
                 </div>
               </div>
+
+              {LANE_NOTE_FIELDS.map((field) => {
+                const laneNote = latestLaneNote(laneId, field.key);
+                return (
+                  <div
+                    key={field.key}
+                    className="rounded border border-[var(--line)] bg-[var(--bg-mid)] px-3 py-2"
+                  >
+                    <div className="text-xs font-semibold text-[var(--gold-soft)]">
+                      {field.label}:
+                    </div>
+                    <div className="mt-1 text-xs text-[var(--cream)]">
+                      {laneNote ? (
+                        <span>{laneNote.text}</span>
+                      ) : (
+                        <span className="italic text-[var(--cream-mute)]">
+                          {field.placeholder}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
 
               {lastLifecycleEvent && (
                 <div className="text-xs text-[var(--cream-mute)]">

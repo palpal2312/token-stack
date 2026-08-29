@@ -12,8 +12,11 @@ import { withJournalLock } from "./journal-lock";
 export interface MasterNote {
   time: string;
   text: string;
-  /** Which MASTER-card line the note fills; legacy notes mean "situation". */
+  /** Which card line the note fills; legacy notes mean "situation".
+   * Master card: situation|close. Lane cards: run|next. */
   field?: string;
+  /** Which lane card a run/next note belongs to (lane-a|lane-b|lane-c). */
+  lane?: string;
   /** Who wrote this note (redacted label); legacy notes mean "master". */
   writer?: string;
 }

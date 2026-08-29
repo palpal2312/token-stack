@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { appendNote, readNotes, type MasterNote } from "@/lib/orchestration-notes";
+import { isLaneId } from "@/lib/orchestration-state";
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 
@@ -13,13 +14,14 @@ function loopbackOrigin(raw: string | null): boolean {
   }
 }
 
-export const NOTE_FIELDS = ["situation", "close"] as const;
+// Master card lines: situation|close. Lane card lines: run|next (paired with lane).
+export const NOTE_FIELDS = ["situation", "close", "run", "next"] as const;
 
 /** Control characters other than tab/newline are rejected. */
 const CONTROL_CHAR_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F]/;
 
 /** Rejects foreign origins/notes without content or with control characters. */
-function guard(request: Request, body: { text?: string; field?: string; writer?: string }): { error: string; status: number } | null {
+function guard(request: Request, body: { text?: string; field?: string; writer?: string; lane?: string }): { error: string; status: number } | null {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
   if ((origin && !loopbackOrigin(origin)) || (!origin && referer && !loopbackOrigin(referer))) {
@@ -35,6 +37,13 @@ function guard(request: Request, body: { text?: string; field?: string; writer?:
     }
     if (body.field !== undefined && !NOTE_FIELDS.includes(body.field as (typeof NOTE_FIELDS)[number])) {
       return { error: "invalid_field", status: 422 };
+    }
+    // run/next notes fill a lane card line, so they must name a real lane.
+    if ((body.field === "run" || body.field === "next") && !body.lane) {
+      return { error: "lane_required", status: 422 };
+    }
+    if (body.lane !== undefined && !isLaneId(body.lane)) {
+      return { error: "invalid_lane", status: 422 };
     }
     if (body.writer !== undefined) {
       if (typeof body.writer !== "string" || body.writer.trim().length === 0) {
@@ -65,7 +74,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { text?: string; field?: string; writer?: string };
+  const body = (await request.json().catch(() => ({}))) as { text?: string; field?: string; writer?: string; lane?: string };
   const blocked = guard(request, body);
   if (blocked) {
     return NextResponse.json(
@@ -77,6 +86,7 @@ export async function POST(request: Request) {
     time: new Date().toISOString(),
     text: body.text!.trim(),
     field: body.field ?? "situation",
+    lane: body.lane,
     writer: body.writer?.trim() || "master",
   };
   appendNote(note);

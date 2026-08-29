@@ -18,6 +18,9 @@
 #     Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3740/api/orchestration/note `
 #       -ContentType 'application/json' `
 #       -Body (@{ text = "sprint status line"; field = "situation" } | ConvertTo-Json)
+#   - Lanes fill their card's "Last run journal" / "Next action / Block" the same
+#     way, with field run|next plus lane (lane-a|lane-b|lane-c):
+#     -Body (@{ text = "ran focused tests; all green"; field = "run"; lane = "lane-a"; writer = "lane-a" } | ConvertTo-Json)
 #   - Read everything in ONE call: GET http://127.0.0.1:3740/api/orchestration/state
 #     returns lanes + events + sprint roadmap + notes + lastWrite (who wrote last).
 #
