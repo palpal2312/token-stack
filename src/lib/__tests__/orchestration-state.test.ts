@@ -217,13 +217,22 @@ test("lane lifecycle machine accepts start/hold/resume/end", (t) => {
 
 test("lane lifecycle rejects illegal transitions and mirrors task machine untouched", (t) => {
   const store = tempStore(t);
-  assert.throws(() => store.append({ ...L, transition: "HOLD_LANE" }, C), /first event.*IDLE or RUNNING/);
+  assert.throws(() => store.append({ ...L, transition: "HOLD_LANE" }, C), /first event.*IDLE/);
   store.append({ ...L, transition: "IDLE" }, C);
   assert.throws(() => store.append({ ...L, transition: "DONE" }, C), /invalid lane transition IDLE -> DONE/);
   store.append({ ...L, transition: "RUNNING" }, C);
   assert.throws(() => store.append({ ...L, transition: "QUEUED" }, C), /invalid lane transition/);
   // task lanes keep their own machine
   assert.throws(() => store.append(ev({ transition: "RUNNING" }), C), /first event.*QUEUED/);
+});
+
+test("lane DISPATCHED = ACTIVE, RUNNING = WORKING", (t) => {
+  const store = tempStore(t);
+  store.append({ ...L, transition: "DISPATCHED" }, C);
+  assert.equal(store.currentState("lane-a"), "DISPATCHED");
+  assert.equal(deriveCardStatus({ done: 0, active: 0, pending: 0 }, "DISPATCHED"), "ACTIVE");
+  store.append({ ...L, transition: "RUNNING" }, C);
+  assert.equal(deriveCardStatus({ done: 0, active: 0, pending: 0 }, "RUNNING"), "WORKING");
 });
 
 test("lane counters split done/active/pending", () => {
@@ -236,7 +245,7 @@ test("lane counters split done/active/pending", () => {
 });
 
 test("card status derives from counters and lifecycle hold", () => {
-  assert.equal(deriveCardStatus({ done: 1, active: 2, pending: 0 }, "RUNNING"), "ACTIVE");
+  assert.equal(deriveCardStatus({ done: 1, active: 2, pending: 0 }, "RUNNING"), "WORKING");
   assert.equal(deriveCardStatus({ done: 0, active: 0, pending: 2 }), "IDLE_WITH_WORK");
   assert.equal(deriveCardStatus({ done: 3, active: 0, pending: 0 }), "DONE");
   assert.equal(deriveCardStatus({ done: 1, active: 0, pending: 1 }, "DONE"), "IDLE_WITH_WORK");

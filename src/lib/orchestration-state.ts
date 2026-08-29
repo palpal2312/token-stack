@@ -59,6 +59,7 @@ export const LANE_IDS = ["lane-a", "lane-b", "lane-c"] as const;
 
 export const LANE_LIFECYCLE_STATES = [
   "IDLE",
+  "DISPATCHED",
   "RUNNING",
   "HOLD_INTERNAL",
   "HOLD_LANE",
@@ -69,11 +70,16 @@ export const LANE_LIFECYCLE_STATES = [
 
 export type LaneLifecycleState = (typeof LANE_LIFECYCLE_STATES)[number];
 
+/**
+ * DISPATCHED = Orca has called the lane and it has not answered yet (ACTIVE).
+ * RUNNING = the lane is executing a task without stalling (WORKING).
+ */
 export const LANE_LIFECYCLE_TRANSITIONS: Record<
   LaneLifecycleState,
   readonly LaneLifecycleState[]
 > = {
-  IDLE: ["RUNNING"],
+  IDLE: ["RUNNING", "DISPATCHED"],
+  DISPATCHED: ["RUNNING", "DONE", "HOLD_INTERNAL", "HOLD_LANE", "HOLD_APPROVAL", "HOLD_TIME"],
   RUNNING: ["DONE", "HOLD_INTERNAL", "HOLD_LANE", "HOLD_APPROVAL", "HOLD_TIME"],
   HOLD_INTERNAL: ["RUNNING", "DONE"],
   HOLD_LANE: ["RUNNING", "DONE"],
@@ -205,8 +211,8 @@ export function validateEvent(
     // Lane lifecycle machine (report of start/hold/end for a physical lane).
     const from = currentState as LaneLifecycleState | null;
     if (from === null) {
-      if (target !== "IDLE" && target !== "RUNNING") {
-        throw new Error(`first event for a lifecycle lane must be IDLE or RUNNING, got ${target}`);
+      if (target !== "IDLE" && target !== "RUNNING" && target !== "DISPATCHED") {
+        throw new Error(`first event for a lifecycle lane must be IDLE, RUNNING or DISPATCHED, got ${target}`);
       }
       return;
     }

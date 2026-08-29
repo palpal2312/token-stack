@@ -80,20 +80,21 @@ export function laneCounters(states: readonly string[]): LaneCounters {
 }
 
 /**
- * Card status. An explicit lane-lifecycle event (IDLE, RUNNING, HOLD_x, DONE)
- * wins;
- * otherwise the counters decide: any active -> ACTIVE, pending-only ->
- * IDLE_WITH_WORK (needs a nudge), finished -> DONE, nothing -> IDLE.
+ * Card status. WORKING = the lane is running a task (lifecycle RUNNING, or
+ * tasks in flight). ACTIVE = Orca called the lane and it has not answered yet
+ * (lifecycle DISPATCHED). HOLD_x = stalled with a reason, IDLE_WITH_WORK =
+ * work left but nobody on it (needs a nudge), DONE = finished, IDLE = empty.
  */
 export function deriveCardStatus(
   counters: LaneCounters,
   lifecycle?: string,
 ): string {
   if (lifecycle && lifecycle.startsWith("HOLD_")) return lifecycle;
-  if (lifecycle === "RUNNING") return "ACTIVE";
+  if (lifecycle === "RUNNING") return "WORKING";
+  if (lifecycle === "DISPATCHED") return "ACTIVE";
   if (lifecycle === "DONE" && counters.pending > 0) return "IDLE_WITH_WORK";
   if (lifecycle) return lifecycle; // IDLE, DONE, HOLD_*
-  if (counters.active > 0) return "ACTIVE";
+  if (counters.active > 0) return "WORKING";
   if (counters.pending > 0) return "IDLE_WITH_WORK";
   if (counters.done > 0) return "DONE";
   return "IDLE";

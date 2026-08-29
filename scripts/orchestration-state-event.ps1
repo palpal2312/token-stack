@@ -88,12 +88,14 @@ if (Test-Path $StateFile) {
 }
 
 if ($Lifecycle) {
-  # Lane lifecycle machine (IDLE -> RUNNING -> HOLD_x/DONE, hold resumes to RUNNING).
+  # Lane lifecycle machine (IDLE -> DISPATCHED (Orca called) -> RUNNING (working)
+  # -> HOLD_x/DONE, hold resumes to RUNNING).
   if ($Lane -notin @('lane-a', 'lane-b', 'lane-c')) {
     Write-Host "-Lifecycle requires a lane id: lane-a | lane-b | lane-c"; exit 2
   }
   $lifecycleAllowed = @{
-    IDLE             = @('RUNNING')
+    IDLE             = @('RUNNING', 'DISPATCHED')
+    DISPATCHED       = @('RUNNING', 'DONE', 'HOLD_INTERNAL', 'HOLD_LANE', 'HOLD_APPROVAL', 'HOLD_TIME')
     RUNNING          = @('DONE', 'HOLD_INTERNAL', 'HOLD_LANE', 'HOLD_APPROVAL', 'HOLD_TIME')
     HOLD_INTERNAL    = @('RUNNING', 'DONE')
     HOLD_LANE        = @('RUNNING', 'DONE')
@@ -102,7 +104,7 @@ if ($Lifecycle) {
     DONE             = @('RUNNING')
   }
   if ($null -eq $current) {
-    if ($Transition -notin @('IDLE', 'RUNNING')) { Write-Host "first lifecycle event must be IDLE or RUNNING, got $Transition"; exit 2 }
+    if ($Transition -notin @('IDLE', 'RUNNING', 'DISPATCHED')) { Write-Host "first lifecycle event must be IDLE, RUNNING or DISPATCHED, got $Transition"; exit 2 }
   } elseif ($lifecycleAllowed[$current] -notcontains $Transition) {
     Write-Host "invalid lane transition $current -> $Transition"
     exit 2

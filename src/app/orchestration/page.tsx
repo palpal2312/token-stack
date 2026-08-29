@@ -34,7 +34,8 @@ const LANE_IDS: Record<BoardTrack, string> = {
 const LANE_ID_SET = new Set(Object.values(LANE_IDS));
 
 const STATUS_STYLE: Record<string, string> = {
-  ACTIVE: "text-blue-700",
+  WORKING: "text-blue-700",
+  ACTIVE: "text-indigo-600",
   DONE: "text-emerald-700",
   IDLE: "text-slate-400",
   IDLE_WITH_WORK: "text-amber-700",
@@ -128,10 +129,9 @@ export default function OrchestrationPage() {
   const lifecycleStates = tracks.map(
     (track) => lanes.find((l) => l.lane === LANE_IDS[track])?.currentState,
   );
+  // WORKING = running a task; ACTIVE = Orca called, lane has not answered yet.
   const laneWorking = lifecycleStates.filter((s) => s === "RUNNING").length;
-  const laneActive = lifecycleStates.filter(
-    (s) => s === "RUNNING" || (s ?? "").startsWith("HOLD_"),
-  ).length;
+  const laneActive = lifecycleStates.filter((s) => s === "DISPATCHED").length;
 
   // Roadmap counts sprints from Orca run-manifests; falls back to journal task counters.
   const roadmap = sprint
