@@ -129,12 +129,17 @@ export default function OrchestrationPage() {
         doing: sprint.doing,
         done: sprint.closed,
         total: sprint.total,
-        label:
+        doingLabel:
           sprint.current === null
-            ? "no sprint active"
-            : `sprint ${String(sprint.current).padStart(2, "0")} active`,
+            ? "currently doing: none"
+            : `Currently doing: Sprint ${String(sprint.current).padStart(2, "0")}`,
       }
-    : { doing: counter.active, done: counter.done, total: taskLanes.length, label: "journal tasks" };
+    : {
+        doing: counter.active,
+        done: counter.done,
+        total: taskLanes.length,
+        doingLabel: "currently doing (journal tasks)",
+      };
 
   const latestNote = (field: NoteField): MasterNote | undefined =>
     [...notes].reverse().find((n) => (n.field ?? "situation") === field);
@@ -162,9 +167,8 @@ export default function OrchestrationPage() {
         <div className="space-y-3 text-sm">
           <p>
             <span className="font-semibold text-[var(--gold-soft)]">ROAD MAP - SPRINT:</span>{" "}
-            {roadmap.doing} (currently doing) / {roadmap.done} (done) /{" "}
+            {roadmap.doing} ({roadmap.doingLabel}) / {roadmap.done} (done) /{" "}
             {roadmap.total} (total)
-            <span className="text-xs text-[var(--cream-mute)] ml-2">— {roadmap.label}</span>
           </p>
           <p>
             <span className="font-semibold text-[var(--gold-soft)]">LANE:</span> {laneWorking} (working) |{" "}
