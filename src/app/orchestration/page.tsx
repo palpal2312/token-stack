@@ -53,6 +53,27 @@ const COLUMN_LABELS: Record<BoardColumn, string> = {
   done: "Done",
 };
 
+const COLUMN_STYLES: Record<
+  BoardColumn,
+  { column: string; label: string; card: string }
+> = {
+  todo: {
+    column: "bg-slate-100 border-slate-200",
+    label: "text-slate-500",
+    card: "bg-white border-slate-300 text-slate-700",
+  },
+  "in-progress": {
+    column: "bg-sky-100 border-sky-300",
+    label: "text-sky-800",
+    card: "bg-sky-200 border-sky-400 text-sky-900",
+  },
+  done: {
+    column: "bg-emerald-100 border-emerald-300",
+    label: "text-emerald-800",
+    card: "bg-emerald-200 border-emerald-400 text-emerald-900",
+  },
+};
+
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
@@ -101,19 +122,20 @@ export default function OrchestrationPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {BOARD_COLUMNS.map((column) => {
                 const cards = inColumn(track, column);
+                const style = COLUMN_STYLES[column];
                 return (
                   <div
                     key={column}
-                    className="rounded border bg-slate-50 p-3 min-h-[120px]"
+                    className={`rounded border ${style.column} p-3 min-h-[120px]`}
                   >
-                    <h3 className="text-xs font-medium text-slate-400 mb-2">
+                    <h3 className={`text-xs font-medium mb-2 ${style.label}`}>
                       {COLUMN_LABELS[column]} ({cards.length})
                     </h3>
                     <div className="space-y-3">
                       {cards.map((lane) => (
                         <article
                           key={lane.lane}
-                          className="border rounded p-3 bg-white shadow-sm"
+                          className={`border rounded p-3 shadow-sm ${style.card}`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <h4 className="text-sm font-semibold">{lane.lane}</h4>
