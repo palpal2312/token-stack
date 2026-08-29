@@ -35,16 +35,17 @@ const LANE_IDS: Record<BoardTrack, string> = {
 
 const LANE_ID_SET = new Set(Object.values(LANE_IDS));
 
+/** Status colors from the Midnight Aubergine tokens (dark app theme). */
 const STATUS_STYLE: Record<string, string> = {
-  WORKING: "text-blue-700",
-  ACTIVE: "text-indigo-600",
-  DONE: "text-emerald-700",
-  IDLE: "text-slate-400",
-  IDLE_WITH_WORK: "text-amber-700",
-  HOLD_INTERNAL: "text-orange-700",
-  HOLD_LANE: "text-amber-700",
-  HOLD_APPROVAL: "text-purple-700",
-  HOLD_TIME: "text-sky-700",
+  WORKING: "text-[var(--emerald)]",
+  ACTIVE: "text-[var(--gold)]",
+  DONE: "text-[var(--emerald)]",
+  IDLE: "text-[var(--cream-mute)]",
+  IDLE_WITH_WORK: "text-[var(--rust)]",
+  HOLD_INTERNAL: "text-[var(--rust)]",
+  HOLD_LANE: "text-[var(--gold)]",
+  HOLD_APPROVAL: "text-[var(--plum)]",
+  HOLD_TIME: "text-[var(--cream-dim)]",
 };
 
 type NoteField = "situation" | "close";
@@ -139,34 +140,34 @@ export default function OrchestrationPage() {
     [...notes].reverse().find((n) => (n.field ?? "situation") === field);
 
   return (
-    <main className="p-6 max-w-4xl mx-auto">
-      <div className="border-2 border-rose-400 bg-rose-50 text-rose-800 rounded px-3 py-2 text-sm mb-6">
+    <main className="p-6 max-w-4xl mx-auto text-[var(--cream)]">
+      <div className="border border-[var(--plum)] bg-[var(--bg-card)] text-[var(--plum)] rounded px-3 py-2 text-sm mb-6">
         READ-ONLY ORCHESTRATION STATE — no execution authority. This page reads
         the append-only state journal; it cannot dispatch, promote, or write.
         legacy_writer: disabled; phase_21: blocked.
       </div>
 
       <header className="mb-5">
-        <h1 className="text-xl font-semibold">Orca lanes</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-xl font-semibold text-[var(--cream)]">Orca lanes</h1>
+        <p className="text-sm text-[var(--cream-dim)]">
           {generatedAt ? `journal snapshot ${generatedAt}` : "loading…"}
         </p>
       </header>
 
-      {error && <p className="text-rose-700 mb-4">failed to load state: {error}</p>}
+      {error && <p className="text-[var(--plum)] mb-4">failed to load state: {error}</p>}
 
       {/* MASTER card — sprint rollup + master-written directives */}
-      <section className="rounded border bg-white shadow-sm p-5 mb-6">
-        <h2 className="text-lg font-bold text-center mb-4">MASTER</h2>
+      <section className="rounded border border-[var(--line)] bg-[var(--bg-card)] shadow p-5 mb-6">
+        <h2 className="text-lg font-bold text-center mb-4 text-[var(--gold)]">MASTER</h2>
         <div className="space-y-3 text-sm">
           <p>
-            <span className="font-semibold">ROAD MAP - SPRINT:</span>{" "}
+            <span className="font-semibold text-[var(--gold-soft)]">ROAD MAP - SPRINT:</span>{" "}
             {roadmap.doing} (currently doing) / {roadmap.done} (done) /{" "}
             {roadmap.total} (total)
-            <span className="text-xs text-slate-400 ml-2">— {roadmap.label}</span>
+            <span className="text-xs text-[var(--cream-mute)] ml-2">— {roadmap.label}</span>
           </p>
           <p>
-            <span className="font-semibold">LANE:</span> {laneWorking} (working) |{" "}
+            <span className="font-semibold text-[var(--gold-soft)]">LANE:</span> {laneWorking} (working) |{" "}
             {laneActive} (active) | {tracks.length} (total)
           </p>
           {NOTE_FIELDS.map((field) => {
@@ -174,21 +175,21 @@ export default function OrchestrationPage() {
             return (
               <div key={field.key}>
                 <p>
-                  <span className="font-semibold">{field.label}:</span>{" "}
+                  <span className="font-semibold text-[var(--gold-soft)]">{field.label}:</span>{" "}
                   {note ? (
-                    <span>{note.text}</span>
+                    <span className="text-[var(--cream)]">{note.text}</span>
                   ) : (
-                    <span className="italic text-slate-400">{field.placeholder}</span>
+                    <span className="italic text-[var(--cream-mute)]">{field.placeholder}</span>
                   )}
                   {note && (
-                    <span className="text-xs text-slate-400 ml-2">
+                    <span className="text-xs text-[var(--cream-mute)] ml-2">
                       {note.time?.slice(0, 16).replace("T", " ")}
                     </span>
                   )}
                 </p>
                 <div className="flex gap-2 mt-1">
                   <input
-                    className="flex-1 rounded border border-slate-300 px-2 py-1 text-sm"
+                    className="flex-1 rounded border border-[var(--line)] bg-[var(--bg-mid)] px-2 py-1 text-sm text-[var(--cream)] placeholder:text-[var(--cream-mute)]"
                     maxLength={500}
                     placeholder={`write ${field.label.toLowerCase()}…`}
                     value={drafts[field.key]}
@@ -197,7 +198,7 @@ export default function OrchestrationPage() {
                     }
                   />
                   <button
-                    className="rounded bg-slate-800 text-white px-3 py-1 text-sm disabled:opacity-50"
+                    className="rounded border border-[var(--line)] bg-[var(--bg-elev)] text-[var(--cream)] px-3 py-1 text-sm disabled:opacity-40 hover:border-[var(--gold-deep)]"
                     disabled={!drafts[field.key].trim() || saving !== null}
                     onClick={() => submitNote(field.key)}
                   >
@@ -226,14 +227,14 @@ export default function OrchestrationPage() {
           return (
             <div
               key={track}
-              className="rounded border bg-white shadow-sm p-5 flex flex-col gap-3"
+              className="rounded border border-[var(--line)] bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3"
             >
-              <div className="text-sm font-semibold text-slate-700">{TRACK_LABELS[track]}</div>
-              <div className={`text-2xl font-bold ${STATUS_STYLE[status] ?? "text-slate-700"}`}>
+              <div className="text-sm font-semibold text-[var(--cream-soft)]">{TRACK_LABELS[track]}</div>
+              <div className={`text-2xl font-bold ${STATUS_STYLE[status] ?? "text-[var(--cream)]"}`}>
                 {status}
               </div>
               {status.startsWith("HOLD_") && holdDetail && (
-                <div className="text-xs bg-slate-50 rounded px-2 py-1 text-slate-600">
+                <div className="text-xs bg-[var(--bg-mid)] rounded px-2 py-1 text-[var(--cream-dim)]">
                   {status === "HOLD_LANE" && `waiting on: ${holdDetail}`}
                   {status === "HOLD_APPROVAL" && `approval needed: ${holdDetail}`}
                   {status === "HOLD_TIME" && `resume: ${holdDetail}`}
@@ -241,24 +242,24 @@ export default function OrchestrationPage() {
                 </div>
               )}
               {laneNote && (
-                <div className="text-xs italic text-slate-500" title={lifecycleEvent?.lastEventAt}>
+                <div className="text-xs italic text-[var(--cream-dim)]" title={lifecycleEvent?.lastEventAt}>
                   {laneNote}
                 </div>
               )}
 
               {/* Task counters: finished / running / queued */}
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded bg-green-50 px-2 py-1">
-                  <div className="text-lg font-bold text-green-800">{counters.done}</div>
-                  <div className="text-[11px] text-green-700">done</div>
+                <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
+                  <div className="text-lg font-bold text-[var(--emerald)]">{counters.done}</div>
+                  <div className="text-[11px] text-[var(--cream-dim)]">done</div>
                 </div>
-                <div className="rounded bg-blue-50 px-2 py-1">
-                  <div className="text-lg font-bold text-blue-800">{counters.active}</div>
-                  <div className="text-[11px] text-blue-700">active</div>
+                <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
+                  <div className="text-lg font-bold text-[var(--gold)]">{counters.active}</div>
+                  <div className="text-[11px] text-[var(--cream-dim)]">active</div>
                 </div>
-                <div className="rounded bg-amber-50 px-2 py-1">
-                  <div className="text-lg font-bold text-amber-800">{counters.pending}</div>
-                  <div className="text-[11px] text-amber-700">pending</div>
+                <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
+                  <div className="text-lg font-bold text-[var(--rust)]">{counters.pending}</div>
+                  <div className="text-[11px] text-[var(--cream-dim)]">pending</div>
                 </div>
               </div>
             </div>
@@ -267,7 +268,7 @@ export default function OrchestrationPage() {
       </div>
 
       {lanes.length === 0 && !error && (
-        <p className="text-sm text-slate-500 mt-6">no lanes in the journal yet.</p>
+        <p className="text-sm text-[var(--cream-dim)] mt-6">no lanes in the journal yet.</p>
       )}
     </main>
   );
