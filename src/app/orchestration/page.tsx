@@ -78,6 +78,27 @@ const LANE_NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[]
   },
 ];
 
+// Every clock on the board renders in GMT+7 (Ho Chi Minh City) no matter which
+// UTC instant a writer stamped — one shared timezone for every reader.
+const BOARD_TZ = "Asia/Ho_Chi_Minh";
+const clock = (d: Date): string =>
+  d.toLocaleTimeString("en-GB", { timeZone: BOARD_TZ, hour12: false });
+/** HH:mm:ss +07 — last-write lines. */
+const fmtTime = (time?: string): string =>
+  time ? `${clock(new Date(time))} +07` : "";
+/** YYYY-MM-DD HH:mm +07 — note box stamps. */
+const fmtStamp = (time?: string): string | undefined => {
+  if (!time) return undefined;
+  const d = new Date(time);
+  return `${d.toLocaleDateString("en-CA", { timeZone: BOARD_TZ })} ${clock(d).slice(0, 5)} +07`;
+};
+/** YYYY-MM-DD HH:mm:ss +07 — header snapshot. */
+const fmtFull = (time?: string): string => {
+  if (!time) return "";
+  const d = new Date(time);
+  return `${d.toLocaleDateString("en-CA", { timeZone: BOARD_TZ })} ${clock(d)} +07`;
+};
+
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
   const [sprint, setSprint] = useState<NonNullable<ApiEnvelope["result"]>["sprint"]>(null);
@@ -141,8 +162,6 @@ export default function OrchestrationPage() {
   const latestLaneNote = (laneId: string, field: NoteField): MasterNote | undefined =>
     [...notes].reverse().find((n) => n.lane === laneId && n.field === field);
 
-  // Last-write stamps show clock only; note boxes keep date + HH:mm.
-  const fmtTime = (time?: string): string => (time ?? "").slice(11, 19);
   // Most recent master note = last write shown on the MASTER card.
   const lastNote = notes.length > 0 ? notes[notes.length - 1] : undefined;
 
@@ -151,10 +170,10 @@ export default function OrchestrationPage() {
       <header className="mb-5">
         <h1 className="text-xl font-semibold text-[var(--cream)]">Orca lanes</h1>
         <p className="text-sm text-[var(--cream-dim)]">
-          {generatedAt ? `journal snapshot ${generatedAt}` : "loading…"}
+          {generatedAt ? `journal snapshot ${fmtFull(generatedAt)}` : "loading…"}
           {lastWrite && (
             <span className="text-[var(--cream-mute)]">
-              {" · "}last write: {lastWrite.writer} ({lastWrite.kind}) {lastWrite.time}
+              {" · "}last write: {lastWrite.writer} ({lastWrite.kind}) {fmtTime(lastWrite.time)}
             </span>
           )}
         </p>
@@ -191,7 +210,7 @@ export default function OrchestrationPage() {
                   )}
                   {note && (
                     <span className="text-xs text-[var(--cream-mute)] ml-2">
-                      {note.time?.slice(0, 16).replace("T", " ")}
+                      {fmtStamp(note.time)}
                     </span>
                   )}
                 </div>
@@ -245,11 +264,13 @@ export default function OrchestrationPage() {
                   {status === "HOLD_INTERNAL" && `lane issue: ${holdDetail}`}
                 </div>
               )}
-              {laneNote && (
-                <div className="text-xs italic text-[var(--cream-dim)]" title={lifecycleEvent?.lastEventAt}>
-                  {laneNote}
-                </div>
-              )}
+              {/* Fixed two-line slot so the three cards stay row-aligned. */}
+              <div
+                className="text-xs italic text-[var(--cream-dim)] line-clamp-2 min-h-8"
+                title={laneNote ? `${laneNote} · ${lifecycleEvent?.lastEventAt ?? ""}` : undefined}
+              >
+                {laneNote}
+              </div>
 
               {/* Task counters: finished / running / queued */}
               <div className="grid grid-cols-3 gap-2 text-center">
@@ -277,7 +298,11 @@ export default function OrchestrationPage() {
                     <div className="text-xs font-semibold text-[var(--gold-soft)]">
                       {field.label}:
                     </div>
-                    <div className="mt-1 text-xs text-[var(--cream)]">
+                    {/* Fixed two-line slot keeps every card's rows level. */}
+                    <div
+                      className="mt-1 text-xs text-[var(--cream)] line-clamp-2 min-h-8"
+                      title={laneNote?.text}
+                    >
                       {laneNote ? (
                         <span>{laneNote.text}</span>
                       ) : (
@@ -291,7 +316,7 @@ export default function OrchestrationPage() {
               })}
 
               {lastLifecycleEvent && (
-                <div className="text-xs text-[var(--cream-mute)]">
+                <div className="mt-auto text-xs text-[var(--cream-mute)]">
                   last write: {lastLifecycleEvent.writer ?? lifecycleEvent?.lane} ·{" "}
                   {fmtTime(lifecycleEvent?.lastEventAt)}
                 </div>
