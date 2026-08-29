@@ -124,7 +124,8 @@ export default function OrchestrationPage() {
   const latestNote = (field: NoteField): MasterNote | undefined =>
     [...notes].reverse().find((n) => (n.field ?? "situation") === field);
 
-  const fmtTime = (time?: string): string => (time ?? "").slice(0, 16).replace("T", " ");
+  // Last-write stamps show clock only; note boxes keep date + HH:mm.
+  const fmtTime = (time?: string): string => (time ?? "").slice(11, 19);
   // Most recent master note = last write shown on the MASTER card.
   const lastNote = notes.length > 0 ? notes[notes.length - 1] : undefined;
 
@@ -173,7 +174,7 @@ export default function OrchestrationPage() {
                   )}
                   {note && (
                     <span className="text-xs text-[var(--cream-mute)] ml-2">
-                      {fmtTime(note.time)}
+                      {note.time?.slice(0, 16).replace("T", " ")}
                     </span>
                   )}
                 </div>
