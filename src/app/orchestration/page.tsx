@@ -54,6 +54,51 @@ function LiveDot({ state }: { state: string }) {
   return <span className="inline-block w-2.5 h-2.5 rounded-full bg-slate-200" aria-label="terminal" />;
 }
 
+function LanePanel({ lane }: { lane: OrchestrationLaneView }) {
+  const last = lane.timeline[lane.timeline.length - 1];
+  return (
+    <article className="rounded border bg-white shadow-sm flex flex-col overflow-hidden">
+      {/* Fixed header: row 1 = status, row 2 = task */}
+      <header className="px-3 py-2 border-b bg-slate-50 shrink-0">
+        <div className="flex items-center gap-2">
+          <LiveDot state={lane.currentState} />
+          <span className="font-medium text-slate-900 text-sm">{lane.lane}</span>
+          <span
+            className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+              STATE_CLASSES[lane.currentState] ?? "bg-slate-100 text-slate-700"
+            }`}
+          >
+            {lane.currentState}
+          </span>
+          {lane.currentState === "WAITING_ON" && lane.prerequisite && (
+            <span className="text-xs text-amber-800">wait: {lane.prerequisite}</span>
+          )}
+        </div>
+        <p className="text-xs text-slate-600 mt-1 truncate">{lane.task}</p>
+        {lane.evidence && (
+          <p className="text-xs mt-0.5 truncate">
+            <a className="underline text-blue-700" href={lane.evidence.path}>{lane.evidence.path}</a>
+            <span className="text-slate-400"> {lane.evidence.sha256.slice(0, 8)}…</span>
+          </p>
+        )}
+      </header>
+      {/* Scrollable timeline body */}
+      <ol className="overflow-y-auto px-3 py-2 space-y-1 text-xs max-h-52 grow">
+        {[...lane.timeline].reverse().map((e, index) => (
+          <li key={`${e.lane}-${e.time}-${index}`} className="flex gap-2">
+            <span className="text-slate-400 shrink-0">{e.time?.slice(11, 19) ?? e.time}</span>
+            <span className="font-medium shrink-0 text-slate-700">{e.transition}</span>
+            <span className="text-slate-600">{e.summary}</span>
+          </li>
+        ))}
+        {lane.timeline.length === 0 && (
+          <li className="text-slate-400">no events yet.</li>
+        )}
+      </ol>
+    </article>
+  );
+}
+
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
@@ -128,42 +173,11 @@ export default function OrchestrationPage() {
                   {activeInTrack > 0 ? `${activeInTrack} running` : "no active lane"}
                 </span>
               </h2>
-              <ul className="rounded border divide-y divide-slate-200 bg-white">
-                {lanesInTrack.map((lane) => {
-                  const last = lane.timeline[lane.timeline.length - 1];
-                  return (
-                    <li key={lane.lane} className="flex items-center gap-3 px-3 py-2 text-sm">
-                      <LiveDot state={lane.currentState} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-900">{lane.lane}</span>
-                          <span
-                            className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                              STATE_CLASSES[lane.currentState] ?? "bg-slate-100 text-slate-700"
-                            }`}
-                          >
-                            {lane.currentState}
-                          </span>
-                          {lane.currentState === "WAITING_ON" && lane.prerequisite && (
-                            <span className="text-xs text-amber-800">
-                              wait: {lane.prerequisite}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 truncate">{lane.task}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs text-slate-400">
-                          {last?.time?.slice(0, 10) ?? "-"}
-                        </p>
-                        <p className="text-xs text-slate-500 max-w-[220px] truncate">
-                          {last?.summary ?? ""}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="grid gap-3 md:grid-cols-2">
+                {lanesInTrack.map((lane) => (
+                  <LanePanel key={lane.lane} lane={lane} />
+                ))}
+              </div>
             </section>
           );
         })}
