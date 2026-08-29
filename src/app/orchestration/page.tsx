@@ -37,8 +37,11 @@ function trackStatus(laneList: OrchestrationLaneView[]): { status: string; detai
     };
   }
   const queued = laneList.filter((l) => l.currentState === "QUEUED");
-  if (queued.length > 0) return { status: "QUEUED", detail: queued.map((l) => l.lane).join(", ") };
-  return { status: "DONE", detail: `${laneList.length} lane${laneList.length === 1 ? "" : "s"} finished` };
+  if (queued.length > 0) return { status: "QUEUED", detail: `queued: ${queued.map((l) => l.lane).join(", ")}` };
+  return {
+    status: "DONE",
+    detail: `${laneList.length} task${laneList.length === 1 ? "" : "s"} finished`,
+  };
 }
 
 export default function OrchestrationPage() {
