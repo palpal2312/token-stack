@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "contract": "s09",
+  "contractVersion": 1,
+  "contractSha256": {
+    "s09-contract.md": "2750f2f71b14ba03c92ffa151f1dfcc8df01b5efcd4f2ed7b2f977eec830a8ec",
+    "s09-contract.json": "96d9dadbe711a38f0d161ccf62c88c2bcbb9fc548e2bffe75a3349f74f8d59d6"
+  },
+  "lane": "community-snapshot-return",
+  "job": "S09-C3-SNAPSHOT-RETURN",
+  "cases": [
+    "valid-ed25519-signature-advisory-import",
+    "invalid-signature-rejected-no-state-change",
+    "expired-snapshot-rejected-no-state-change",
+    "unknown-keyId-rejected-no-state-change",
+    "replay-same-version-duplicate-or-conflict",
+    "non-monotonic-snapshot-version-conflict",
+    "wrong-rollback-reference-rejected-no-state-change",
+    "atomic-rollback-restores-prior-version",
+    "second-rollback-fails-closed-no-prior",
+    "journal-crash-rebuild-restores-rolled-back-state",
+    "provenance-required-on-import-envelope",
+    "private-signing-keys-generated-in-memory-only"
+  ],
+  "signing": {
+    "algorithm": "Ed25519",
+    "key_source": "runtime_allowlisted_registry",
+    "private_key_in_repo": false
+  },
+  "controls": {
+    "legacy_writer": "disabled",
+    "phase_21": "blocked",
+    "authority": "advisory-only",
+    "publication": "disabled",
+    "shared_migrations": "untouched",
+    "shared_dto_registration": "untouched",
+    "api_routes": "untouched",
+    "workflow_graph": "untouched",
+    "master": "untouched"
+  }
+}
