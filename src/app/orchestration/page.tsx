@@ -69,11 +69,6 @@ export default function OrchestrationPage() {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<MasterNote[]>([]);
-  const [drafts, setDrafts] = useState<Record<NoteField, string>>({
-    situation: "",
-    close: "",
-  });
-  const [saving, setSaving] = useState<NoteField | null>(null);
 
   // Single GET: lanes + sprint roadmap + master notes come back together.
   useEffect(() => {
@@ -91,24 +86,6 @@ export default function OrchestrationPage() {
       })
       .catch((reason: unknown) => setError(String((reason as Error).message ?? reason)));
   }, []);
-
-  const submitNote = (field: NoteField) => {
-    const text = drafts[field].trim();
-    if (!text || saving) return;
-    setSaving(field);
-    fetch("/api/orchestration/note", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ text, field }),
-    })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((envelope: { result?: { notes: MasterNote[] } }) => {
-        setNotes(envelope.result?.notes ?? []);
-        setDrafts((prev) => ({ ...prev, [field]: "" }));
-      })
-      .catch(() => setError("failed to save note"))
-      .finally(() => setSaving(null));
-  };
 
   const tracks: BoardTrack[] = ["A", "B", "C"];
 
@@ -177,11 +154,14 @@ export default function OrchestrationPage() {
           {NOTE_FIELDS.map((field) => {
             const note = latestNote(field.key);
             return (
-              <div key={field.key}>
-                <p>
-                  <span className="font-semibold text-[var(--gold-soft)]">{field.label}:</span>{" "}
+              <div
+                key={field.key}
+                className="rounded border border-[var(--line)] bg-[var(--bg-mid)] px-3 py-2"
+              >
+                <div className="font-semibold text-[var(--gold-soft)]">{field.label}:</div>
+                <div className="mt-1 text-[var(--cream)]">
                   {note ? (
-                    <span className="text-[var(--cream)]">{note.text}</span>
+                    <span>{note.text}</span>
                   ) : (
                     <span className="italic text-[var(--cream-mute)]">{field.placeholder}</span>
                   )}
@@ -190,24 +170,6 @@ export default function OrchestrationPage() {
                       {note.time?.slice(0, 16).replace("T", " ")}
                     </span>
                   )}
-                </p>
-                <div className="flex gap-2 mt-1">
-                  <input
-                    className="flex-1 rounded border border-[var(--line)] bg-[var(--bg-mid)] px-2 py-1 text-sm text-[var(--cream)] placeholder:text-[var(--cream-mute)]"
-                    maxLength={500}
-                    placeholder={`write ${field.label.toLowerCase()}…`}
-                    value={drafts[field.key]}
-                    onChange={(event) =>
-                      setDrafts((prev) => ({ ...prev, [field.key]: event.target.value }))
-                    }
-                  />
-                  <button
-                    className="rounded border border-[var(--line)] bg-[var(--bg-elev)] text-[var(--cream)] px-3 py-1 text-sm disabled:opacity-40 hover:border-[var(--gold-deep)]"
-                    disabled={!drafts[field.key].trim() || saving !== null}
-                    onClick={() => submitNote(field.key)}
-                  >
-                    {saving === field.key ? "Saving…" : "Save"}
-                  </button>
                 </div>
               </div>
             );
