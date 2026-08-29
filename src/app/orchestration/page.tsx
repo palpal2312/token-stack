@@ -2,13 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import {
-  BOARD_COLUMNS,
-  BoardColumn,
-  BoardTrack,
-  columnForState,
-  trackForLane,
-} from "@/lib/orchestration-board";
+import { columnForState, trackForLane } from "@/lib/orchestration-board";
+import type { BoardTrack } from "@/lib/orchestration-board";
 import type { OrchestrationLaneView } from "@/lib/orchestration-state";
 
 interface ApiEnvelope {
@@ -22,12 +17,8 @@ interface ApiEnvelope {
 
 interface OrchestrationEvent {
   lane: string;
-  task: string;
   transition: string;
   time?: string;
-  prerequisite?: string;
-  evidencePath?: string;
-  evidenceSha256?: string;
   summary: string;
 }
 
@@ -42,37 +33,26 @@ const STATE_CLASSES: Record<string, string> = {
 };
 
 const TRACK_LABELS: Record<BoardTrack, string> = {
-  A: "Lane A — community intake + snapshot return",
+  A: "Lane A — community",
   B: "Lane B — controlled delivery",
   C: "Lane C — integration / governance",
 };
 
-const COLUMN_LABELS: Record<BoardColumn, string> = {
-  todo: "To Do",
-  "in-progress": "In Progress",
-  done: "Done",
-};
+const ACTIVE_STATES = new Set(["DISPATCHED", "RUNNING", "WAITING_ON"]);
 
-const COLUMN_STYLES: Record<
-  BoardColumn,
-  { column: string; label: string; card: string }
-> = {
-  todo: {
-    column: "bg-slate-100 border-slate-300",
-    label: "bg-slate-400 text-white",
-    card: "bg-white border-slate-300 border-l-4 border-l-slate-400 text-slate-900",
-  },
-  "in-progress": {
-    column: "bg-blue-50 border-blue-300",
-    label: "bg-blue-600 text-white",
-    card: "bg-white border-blue-300 border-l-4 border-l-blue-600 text-slate-900",
-  },
-  done: {
-    column: "bg-green-50 border-green-300",
-    label: "bg-green-700 text-white",
-    card: "bg-white border-green-300 border-l-4 border-l-green-700 text-slate-900",
-  },
-};
+/** Live indicator: green pulse = running now, amber = dispatched/waiting, gray = queued, none = terminal. */
+function LiveDot({ state }: { state: string }) {
+  if (state === "RUNNING") {
+    return <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" aria-label="running" />;
+  }
+  if (state === "DISPATCHED" || state === "WAITING_ON") {
+    return <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-400" aria-label="active" />;
+  }
+  if (state === "QUEUED") {
+    return <span className="inline-block w-2.5 h-2.5 rounded-full bg-slate-300" aria-label="queued" />;
+  }
+  return <span className="inline-block w-2.5 h-2.5 rounded-full bg-slate-200" aria-label="terminal" />;
+}
 
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
@@ -93,21 +73,22 @@ export default function OrchestrationPage() {
       .catch((reason: unknown) => setError(String((reason as Error).message ?? reason)));
   }, []);
 
+  const active = lanes.filter((l) => ACTIVE_STATES.has(l.currentState));
+  const queued = lanes.filter((l) => l.currentState === "QUEUED");
+  const done = lanes.filter((l) => columnForState(l.currentState) === "done");
+
   const tracks: BoardTrack[] = ["A", "B", "C"];
-  const byTrack = (track: BoardTrack) =>
-    lanes.filter((l) => trackForLane(l.lane) === track);
-  const inColumn = (track: BoardTrack, column: BoardColumn) =>
-    byTrack(track).filter((l) => columnForState(l.currentState) === column);
 
   return (
-    <main className="p-6 max-w-6xl mx-auto">
+    <main className="p-6 max-w-4xl mx-auto">
       <div className="border-2 border-rose-400 bg-rose-50 text-rose-800 rounded px-3 py-2 text-sm mb-6">
-        READ-ONLY ORCHESTRATION STATE — no execution authority. This dashboard
-        renders the append-only state journal; it cannot dispatch, promote, or
-        write. legacy_writer: disabled; phase_21: blocked.
+        READ-ONLY ORCHESTRATION STATE — no execution authority. This page reads
+        the append-only state journal; it cannot dispatch, promote, or write.
+        legacy_writer: disabled; phase_21: blocked.
       </div>
-      <header className="mb-6">
-        <h1 className="text-xl font-semibold">Orchestration state — Sprint 09 lanes</h1>
+
+      <header className="mb-5">
+        <h1 className="text-xl font-semibold">Orchestration state machine</h1>
         <p className="text-sm text-slate-500">
           {generatedAt ? `journal snapshot ${generatedAt}` : "loading…"}
         </p>
@@ -115,87 +96,79 @@ export default function OrchestrationPage() {
 
       {error && <p className="text-rose-700 mb-4">failed to load state: {error}</p>}
 
+      <section className="flex flex-wrap gap-3 mb-6">
+        <div className="rounded border border-blue-300 bg-blue-50 px-3 py-2 text-sm">
+          <span className="font-semibold text-blue-800">{active.length}</span>
+          <span className="text-blue-800"> active lane{active.length === 1 ? "" : "s"}</span>
+        </div>
+        <div className="rounded border border-slate-300 bg-slate-50 px-3 py-2 text-sm">
+          <span className="font-semibold text-slate-800">{queued.length}</span>
+          <span className="text-slate-700"> queued</span>
+        </div>
+        <div className="rounded border border-green-300 bg-green-50 px-3 py-2 text-sm">
+          <span className="font-semibold text-green-800">{done.length}</span>
+          <span className="text-green-800"> done</span>
+        </div>
+        <div className="rounded border border-slate-300 bg-white px-3 py-2 text-sm">
+          <span className="font-semibold text-slate-800">{lanes.length}</span>
+          <span className="text-slate-700"> total lanes</span>
+        </div>
+      </section>
+
       <div className="space-y-6">
-        {tracks.map((track) => (
-          <section key={track}>
-            <h2 className="text-base font-semibold mb-2">{TRACK_LABELS[track]}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {BOARD_COLUMNS.map((column) => {
-                const cards = inColumn(track, column);
-                const style = COLUMN_STYLES[column];
-                return (
-                  <div
-                    key={column}
-                    className={`rounded border ${style.column} p-3 min-h-[120px]`}
-                  >
-                    <h3 className={`text-xs font-semibold mb-2 inline-block px-2 py-0.5 rounded ${style.label}`}>
-                      {COLUMN_LABELS[column]} ({cards.length})
-                    </h3>
-                    <div className="space-y-3">
-                      {cards.map((lane) => (
-                        <article
-                          key={lane.lane}
-                          className={`border rounded p-3 shadow-sm ${style.card}`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <h4 className="text-sm font-semibold">{lane.lane}</h4>
-                            <span
-                              className={`text-xs font-medium px-2 py-0.5 rounded ${
-                                STATE_CLASSES[lane.currentState] ?? "bg-slate-100 text-slate-700"
-                              }`}
-                            >
-                              {lane.currentState}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-600 mb-1">{lane.task}</p>
+        {tracks.map((track) => {
+          const lanesInTrack = lanes.filter((l) => trackForLane(l.lane) === track);
+          if (lanesInTrack.length === 0) return null;
+          const activeInTrack = lanesInTrack.filter((l) => ACTIVE_STATES.has(l.currentState)).length;
+          return (
+            <section key={track}>
+              <h2 className="text-sm font-semibold text-slate-700 mb-2">
+                {TRACK_LABELS[track]}
+                <span className="ml-2 text-xs font-normal text-slate-400">
+                  {activeInTrack > 0 ? `${activeInTrack} running` : "no active lane"}
+                </span>
+              </h2>
+              <ul className="rounded border divide-y divide-slate-200 bg-white">
+                {lanesInTrack.map((lane) => {
+                  const last = lane.timeline[lane.timeline.length - 1];
+                  return (
+                    <li key={lane.lane} className="flex items-center gap-3 px-3 py-2 text-sm">
+                      <LiveDot state={lane.currentState} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-slate-900">{lane.lane}</span>
+                          <span
+                            className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                              STATE_CLASSES[lane.currentState] ?? "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {lane.currentState}
+                          </span>
                           {lane.currentState === "WAITING_ON" && lane.prerequisite && (
-                            <p className="text-xs text-amber-800 mb-1">
-                              prerequisite: {lane.prerequisite}
-                            </p>
+                            <span className="text-xs text-amber-800">
+                              wait: {lane.prerequisite}
+                            </span>
                           )}
-                          {lane.evidence && (
-                            <p className="text-xs mb-1">
-                              <a
-                                className="underline break-all text-blue-700"
-                                href={lane.evidence.path}
-                              >
-                                {lane.evidence.path}
-                              </a>
-                              <span className="text-slate-400"> {lane.evidence.sha256.slice(0, 8)}…</span>
-                            </p>
-                          )}
-                          <details className="text-xs mt-1">
-                            <summary className="text-slate-400 cursor-pointer">
-                              timeline ({lane.timeline.length})
-                            </summary>
-                            <ol className="mt-1 space-y-1">
-                              {[...lane.timeline].reverse().map((e, index) => (
-                                <li
-                                  key={`${e.lane}-${e.time}-${index}`}
-                                  className="flex gap-2 text-xs"
-                                >
-                                  <span className="text-slate-400 shrink-0">
-                                    {e.time?.slice(11, 19) ?? e.time}
-                                  </span>
-                                  <span className="font-medium shrink-0">{e.transition}</span>
-                                  <span className="text-slate-600">{e.summary}</span>
-                                </li>
-                              ))}
-                            </ol>
-                          </details>
-                        </article>
-                      ))}
-                      {cards.length === 0 && (
-                        <p className="text-xs text-slate-300">—</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))}
+                        </div>
+                        <p className="text-xs text-slate-500 truncate">{lane.task}</p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs text-slate-400">
+                          {last?.time?.slice(0, 10) ?? "-"}
+                        </p>
+                        <p className="text-xs text-slate-500 max-w-[220px] truncate">
+                          {last?.summary ?? ""}
+                        </p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          );
+        })}
       </div>
+
       {lanes.length === 0 && !error && (
         <p className="text-sm text-slate-500">no lanes in the journal yet.</p>
       )}
