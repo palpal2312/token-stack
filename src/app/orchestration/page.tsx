@@ -8,6 +8,7 @@ import {
   trackForLane,
 } from "@/lib/orchestration-board";
 import type { BoardTrack } from "@/lib/orchestration-board";
+import type { MasterNote } from "@/lib/orchestration-notes";
 import type { OrchestrationLaneView } from "@/lib/orchestration-state";
 
 interface ApiEnvelope {
@@ -15,6 +16,7 @@ interface ApiEnvelope {
     lanes: OrchestrationLaneView[];
     generatedAt: string;
     sprint?: { total: number; closed: number; doing: number; current: number | null } | null;
+    notes?: MasterNote[];
   } | null;
   error: { code: string; status: number } | null;
 }
@@ -45,13 +47,6 @@ const STATUS_STYLE: Record<string, string> = {
   HOLD_TIME: "text-sky-700",
 };
 
-interface MasterNote {
-  time: string;
-  text: string;
-  /** Which MASTER-card line this note fills. Legacy notes default to situation. */
-  field?: string;
-}
-
 type NoteField = "situation" | "close";
 
 const NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[] = [
@@ -79,6 +74,7 @@ export default function OrchestrationPage() {
   });
   const [saving, setSaving] = useState<NoteField | null>(null);
 
+  // Single GET: lanes + sprint roadmap + master notes come back together.
   useEffect(() => {
     fetch("/api/orchestration/state")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
@@ -89,18 +85,10 @@ export default function OrchestrationPage() {
         }
         setLanes(envelope.result.lanes);
         setSprint(envelope.result.sprint ?? null);
+        setNotes(envelope.result.notes ?? []);
         setGeneratedAt(envelope.result.generatedAt);
       })
       .catch((reason: unknown) => setError(String((reason as Error).message ?? reason)));
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/orchestration/note")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((envelope: { result?: { notes: MasterNote[] } }) => {
-        setNotes(envelope.result?.notes ?? []);
-      })
-      .catch(() => {});
   }, []);
 
   const submitNote = (field: NoteField) => {
@@ -232,6 +220,8 @@ export default function OrchestrationPage() {
           const counters = laneCounters(trackTaskLanes.map((l) => l.currentState));
           const status = deriveCardStatus(counters, lifecycleEvent?.currentState);
           const holdDetail = lifecycleEvent?.prerequisite;
+          // Lane memo = summary of the lane's latest lifecycle event.
+          const laneNote = lifecycleEvent?.timeline[lifecycleEvent.timeline.length - 1]?.summary;
 
           return (
             <div
@@ -248,6 +238,11 @@ export default function OrchestrationPage() {
                   {status === "HOLD_APPROVAL" && `approval needed: ${holdDetail}`}
                   {status === "HOLD_TIME" && `resume: ${holdDetail}`}
                   {status === "HOLD_INTERNAL" && `lane issue: ${holdDetail}`}
+                </div>
+              )}
+              {laneNote && (
+                <div className="text-xs italic text-slate-500" title={lifecycleEvent?.lastEventAt}>
+                  {laneNote}
                 </div>
               )}
 

@@ -11,6 +11,16 @@
 #   .\scripts\orchestration-state-event.ps1 -Lane community -Task S09-C1-COMMUNITY-INTAKE -Transition QUEUED -Summary "intake lane queued"
 #   .\scripts\orchestration-state-event.ps1 -Lane snapshot-return -Transition WAITING_ON -Prerequisite "I5 receipt and master-byte re-pin" -Summary "promotion landed; receipt pending"
 #
+# Protocol for a one-GET picture (token-cheap for the master):
+#   - Lane start/hold/end + lane memo: append events here; the -Summary is the
+#     lane's memo and shows on its card.
+#   - Master fills "CURRENTLY SITUATION" / "HOW TO CLOSE THIS SPRINT" via:
+#     Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3740/api/orchestration/note `
+#       -ContentType 'application/json' `
+#       -Body (@{ text = "sprint status line"; field = "situation" } | ConvertTo-Json)
+#   - Read everything in ONE call: GET http://127.0.0.1:3740/api/orchestration/state
+#     returns lanes + events + sprint roadmap + notes.
+#
 # Local preview (dashboard, read-only, 127.0.0.1:3740) using the seed fixture:
 #   $preview = "$PWD/qa/fixtures/orchestration-state/preview-home"
 #   New-Item -ItemType Directory -Force $preview | Out-Null

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { readNotes } from "@/lib/orchestration-notes";
 import { deriveSprintRoadmap, OrchestrationStateStore } from "@/lib/orchestration-state";
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
@@ -47,6 +48,7 @@ export async function GET(request: Request) {
       lanes,
       events,
       sprint: deriveSprintRoadmap(),
+      notes: readNotes(),
       generatedAt: new Date().toISOString(),
     },
     error: null,

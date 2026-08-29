@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
+
+import { appendNote, readNotes, type MasterNote } from "@/lib/orchestration-notes";
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 
@@ -14,29 +13,7 @@ function loopbackOrigin(raw: string | null): boolean {
   }
 }
 
-export interface MasterNote {
-  time: string;
-  text: string;
-  /** Which MASTER-card line the note fills; legacy notes mean "situation". */
-  field?: string;
-}
-
-const NOTE_FIELDS = new Set(["situation", "close"]);
-
-function notesPath(): string {
-  const base = process.env.AGENTIC_OS_HOME ?? path.join(os.homedir(), ".agentic-os");
-  return path.join(base, "orchestration-notes.jsonl");
-}
-
-function readNotes(): MasterNote[] {
-  const file = notesPath();
-  if (!existsSync(file)) return [];
-  return readFileSync(file, "utf8")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as MasterNote);
-}
+export const NOTE_FIELDS = ["situation", "close"] as const;
 
 /** Control characters other than tab/newline are rejected. */
 const CONTROL_CHAR_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F]/;
@@ -56,7 +33,7 @@ function guard(request: Request, body: { text?: string; field?: string }): { err
     if (CONTROL_CHAR_RE.test(body.text)) {
       return { error: "control_characters_rejected", status: 422 };
     }
-    if (body.field !== undefined && !NOTE_FIELDS.has(body.field)) {
+    if (body.field !== undefined && !NOTE_FIELDS.includes(body.field as (typeof NOTE_FIELDS)[number])) {
       return { error: "invalid_field", status: 422 };
     }
   }
@@ -92,9 +69,7 @@ export async function POST(request: Request) {
     text: body.text!.trim(),
     field: body.field ?? "situation",
   };
-  const file = notesPath();
-  mkdirSync(path.dirname(file), { recursive: true });
-  appendFileSync(file, `${JSON.stringify(note)}\n`, "utf8");
+  appendNote(note);
   return NextResponse.json(
     { schemaVersion: 1, result: { note, notes: readNotes() }, error: null },
     { status: 201 },
