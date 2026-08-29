@@ -50,6 +50,45 @@ export const ALLOWED_TRANSITIONS: Record<
 const TERMINAL: ReadonlySet<OrchestrationState> = new Set(["DONE", "BLOCKED", "FAILED"]);
 
 /**
+ * Board projection for the dashboard: physical Sprint 09 tracks A/B/C and a
+ * per-column bucket derived from the journal lane state. The journal's lane
+ * stays the domain chain; the board groups domains under a track.
+ */
+export type BoardTrack = "A" | "B" | "C";
+export type BoardColumn = "todo" | "in-progress" | "done";
+
+export const BOARD_COLUMNS: readonly BoardColumn[] = ["todo", "in-progress", "done"];
+
+/** Domain lane -> physical track (Sprint 09 lanes). Unknown domains land on C. */
+export const LANE_TRACKS: Record<string, BoardTrack> = {
+  "community-intake": "A",
+  "community": "A",
+  "snapshot-return": "A",
+  "controlled-delivery": "B",
+  "integration-baseline": "C",
+  "dto-drift": "C",
+  "orchestration-dashboard": "C",
+  "contract": "C",
+};
+
+export function trackForLane(lane: string): BoardTrack {
+  return LANE_TRACKS[lane] ?? "C";
+}
+
+export function columnForState(state: OrchestrationState | "INIT"): BoardColumn {
+  switch (state) {
+    case "QUEUED":
+      return "todo";
+    case "DISPATCHED":
+    case "RUNNING":
+    case "WAITING_ON":
+      return "in-progress";
+    default:
+      return "done";
+  }
+}
+
+/**
  * Contract-aligned forbidden content markers. A redacted summary must contain
  * none of these (prompts, conversations, raw logs, secrets, tokens,
  * credentials, private keys, source code, or diffs are never persisted).

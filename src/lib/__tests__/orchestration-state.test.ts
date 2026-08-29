@@ -6,8 +6,10 @@ import * as path from "node:path";
 
 import {
   ALLOWED_TRANSITIONS,
+  columnForState,
   OrchestrationEvent,
   OrchestrationStateStore,
+  trackForLane,
 } from "../orchestration-state";
 
 function tempStore(t: { after: (fn: () => void) => void }): OrchestrationStateStore {
@@ -157,6 +159,28 @@ test("journal is append-only and replay-reconstructed", (t) => {
   reopened.append({ ...ev({ transition: "RUNNING" }), lane: "controlled-delivery" }, C);
   const bytes2 = fs.readFileSync(file, "utf8");
   assert.equal(bytes2.startsWith(bytes1), true, "journal only grows, never rewrites");
+});
+
+test("board track mapping follows Sprint 09 lanes A/B/C", () => {
+  assert.equal(trackForLane("community-intake"), "A");
+  assert.equal(trackForLane("community"), "A");
+  assert.equal(trackForLane("snapshot-return"), "A");
+  assert.equal(trackForLane("controlled-delivery"), "B");
+  assert.equal(trackForLane("integration-baseline"), "C");
+  assert.equal(trackForLane("dto-drift"), "C");
+  assert.equal(trackForLane("orchestration-dashboard"), "C");
+  assert.equal(trackForLane("contract"), "C");
+  assert.equal(trackForLane("unknown-domain"), "C");
+});
+
+test("board column derives from journal state", () => {
+  assert.equal(columnForState("QUEUED"), "todo");
+  assert.equal(columnForState("DISPATCHED"), "in-progress");
+  assert.equal(columnForState("RUNNING"), "in-progress");
+  assert.equal(columnForState("WAITING_ON"), "in-progress");
+  assert.equal(columnForState("DONE"), "done");
+  assert.equal(columnForState("BLOCKED"), "done");
+  assert.equal(columnForState("FAILED"), "done");
 });
 
 test("wildcard transition table has the required chain shapes", () => {
