@@ -8,6 +8,10 @@
  * (To Do / In Progress / Done) derived from the journal state.
  */
 
+// Type-only imports keep this module browser-safe (erased at compile time).
+import type { MasterNote } from "./orchestration-notes";
+import type { OrchestrationLaneView } from "./orchestration-state";
+
 /** Journal terminal/active states (mirrored from the state machine). */
 type OrchestrationState =
   | "QUEUED"
@@ -95,6 +99,68 @@ export function lifecycleCounters(state?: string): LaneCounters {
 
 export function addCounters(a: LaneCounters, b: LaneCounters): LaneCounters {
   return { done: a.done + b.done, active: a.active + b.active, pending: a.pending + b.pending };
+}
+
+/** Physical lifecycle lane id per track — the three lane cards. */
+export const TRACK_LANE_IDS: Record<BoardTrack, string> = {
+  A: "lane-a",
+  B: "lane-b",
+  C: "lane-c",
+};
+
+export const LANE_ID_SET = new Set(Object.values(TRACK_LANE_IDS));
+
+/** Everything a lane card shows, derived once so the API and the page agree. */
+export interface BoardCard {
+  track: BoardTrack;
+  laneId: string;
+  status: string;
+  counters: LaneCounters;
+  /** Raw lifecycle state of the lane (RUNNING, DONE, HOLD_x, IDLE...). */
+  lifecycle?: string;
+  /** Summary of the lane's latest lifecycle event (the card's italic memo). */
+  memo?: string;
+  prerequisite?: string;
+  lastEventAt?: string;
+  lastWrite?: { writer: string; time?: string };
+  /** Latest run/next lane note text (the two note boxes on the card). */
+  run?: string;
+  next?: string;
+}
+
+export function deriveBoardCards(
+  lanes: readonly OrchestrationLaneView[],
+  notes: readonly MasterNote[],
+): BoardCard[] {
+  return (Object.keys(TRACK_LANE_IDS) as BoardTrack[]).map((track) => {
+    const laneId = TRACK_LANE_IDS[track];
+    const lifecycle = lanes.find((l) => l.lane === laneId);
+    const taskLanes = lanes.filter(
+      (l) => l.lane !== laneId && trackForLane(l.lane) === track,
+    );
+    const counters = addCounters(
+      laneCounters(taskLanes.map((l) => l.currentState)),
+      lifecycleCounters(lifecycle?.currentState),
+    );
+    const lastEvent = lifecycle?.timeline[lifecycle.timeline.length - 1];
+    const latestLaneNote = (field: string) =>
+      [...notes].reverse().find((n) => n.lane === laneId && n.field === field);
+    return {
+      track,
+      laneId,
+      status: deriveCardStatus(counters, lifecycle?.currentState),
+      counters,
+      lifecycle: lifecycle?.currentState,
+      memo: lastEvent?.summary,
+      prerequisite: lifecycle?.prerequisite,
+      lastEventAt: lifecycle?.lastEventAt,
+      lastWrite: lastEvent
+        ? { writer: lastEvent.writer ?? laneId, time: lifecycle?.lastEventAt }
+        : undefined,
+      run: latestLaneNote("run")?.text,
+      next: latestLaneNote("next")?.text,
+    };
+  });
 }
 
 /**

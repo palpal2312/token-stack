@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { deriveBoardCards } from "@/lib/orchestration-board";
 import { readNotes } from "@/lib/orchestration-notes";
 import { deriveSprintRoadmap, OrchestrationStateStore } from "@/lib/orchestration-state";
 
@@ -65,6 +66,9 @@ export async function GET(request: Request) {
     result: {
       lanes,
       events,
+      // Derived lane cards — the same projection the dashboard renders, so a
+      // machine reader (master agent) gets status/counters/notes in one GET.
+      cards: deriveBoardCards(lanes, notes),
       sprint: deriveSprintRoadmap(),
       notes,
       lastWrite,

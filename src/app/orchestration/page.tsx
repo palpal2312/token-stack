@@ -2,20 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-import {
-  addCounters,
-  deriveCardStatus,
-  laneCounters,
-  lifecycleCounters,
-  trackForLane,
-} from "@/lib/orchestration-board";
-import type { BoardTrack } from "@/lib/orchestration-board";
+import { LANE_ID_SET, laneCounters } from "@/lib/orchestration-board";
+import type { BoardCard, BoardTrack } from "@/lib/orchestration-board";
 import type { MasterNote } from "@/lib/orchestration-notes";
 import type { OrchestrationLaneView } from "@/lib/orchestration-state";
 
 interface ApiEnvelope {
   result: {
     lanes: OrchestrationLaneView[];
+    cards?: BoardCard[];
     generatedAt: string;
     sprint?: { total: number; closed: number; doing: number; current: number | null } | null;
     notes?: MasterNote[];
@@ -29,14 +24,6 @@ const TRACK_LABELS: Record<BoardTrack, string> = {
   B: "Lane B — controlled delivery",
   C: "Lane C — integration / governance",
 };
-
-const LANE_IDS: Record<BoardTrack, string> = {
-  A: "lane-a",
-  B: "lane-b",
-  C: "lane-c",
-};
-
-const LANE_ID_SET = new Set(Object.values(LANE_IDS));
 
 /** Status colors from the Midnight Aubergine tokens (dark app theme). */
 const STATUS_STYLE: Record<string, string> = {
@@ -67,7 +54,7 @@ const NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[] = [
 ];
 
 // Lane card lines, filled by the lane agent via the note API (field run/next + lane).
-const LANE_NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[] = [
+const LANE_NOTE_FIELDS: { key: "run" | "next"; label: string; placeholder: string }[] = [
   {
     key: "run",
     label: "Last run journal",
@@ -103,13 +90,14 @@ const fmtFull = (time?: string): string => {
 
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
+  const [cards, setCards] = useState<BoardCard[]>([]);
   const [sprint, setSprint] = useState<NonNullable<ApiEnvelope["result"]>["sprint"]>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<MasterNote[]>([]);
   const [lastWrite, setLastWrite] = useState<NonNullable<ApiEnvelope["result"]>["lastWrite"]>(null);
 
-  // Single GET: lanes + sprint roadmap + master notes come back together.
+  // Single GET: lanes + derived cards + sprint roadmap + notes come back together.
   useEffect(() => {
     fetch("/api/orchestration/state")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
@@ -119,6 +107,7 @@ export default function OrchestrationPage() {
           return;
         }
         setLanes(envelope.result.lanes);
+        setCards(envelope.result.cards ?? []);
         setSprint(envelope.result.sprint ?? null);
         setNotes(envelope.result.notes ?? []);
         setLastWrite(envelope.result.lastWrite ?? null);
@@ -127,18 +116,13 @@ export default function OrchestrationPage() {
       .catch((reason: unknown) => setError(String((reason as Error).message ?? reason)));
   }, []);
 
-  const tracks: BoardTrack[] = ["A", "B", "C"];
-
   // MASTER card: roadmap + lane counters derived from the journal.
   const taskLanes = lanes.filter((l) => !LANE_ID_SET.has(l.lane));
   const counter = laneCounters(taskLanes.map((l) => l.currentState));
-  const lifecycleStates = tracks.map(
-    (track) => lanes.find((l) => l.lane === LANE_IDS[track])?.currentState,
-  );
   // WORKING = running a task. ACTIVE = lane alive and answering when called —
   // any reported lifecycle state except IDLE (DISPATCHED/RUNNING/HOLD/DONE).
-  const laneWorking = lifecycleStates.filter((s) => s === "RUNNING").length;
-  const laneActive = lifecycleStates.filter((s) => s && s !== "IDLE").length;
+  const laneWorking = cards.filter((c) => c.lifecycle === "RUNNING").length;
+  const laneActive = cards.filter((c) => c.lifecycle && c.lifecycle !== "IDLE").length;
 
   // Roadmap counts sprints from Orca run-manifests; falls back to journal task counters.
   const roadmap = sprint
@@ -160,9 +144,6 @@ export default function OrchestrationPage() {
 
   const latestNote = (field: NoteField): MasterNote | undefined =>
     [...notes].reverse().find((n) => (n.field ?? "situation") === field);
-
-  const latestLaneNote = (laneId: string, field: NoteField): MasterNote | undefined =>
-    [...notes].reverse().find((n) => n.lane === laneId && n.field === field);
 
   // Most recent master note = last write shown on the MASTER card.
   const lastNote = notes.length > 0 ? notes[notes.length - 1] : undefined;
@@ -194,7 +175,7 @@ export default function OrchestrationPage() {
           </p>
           <p>
             <span className="font-semibold text-[var(--gold-soft)]">LANE:</span> {laneWorking} (working) |{" "}
-            {laneActive} (active) | {tracks.length} (total)
+            {laneActive} (active) | {cards.length} (total)
           </p>
           {NOTE_FIELDS.map((field) => {
             const note = latestNote(field.key);
@@ -234,101 +215,81 @@ export default function OrchestrationPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {tracks.map((track) => {
-          const laneId = LANE_IDS[track];
-          const lifecycleEvent = lanes.find((l) => l.lane === laneId);
-          const trackTaskLanes = lanes.filter(
-            (l) => l.lane !== laneId && trackForLane(l.lane) === track,
-          );
-          const counters = addCounters(
-            laneCounters(trackTaskLanes.map((l) => l.currentState)),
-            lifecycleCounters(lifecycleEvent?.currentState),
-          );
-          const status = deriveCardStatus(counters, lifecycleEvent?.currentState);
-          const holdDetail = lifecycleEvent?.prerequisite;
-          // Lane memo = summary of the lane's latest lifecycle event; its
-          // writer/time is the card's last-write line.
-          const lastLifecycleEvent =
-            lifecycleEvent?.timeline[lifecycleEvent.timeline.length - 1];
-          const laneNote = lastLifecycleEvent?.summary;
-
-          return (
-            <div
-              key={track}
-              className="rounded border border-[var(--line)] bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3"
-            >
-              <div className="text-sm font-semibold text-[var(--cream-soft)]">{TRACK_LABELS[track]}</div>
-              <div className={`text-2xl font-bold ${STATUS_STYLE[status] ?? "text-[var(--cream)]"}`}>
-                {status}
-              </div>
-              {status.startsWith("HOLD_") && holdDetail && (
-                <div className="text-xs bg-[var(--bg-mid)] rounded px-2 py-1 text-[var(--cream-dim)]">
-                  {status === "HOLD_LANE" && `waiting on: ${holdDetail}`}
-                  {status === "HOLD_APPROVAL" && `approval needed: ${holdDetail}`}
-                  {status === "HOLD_TIME" && `resume: ${holdDetail}`}
-                  {status === "HOLD_INTERNAL" && `lane issue: ${holdDetail}`}
-                </div>
-              )}
-              {/* Fixed two-line slot so the three cards stay row-aligned. */}
-              <div
-                className="text-xs italic text-[var(--cream-dim)] line-clamp-2 min-h-8"
-                title={laneNote ? `${laneNote} · ${lifecycleEvent?.lastEventAt ?? ""}` : undefined}
-              >
-                {laneNote}
-              </div>
-
-              {/* Task counters: finished / running / queued */}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
-                  <div className="text-lg font-bold text-[var(--emerald)]">{counters.done}</div>
-                  <div className="text-[11px] text-[var(--cream-dim)]">done</div>
-                </div>
-                <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
-                  <div className="text-lg font-bold text-[var(--gold)]">{counters.active}</div>
-                  <div className="text-[11px] text-[var(--cream-dim)]">active</div>
-                </div>
-                <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
-                  <div className="text-lg font-bold text-[var(--rust)]">{counters.pending}</div>
-                  <div className="text-[11px] text-[var(--cream-dim)]">pending</div>
-                </div>
-              </div>
-
-              {LANE_NOTE_FIELDS.map((field) => {
-                const laneNote = latestLaneNote(laneId, field.key);
-                return (
-                  <div
-                    key={field.key}
-                    className="rounded border border-[var(--line)] bg-[var(--bg-mid)] px-3 py-2"
-                  >
-                    <div className="text-xs font-semibold text-[var(--gold-soft)]">
-                      {field.label}:
-                    </div>
-                    {/* Fixed two-line slot keeps every card's rows level. */}
-                    <div
-                      className="mt-1 text-xs text-[var(--cream)] line-clamp-2 min-h-8"
-                      title={laneNote?.text}
-                    >
-                      {laneNote ? (
-                        <span>{laneNote.text}</span>
-                      ) : (
-                        <span className="italic text-[var(--cream-mute)]">
-                          {field.placeholder}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {lastLifecycleEvent && (
-                <div className="mt-auto text-xs text-[var(--cream-mute)]">
-                  last write: {lastLifecycleEvent.writer ?? lifecycleEvent?.lane} ·{" "}
-                  {fmtTime(lifecycleEvent?.lastEventAt)}
-                </div>
-              )}
+        {cards.map((card) => (
+          <div
+            key={card.track}
+            className="rounded border border-[var(--line)] bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3"
+          >
+            <div className="text-sm font-semibold text-[var(--cream-soft)]">{TRACK_LABELS[card.track]}</div>
+            <div className={`text-2xl font-bold ${STATUS_STYLE[card.status] ?? "text-[var(--cream)]"}`}>
+              {card.status}
             </div>
-          );
-        })}
+            {card.status.startsWith("HOLD_") && card.prerequisite && (
+              <div className="text-xs bg-[var(--bg-mid)] rounded px-2 py-1 text-[var(--cream-dim)]">
+                {card.status === "HOLD_LANE" && `waiting on: ${card.prerequisite}`}
+                {card.status === "HOLD_APPROVAL" && `approval needed: ${card.prerequisite}`}
+                {card.status === "HOLD_TIME" && `resume: ${card.prerequisite}`}
+                {card.status === "HOLD_INTERNAL" && `lane issue: ${card.prerequisite}`}
+              </div>
+            )}
+            {/* Fixed two-line slot so the three cards stay row-aligned. */}
+            <div
+              className="text-xs italic text-[var(--cream-dim)] line-clamp-2 min-h-8"
+              title={card.memo ? `${card.memo} · ${card.lastEventAt ?? ""}` : undefined}
+            >
+              {card.memo}
+            </div>
+
+            {/* Task counters: finished / running / queued */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
+                <div className="text-lg font-bold text-[var(--emerald)]">{card.counters.done}</div>
+                <div className="text-[11px] text-[var(--cream-dim)]">done</div>
+              </div>
+              <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
+                <div className="text-lg font-bold text-[var(--gold)]">{card.counters.active}</div>
+                <div className="text-[11px] text-[var(--cream-dim)]">active</div>
+              </div>
+              <div className="rounded bg-[var(--bg-mid)] border border-[var(--line-deep)] px-2 py-1">
+                <div className="text-lg font-bold text-[var(--rust)]">{card.counters.pending}</div>
+                <div className="text-[11px] text-[var(--cream-dim)]">pending</div>
+              </div>
+            </div>
+
+            {LANE_NOTE_FIELDS.map((field) => {
+              const text = field.key === "run" ? card.run : card.next;
+              return (
+                <div
+                  key={field.key}
+                  className="rounded border border-[var(--line)] bg-[var(--bg-mid)] px-3 py-2"
+                >
+                  <div className="text-xs font-semibold text-[var(--gold-soft)]">
+                    {field.label}:
+                  </div>
+                  {/* Fixed two-line slot keeps every card's rows level. */}
+                  <div
+                    className="mt-1 text-xs text-[var(--cream)] line-clamp-2 min-h-8"
+                    title={text}
+                  >
+                    {text ? (
+                      <span>{text}</span>
+                    ) : (
+                      <span className="italic text-[var(--cream-mute)]">
+                        {field.placeholder}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {card.lastWrite && (
+              <div className="mt-auto text-xs text-[var(--cream-mute)]">
+                last write: {card.lastWrite.writer} · {fmtTime(card.lastWrite.time)}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {lanes.length === 0 && !error && (
