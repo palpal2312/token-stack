@@ -19,7 +19,7 @@ export const NOTE_FIELDS = ["situation", "close"] as const;
 const CONTROL_CHAR_RE = /[\x00-\x08\x0B\x0C\x0E-\x1F]/;
 
 /** Rejects foreign origins/notes without content or with control characters. */
-function guard(request: Request, body: { text?: string; field?: string }): { error: string; status: number } | null {
+function guard(request: Request, body: { text?: string; field?: string; writer?: string }): { error: string; status: number } | null {
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
   if ((origin && !loopbackOrigin(origin)) || (!origin && referer && !loopbackOrigin(referer))) {
@@ -35,6 +35,15 @@ function guard(request: Request, body: { text?: string; field?: string }): { err
     }
     if (body.field !== undefined && !NOTE_FIELDS.includes(body.field as (typeof NOTE_FIELDS)[number])) {
       return { error: "invalid_field", status: 422 };
+    }
+    if (body.writer !== undefined) {
+      if (typeof body.writer !== "string" || body.writer.trim().length === 0) {
+        return { error: "invalid_writer", status: 422 };
+      }
+      if (body.writer.length > 64) return { error: "writer_too_long", status: 413 };
+      if (CONTROL_CHAR_RE.test(body.writer)) {
+        return { error: "control_characters_rejected", status: 422 };
+      }
     }
   }
   return null;
@@ -56,7 +65,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { text?: string; field?: string };
+  const body = (await request.json().catch(() => ({}))) as { text?: string; field?: string; writer?: string };
   const blocked = guard(request, body);
   if (blocked) {
     return NextResponse.json(
@@ -68,6 +77,7 @@ export async function POST(request: Request) {
     time: new Date().toISOString(),
     text: body.text!.trim(),
     field: body.field ?? "situation",
+    writer: body.writer?.trim() || "master",
   };
   appendNote(note);
   return NextResponse.json(

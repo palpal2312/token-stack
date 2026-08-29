@@ -7,11 +7,15 @@ import { existsSync, mkdirSync, readFileSync, appendFileSync } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { withJournalLock } from "./journal-lock";
+
 export interface MasterNote {
   time: string;
   text: string;
   /** Which MASTER-card line the note fills; legacy notes mean "situation". */
   field?: string;
+  /** Who wrote this note (redacted label); legacy notes mean "master". */
+  writer?: string;
 }
 
 export function notesPath(): string {
@@ -29,8 +33,12 @@ export function readNotes(): MasterNote[] {
     .map((line) => JSON.parse(line) as MasterNote);
 }
 
+/** Queues concurrent writers on the same mkdir lock as the state journal. */
 export function appendNote(note: MasterNote): void {
   const file = notesPath();
+  // Lock lives beside the journal, so the directory must exist first.
   mkdirSync(path.dirname(file), { recursive: true });
-  appendFileSync(file, `${JSON.stringify(note)}\n`, "utf8");
+  withJournalLock(file, {}, () => {
+    appendFileSync(file, `${JSON.stringify(note)}\n`, "utf8");
+  });
 }

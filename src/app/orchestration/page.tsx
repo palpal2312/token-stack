@@ -17,6 +17,7 @@ interface ApiEnvelope {
     generatedAt: string;
     sprint?: { total: number; closed: number; doing: number; current: number | null } | null;
     notes?: MasterNote[];
+    lastWrite?: { time: string; writer: string; kind: "event" | "note" } | null;
   } | null;
   error: { code: string; status: number } | null;
 }
@@ -69,6 +70,7 @@ export default function OrchestrationPage() {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<MasterNote[]>([]);
+  const [lastWrite, setLastWrite] = useState<NonNullable<ApiEnvelope["result"]>["lastWrite"]>(null);
 
   // Single GET: lanes + sprint roadmap + master notes come back together.
   useEffect(() => {
@@ -82,6 +84,7 @@ export default function OrchestrationPage() {
         setLanes(envelope.result.lanes);
         setSprint(envelope.result.sprint ?? null);
         setNotes(envelope.result.notes ?? []);
+        setLastWrite(envelope.result.lastWrite ?? null);
         setGeneratedAt(envelope.result.generatedAt);
       })
       .catch((reason: unknown) => setError(String((reason as Error).message ?? reason)));
@@ -127,6 +130,11 @@ export default function OrchestrationPage() {
         <h1 className="text-xl font-semibold text-[var(--cream)]">Orca lanes</h1>
         <p className="text-sm text-[var(--cream-dim)]">
           {generatedAt ? `journal snapshot ${generatedAt}` : "loading…"}
+          {lastWrite && (
+            <span className="text-[var(--cream-mute)]">
+              {" · "}last write: {lastWrite.writer} ({lastWrite.kind}) {lastWrite.time}
+            </span>
+          )}
         </p>
       </header>
 

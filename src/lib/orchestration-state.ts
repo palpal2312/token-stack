@@ -15,6 +15,8 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
+import { withJournalLock, type LockOptions } from "./journal-lock";
+
 export const ORCHESTRATION_STATES = [
   "QUEUED",
   "DISPATCHED",
@@ -131,6 +133,8 @@ export interface OrchestrationEvent {
   evidencePath?: string;
   /** SHA-256 of the referenced evidence (optional; must pair with path). */
   evidenceSha256?: string;
+  /** Who appended this event (redacted label, never an account/secret). */
+  writer?: string;
   /** Redacted, bounded one-line summary. */
   summary: string;
 }
@@ -204,6 +208,14 @@ export function validateEvent(
   }
   if (hasHash && !SHA256_RE.test(event.evidenceSha256!)) {
     throw new Error("evidenceSha256 must be a 64-char hex SHA-256");
+  }
+  if (event.writer !== undefined) {
+    if (typeof event.writer !== "string" || event.writer.trim().length === 0) {
+      throw new Error("writer must be a non-empty label when present");
+    }
+    if (event.writer.length > 64) {
+      throw new Error("writer exceeds 64 characters");
+    }
   }
   assertRedactedSummary(event.summary);
 
@@ -318,22 +330,31 @@ export class OrchestrationStateStore {
    * Controller-only writer. Requires either the explicit env gate
    * ORCHESTRATION_CONTROLLER=1 or controller: true. Append-only: the event is
    * validated and written as one JSON line; nothing is ever rewritten.
+   *
+   * Concurrent writers queue on a mkdir lock around read-validate-append, so
+   * two agents appending at once serialize instead of interleaving.
    */
-  append(event: OrchestrationEvent, opts: { controller?: boolean } = {}): OrchestrationEvent {
+  append(
+    event: OrchestrationEvent,
+    opts: { controller?: boolean; lock?: LockOptions } = {},
+  ): OrchestrationEvent {
     if (!opts.controller && !isController()) {
       throw new Error(
         "controller-only writer: set ORCHESTRATION_CONTROLLER=1 or pass controller: true",
       );
     }
-    const prior = this.currentState(event.lane);
-    validateEvent(event, prior);
-    const line: OrchestrationEvent = {
-      ...event,
-      time: event.time ?? new Date().toISOString(),
-    };
-    this.ensureFile();
-    fs.appendFileSync(this.statePath, `${JSON.stringify(line)}\n`, "utf8");
-    return line;
+    return withJournalLock(this.statePath, opts.lock ?? {}, () => {
+      const prior = this.currentState(event.lane);
+      validateEvent(event, prior);
+      const line: OrchestrationEvent = {
+        ...event,
+        writer: event.writer ?? process.env.ORCHESTRATION_WRITER ?? "controller",
+        time: event.time ?? new Date().toISOString(),
+      };
+      this.ensureFile();
+      fs.appendFileSync(this.statePath, `${JSON.stringify(line)}\n`, "utf8");
+      return line;
+    });
   }
 
   readEvents(): OrchestrationEvent[] {

@@ -19,7 +19,14 @@
 #       -ContentType 'application/json' `
 #       -Body (@{ text = "sprint status line"; field = "situation" } | ConvertTo-Json)
 #   - Read everything in ONE call: GET http://127.0.0.1:3740/api/orchestration/state
-#     returns lanes + events + sprint roadmap + notes.
+#     returns lanes + events + sprint roadmap + notes + lastWrite (who wrote last).
+#
+# Writer identity + queueing:
+#   - -Writer names who appends (redacted label, never an account/secret);
+#     defaults to $env:ORCHESTRATION_WRITER, then "controller".
+#   - Concurrent writers queue on an atomic mkdir lock (<journal>.lock) around
+#     read-validate-append; stale locks (>10s) are reclaimed. Same lock as the
+#     node-side writers, so PS and API writers serialize on one journal.
 #
 # Local preview (dashboard, read-only, 127.0.0.1:3740) using the seed fixture:
 #   $preview = "$PWD/qa/fixtures/orchestration-state/preview-home"
@@ -40,7 +47,8 @@ param(
   [string]$EvidencePath,
   [string]$EvidenceSha256,
   [string]$Time,
-  [string]$StateFile
+  [string]$StateFile,
+  [string]$Writer
 )
 
 $ErrorActionPreference = 'Stop'
@@ -82,11 +90,40 @@ if ($EvidenceSha256 -and $EvidenceSha256 -notmatch '^[a-f0-9]{64}$') {
 }
 
 if (-not $StateFile) {
-  $home = if ($env:AGENTIC_OS_HOME) { $env:AGENTIC_OS_HOME } else { Join-Path $HOME '.agentic-os' }
-  $StateFile = Join-Path $home 'orchestration-state.jsonl'
+  # $HOME is a read-only automatic variable; use $baseDir for the journal root.
+  $baseDir = if ($env:AGENTIC_OS_HOME) { $env:AGENTIC_OS_HOME } else { Join-Path $HOME '.agentic-os' }
+  $StateFile = Join-Path $baseDir 'orchestration-state.jsonl'
 }
 $dir = Split-Path -Parent $StateFile
 if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+
+$writerName = if ($Writer) { $Writer } elseif ($env:ORCHESTRATION_WRITER) { $env:ORCHESTRATION_WRITER } else { 'controller' }
+if ($writerName.Length -gt 64) { Write-Host 'writer exceeds 64 characters'; exit 2 }
+
+# Writer queue: atomic mkdir lock around read-validate-append, so two agents
+# appending at once serialize instead of interleaving (mirrors journal-lock.ts).
+$lock = "$StateFile.lock"
+$deadline = (Get-Date).AddSeconds(5)
+while ($true) {
+  try { New-Item -ItemType Directory -Path $lock -ErrorAction Stop | Out-Null; break }
+  catch {
+    if (Test-Path $lock) {
+      $ageSeconds = ((Get-Date) - (Get-Item $lock).LastWriteTime).TotalSeconds
+      if ($ageSeconds -gt 10) {
+        # Holder crashed without releasing; reclaim the stale lock and retry.
+        Remove-Item $lock -Recurse -Force -ErrorAction SilentlyContinue
+        continue
+      }
+    }
+    if ((Get-Date) -ge $deadline) {
+      Write-Host 'writer queue timeout: another writer holds the journal lock'
+      exit 2
+    }
+    Start-Sleep -Milliseconds 50
+  }
+}
+
+try {
 
 $current = $null
 if (Test-Path $StateFile) {
@@ -137,6 +174,7 @@ $line = @{
   transition  = $Transition
   time        = $Time
   summary     = $Summary
+  writer      = $writerName
   prerequisite  = $(if ($Prerequisite) { $Prerequisite } else { $null })
   evidencePath  = $(if ($EvidencePath) { $EvidencePath } else { $null })
   evidenceSha256 = $(if ($EvidenceSha256) { $EvidenceSha256 } else { $null })
@@ -144,4 +182,8 @@ $line = @{
 
 $json = $line | ConvertTo-Json -Compress
 Add-Content -Path $StateFile -Value $json -Encoding utf8
-Write-Output "appended: $Lane -> $Transition at $StateFile"
+Write-Output "appended: $Lane -> $Transition (writer $writerName) at $StateFile"
+
+} finally {
+  Remove-Item $lock -Recurse -Force -ErrorAction SilentlyContinue
+}

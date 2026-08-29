@@ -40,6 +40,22 @@ export async function GET(request: Request) {
   const store = new OrchestrationStateStore();
   const events = store.readEvents();
   const lanes = store.deriveLanes();
+  const notes = readNotes();
+
+  // Last write across both journals: who appended most recently, and where.
+  let lastWrite: { time: string; writer: string; kind: "event" | "note" } | null = null;
+  for (const e of events) {
+    if (!e.time) continue;
+    if (!lastWrite || e.time > lastWrite.time) {
+      lastWrite = { time: e.time, writer: e.writer ?? "controller", kind: "event" };
+    }
+  }
+  for (const n of notes) {
+    if (!n.time) continue;
+    if (!lastWrite || n.time > lastWrite.time) {
+      lastWrite = { time: n.time, writer: n.writer ?? "master", kind: "note" };
+    }
+  }
 
   return NextResponse.json({
     schemaVersion: 1,
@@ -48,7 +64,8 @@ export async function GET(request: Request) {
       lanes,
       events,
       sprint: deriveSprintRoadmap(),
-      notes: readNotes(),
+      notes,
+      lastWrite,
       generatedAt: new Date().toISOString(),
     },
     error: null,

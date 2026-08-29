@@ -256,6 +256,45 @@ test("card status derives from counters and lifecycle hold", () => {
   );
   assert.equal(deriveCardStatus({ done: 1, active: 0, pending: 0 }, "HOLD_INTERNAL"), "HOLD_INTERNAL");
 });
+test("events record their writer and default to controller", (t) => {
+  const store = tempStore(t);
+  store.append(ev({}), C);
+  store.append(ev({ transition: "DISPATCHED", writer: "lane-a" }), C);
+  const events = store.readEvents();
+  assert.equal(events[0].writer, "controller");
+  assert.equal(events[1].writer, "lane-a");
+  assert.throws(() => store.append(ev({ transition: "RUNNING", writer: "" }), C), /non-empty/);
+  assert.throws(() => store.append(ev({ transition: "RUNNING", writer: "x".repeat(65) }), C), /64 characters/);
+});
+
+test("concurrent writers queue on the journal lock", (t) => {
+  const store = tempStore(t);
+  const lockDir = `${store.statePath}.lock`;
+  fs.mkdirSync(lockDir);
+  t.after(() => fs.rmSync(lockDir, { recursive: true, force: true }));
+  // Held lock: a second writer times out instead of interleaving.
+  assert.throws(
+    () => store.append(ev({}), { controller: true, lock: { timeoutMs: 120, retryMs: 20 } }),
+    /writer queue timeout/,
+  );
+  // Released lock: the queued writer proceeds.
+  fs.rmdirSync(lockDir);
+  store.append(ev({}), { controller: true, lock: { timeoutMs: 120, retryMs: 20 } });
+  assert.equal(store.currentState("community"), "QUEUED");
+});
+
+test("stale locks are reclaimed so a crashed writer cannot wedge the journal", (t) => {
+  const store = tempStore(t);
+  const lockDir = `${store.statePath}.lock`;
+  fs.mkdirSync(lockDir);
+  t.after(() => fs.rmSync(lockDir, { recursive: true, force: true }));
+  const past = new Date(Date.now() - 60_000);
+  fs.utimesSync(lockDir, past, past);
+  store.append(ev({}), { controller: true, lock: { timeoutMs: 200, retryMs: 20, staleMs: 1000 } });
+  assert.equal(store.currentState("community"), "QUEUED");
+  assert.equal(fs.existsSync(lockDir), false, "lock released after append");
+});
+
 test("sprint roadmap derives closed/doing/total from orchestrate run-manifests", (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "orch-roadmap-"));
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
