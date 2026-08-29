@@ -47,7 +47,9 @@ export async function GET(request: Request) {
   for (const e of events) {
     if (!e.time) continue;
     if (!lastWrite || e.time > lastWrite.time) {
-      lastWrite = { time: e.time, writer: e.writer ?? "controller", kind: "event" };
+      // Legacy rows predate the writer field; attribute them to the
+      // reporting lane (the controller was only the scribe).
+      lastWrite = { time: e.time, writer: e.writer ?? e.lane, kind: "event" };
     }
   }
   for (const n of notes) {

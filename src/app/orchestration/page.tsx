@@ -252,7 +252,7 @@ export default function OrchestrationPage() {
 
               {lastLifecycleEvent && (
                 <div className="text-xs text-[var(--cream-mute)]">
-                  last write: {lastLifecycleEvent.writer ?? "controller"} ·{" "}
+                  last write: {lastLifecycleEvent.writer ?? lifecycleEvent?.lane} ·{" "}
                   {fmtTime(lifecycleEvent?.lastEventAt)}
                 </div>
               )}
