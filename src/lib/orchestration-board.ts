@@ -80,6 +80,24 @@ export function laneCounters(states: readonly string[]): LaneCounters {
 }
 
 /**
+ * The lifecycle lane's current dispatch counts as one task on its card too,
+ * so a lane's own jobs move done/active/pending (RUNNING/HOLD = active,
+ * DISPATCHED = pending, DONE = done, IDLE/absent = nothing). Ceiling: this
+ * reflects the latest dispatch, not the lane's job history — add a per-event
+ * tally if totals ever matter.
+ */
+export function lifecycleCounters(state?: string): LaneCounters {
+  if (!state || state === "IDLE") return { done: 0, active: 0, pending: 0 };
+  if (state === "DONE") return { done: 1, active: 0, pending: 0 };
+  if (state === "DISPATCHED") return { done: 0, active: 0, pending: 1 };
+  return { done: 0, active: 1, pending: 0 };
+}
+
+export function addCounters(a: LaneCounters, b: LaneCounters): LaneCounters {
+  return { done: a.done + b.done, active: a.active + b.active, pending: a.pending + b.pending };
+}
+
+/**
  * Card status. WORKING = the lane is running a task (lifecycle RUNNING, or
  * tasks in flight). ACTIVE = Orca called the lane and it has not answered yet
  * (lifecycle DISPATCHED). HOLD_x = stalled with a reason, IDLE_WITH_WORK =

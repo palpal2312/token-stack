@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 
 import {
+  addCounters,
   deriveCardStatus,
   laneCounters,
+  lifecycleCounters,
   trackForLane,
 } from "@/lib/orchestration-board";
 import type { BoardTrack } from "@/lib/orchestration-board";
@@ -238,7 +240,10 @@ export default function OrchestrationPage() {
           const trackTaskLanes = lanes.filter(
             (l) => l.lane !== laneId && trackForLane(l.lane) === track,
           );
-          const counters = laneCounters(trackTaskLanes.map((l) => l.currentState));
+          const counters = addCounters(
+            laneCounters(trackTaskLanes.map((l) => l.currentState)),
+            lifecycleCounters(lifecycleEvent?.currentState),
+          );
           const status = deriveCardStatus(counters, lifecycleEvent?.currentState);
           const holdDetail = lifecycleEvent?.prerequisite;
           // Lane memo = summary of the lane's latest lifecycle event; its
