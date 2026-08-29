@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-import { trackForLane } from "@/lib/orchestration-board";
+import {
+  deriveCardStatus,
+  laneCounters,
+  trackForLane,
+} from "@/lib/orchestration-board";
 import type { BoardTrack } from "@/lib/orchestration-board";
 import type { OrchestrationLaneView } from "@/lib/orchestration-state";
 
@@ -11,38 +15,28 @@ interface ApiEnvelope {
   error: { code: string; status: number } | null;
 }
 
-const ACTIVE = new Set(["DISPATCHED", "RUNNING", "WAITING_ON"]);
-
 const TRACK_LABELS: Record<BoardTrack, string> = {
   A: "Lane A — community",
   B: "Lane B — controlled delivery",
   C: "Lane C — integration / governance",
 };
 
-const STATUS_STYLE: Record<string, string> = {
-  ACTIVE: "text-blue-700",
-  QUEUED: "text-slate-600",
-  DONE: "text-emerald-700",
-  IDLE: "text-slate-400",
+const LANE_IDS: Record<BoardTrack, string> = {
+  A: "lane-a",
+  B: "lane-b",
+  C: "lane-c",
 };
 
-/** One status per Orca lane card. */
-function trackStatus(laneList: OrchestrationLaneView[]): { status: string; detail: string } {
-  if (laneList.length === 0) return { status: "IDLE", detail: "no lanes" };
-  const running = laneList.filter((l) => ACTIVE.has(l.currentState));
-  if (running.length > 0) {
-    return {
-      status: "ACTIVE",
-      detail: running.map((l) => `${l.lane} (${l.currentState})`).join(", "),
-    };
-  }
-  const queued = laneList.filter((l) => l.currentState === "QUEUED");
-  if (queued.length > 0) return { status: "QUEUED", detail: `queued: ${queued.map((l) => l.lane).join(", ")}` };
-  return {
-    status: "DONE",
-    detail: `${laneList.length} task${laneList.length === 1 ? "" : "s"} finished`,
-  };
-}
+const STATUS_STYLE: Record<string, string> = {
+  ACTIVE: "text-blue-700",
+  DONE: "text-emerald-700",
+  IDLE: "text-slate-400",
+  IDLE_WITH_WORK: "text-amber-700",
+  HOLD_INTERNAL: "text-orange-700",
+  HOLD_LANE: "text-amber-700",
+  HOLD_APPROVAL: "text-purple-700",
+  HOLD_TIME: "text-sky-700",
+};
 
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
@@ -64,11 +58,6 @@ export default function OrchestrationPage() {
   }, []);
 
   const tracks: BoardTrack[] = ["A", "B", "C"];
-  const views = tracks.map((track) => ({
-    track,
-    label: TRACK_LABELS[track],
-    ...trackStatus(lanes.filter((l) => trackForLane(l.lane) === track)),
-  }));
 
   return (
     <main className="p-6 max-w-4xl mx-auto">
@@ -88,18 +77,52 @@ export default function OrchestrationPage() {
       {error && <p className="text-rose-700 mb-4">failed to load state: {error}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {views.map((v) => (
-          <div
-            key={v.track}
-            className="rounded border bg-white shadow-sm p-5 text-center flex flex-col items-center justify-center gap-1"
-          >
-            <div className="text-sm font-semibold text-slate-700">{v.label}</div>
-            <div className={`text-2xl font-bold ${STATUS_STYLE[v.status] ?? "text-slate-700"}`}>
-              {v.status}
+        {tracks.map((track) => {
+          const laneId = LANE_IDS[track];
+          const lifecycleEvent = lanes.find((l) => l.lane === laneId);
+          const taskLanes = lanes.filter(
+            (l) => l.lane !== laneId && trackForLane(l.lane) === track,
+          );
+          const counters = laneCounters(taskLanes.map((l) => l.currentState));
+          const status = deriveCardStatus(counters, lifecycleEvent?.currentState);
+          const holdDetail = lifecycleEvent?.prerequisite;
+
+          return (
+            <div
+              key={track}
+              className="rounded border bg-white shadow-sm p-5 flex flex-col gap-3"
+            >
+              <div className="text-sm font-semibold text-slate-700">{TRACK_LABELS[track]}</div>
+              <div className={`text-2xl font-bold ${STATUS_STYLE[status] ?? "text-slate-700"}`}>
+                {status}
+              </div>
+              {status.startsWith("HOLD_") && holdDetail && (
+                <div className="text-xs bg-slate-50 rounded px-2 py-1 text-slate-600">
+                  {status === "HOLD_LANE" && `waiting on: ${holdDetail}`}
+                  {status === "HOLD_APPROVAL" && `approval needed: ${holdDetail}`}
+                  {status === "HOLD_TIME" && `resume: ${holdDetail}`}
+                  {status === "HOLD_INTERNAL" && `lane issue: ${holdDetail}`}
+                </div>
+              )}
+
+              {/* Task counters: finished / running / queued */}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded bg-green-50 px-2 py-1">
+                  <div className="text-lg font-bold text-green-800">{counters.done}</div>
+                  <div className="text-[11px] text-green-700">done</div>
+                </div>
+                <div className="rounded bg-blue-50 px-2 py-1">
+                  <div className="text-lg font-bold text-blue-800">{counters.active}</div>
+                  <div className="text-[11px] text-blue-700">active</div>
+                </div>
+                <div className="rounded bg-amber-50 px-2 py-1">
+                  <div className="text-lg font-bold text-amber-800">{counters.pending}</div>
+                  <div className="text-[11px] text-amber-700">pending</div>
+                </div>
+              </div>
             </div>
-            {v.detail && <div className="text-xs text-slate-500">{v.detail}</div>}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {lanes.length === 0 && !error && (

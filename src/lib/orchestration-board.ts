@@ -51,3 +51,50 @@ export function columnForState(state: OrchestrationState | "INIT"): BoardColumn 
       return "done";
   }
 }
+
+/**
+ * Lane card counters: how a lane is consuming its task list. `active` = tasks
+ * in flight (dispatched/running/waiting), `pending` = queued or interrupted
+ * tasks still unfinished, `done` = finished. Lets the master see parallelism
+ * and laziness (pending > 0 with no active) at a glance.
+ */
+export interface LaneCounters {
+  done: number;
+  active: number;
+  pending: number;
+}
+
+const ACTIVE_STATES = new Set(["DISPATCHED", "RUNNING", "WAITING_ON"]);
+const DONE_STATES = new Set(["DONE"]);
+
+export function laneCounters(states: readonly string[]): LaneCounters {
+  let done = 0;
+  let active = 0;
+  let pending = 0;
+  for (const state of states) {
+    if (ACTIVE_STATES.has(state)) active += 1;
+    else if (DONE_STATES.has(state)) done += 1;
+    else pending += 1;
+  }
+  return { done, active, pending };
+}
+
+/**
+ * Card status. An explicit lane-lifecycle event (IDLE, RUNNING, HOLD_x, DONE)
+ * wins;
+ * otherwise the counters decide: any active -> ACTIVE, pending-only ->
+ * IDLE_WITH_WORK (needs a nudge), finished -> DONE, nothing -> IDLE.
+ */
+export function deriveCardStatus(
+  counters: LaneCounters,
+  lifecycle?: string,
+): string {
+  if (lifecycle && lifecycle.startsWith("HOLD_")) return lifecycle;
+  if (lifecycle === "RUNNING") return "ACTIVE";
+  if (lifecycle === "DONE" && counters.pending > 0) return "IDLE_WITH_WORK";
+  if (lifecycle) return lifecycle; // IDLE, DONE, HOLD_*
+  if (counters.active > 0) return "ACTIVE";
+  if (counters.pending > 0) return "IDLE_WITH_WORK";
+  if (counters.done > 0) return "DONE";
+  return "IDLE";
+}

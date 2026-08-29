@@ -23,8 +23,9 @@
 param(
   [Parameter(Mandatory = $true)][string]$Lane,
   [Parameter(Mandatory = $true)][string]$Task,
-  [Parameter(Mandatory = $true)][ValidateSet("QUEUED", "DISPATCHED", "RUNNING", "WAITING_ON", "DONE", "BLOCKED", "FAILED")][string]$Transition,
+  [Parameter(Mandatory = $true)][ValidateSet("QUEUED", "DISPATCHED", "RUNNING", "WAITING_ON", "DONE", "BLOCKED", "FAILED", "IDLE", "HOLD_INTERNAL", "HOLD_LANE", "HOLD_APPROVAL", "HOLD_TIME")][string]$Transition,
   [Parameter(Mandatory = $true)][string]$Summary,
+  [switch]$Lifecycle,
   [string]$Prerequisite,
   [string]$EvidencePath,
   [string]$EvidenceSha256,
@@ -86,13 +87,35 @@ if (Test-Path $StateFile) {
   }
 }
 
-if ($null -eq $current) {
-  if ($Transition -ne 'QUEUED') { Write-Host "first event for a lane must be QUEUED, got $Transition"; exit 2 }
-} else {
-  if ($terminal -contains $current) { Write-Host "lane is terminal ($current); no further transitions allowed"; exit 2 }
-  if ($allowed[$current] -notcontains $Transition) {
-    Write-Host "invalid transition $current -> $Transition"
+if ($Lifecycle) {
+  # Lane lifecycle machine (IDLE -> RUNNING -> HOLD_x/DONE, hold resumes to RUNNING).
+  if ($Lane -notin @('lane-a', 'lane-b', 'lane-c')) {
+    Write-Host "-Lifecycle requires a lane id: lane-a | lane-b | lane-c"; exit 2
+  }
+  $lifecycleAllowed = @{
+    IDLE             = @('RUNNING')
+    RUNNING          = @('DONE', 'HOLD_INTERNAL', 'HOLD_LANE', 'HOLD_APPROVAL', 'HOLD_TIME')
+    HOLD_INTERNAL    = @('RUNNING', 'DONE')
+    HOLD_LANE        = @('RUNNING', 'DONE')
+    HOLD_APPROVAL    = @('RUNNING', 'DONE')
+    HOLD_TIME        = @('RUNNING', 'DONE')
+    DONE             = @('RUNNING')
+  }
+  if ($null -eq $current) {
+    if ($Transition -notin @('IDLE', 'RUNNING')) { Write-Host "first lifecycle event must be IDLE or RUNNING, got $Transition"; exit 2 }
+  } elseif ($lifecycleAllowed[$current] -notcontains $Transition) {
+    Write-Host "invalid lane transition $current -> $Transition"
     exit 2
+  }
+} else {
+  if ($null -eq $current) {
+    if ($Transition -ne 'QUEUED') { Write-Host "first event for a lane must be QUEUED, got $Transition"; exit 2 }
+  } else {
+    if ($terminal -contains $current) { Write-Host "lane is terminal ($current); no further transitions allowed"; exit 2 }
+    if ($allowed[$current] -notcontains $Transition) {
+      Write-Host "invalid transition $current -> $Transition"
+      exit 2
+    }
   }
 }
 

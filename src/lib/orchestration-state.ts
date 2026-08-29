@@ -49,6 +49,43 @@ export const ALLOWED_TRANSITIONS: Record<
 /** Terminal states accept no further events for the lane. */
 const TERMINAL: ReadonlySet<OrchestrationState> = new Set(["DONE", "BLOCKED", "FAILED"]);
 
+/**
+ * Physical Orca lanes are first-class lifecycle machines (Sprint 09): a lane
+ * reports when its work starts (RUNNING), pauses/holds with a reason, resumes,
+ * or ends (DONE). Lane lifecycle events use lane ids lane-a/lane-b/lane-c and
+ * validate against this machine; tasks keep the QUEUED->... machine above.
+ */
+export const LANE_IDS = ["lane-a", "lane-b", "lane-c"] as const;
+
+export const LANE_LIFECYCLE_STATES = [
+  "IDLE",
+  "RUNNING",
+  "HOLD_INTERNAL",
+  "HOLD_LANE",
+  "HOLD_APPROVAL",
+  "HOLD_TIME",
+  "DONE",
+] as const;
+
+export type LaneLifecycleState = (typeof LANE_LIFECYCLE_STATES)[number];
+
+export const LANE_LIFECYCLE_TRANSITIONS: Record<
+  LaneLifecycleState,
+  readonly LaneLifecycleState[]
+> = {
+  IDLE: ["RUNNING"],
+  RUNNING: ["DONE", "HOLD_INTERNAL", "HOLD_LANE", "HOLD_APPROVAL", "HOLD_TIME"],
+  HOLD_INTERNAL: ["RUNNING", "DONE"],
+  HOLD_LANE: ["RUNNING", "DONE"],
+  HOLD_APPROVAL: ["RUNNING", "DONE"],
+  HOLD_TIME: ["RUNNING", "DONE"],
+  DONE: ["RUNNING"],
+};
+
+export function isLaneId(lane: string): boolean {
+  return (LANE_IDS as readonly string[]).includes(lane);
+}
+
 
 /**
  * Contract-aligned forbidden content markers. A redacted summary must contain
@@ -78,8 +115,8 @@ export interface OrchestrationEvent {
   lane: string;
   /** Task/job label within the lane, e.g. `S09-C1-COMMUNITY-INTAKE`. */
   task: string;
-  /** Target state after this event (must be a valid transition). */
-  transition: OrchestrationState;
+  /** Target state after this event (task machine or lane lifecycle). */
+  transition: OrchestrationState | LaneLifecycleState;
   /** ISO-8601 timestamp; defaults to now when omitted. */
   time?: string;
   /** Named dependency the lane is waiting on (WAITING_ON only). */
@@ -95,7 +132,7 @@ export interface OrchestrationEvent {
 export interface OrchestrationLaneView {
   lane: string;
   task: string;
-  currentState: OrchestrationState | "INIT";
+  currentState: string;
   prerequisite?: string;
   evidence?: { path: string; sha256: string };
   lastEventAt?: string;
@@ -133,7 +170,7 @@ export function assertRedactedSummary(summary: string): void {
 /** Validates shape, transition legality, pairing, and redaction. */
 export function validateEvent(
   event: OrchestrationEvent,
-  currentState: OrchestrationState | null,
+  currentState: string | null,
 ): void {
   if (typeof event.lane !== "string" || event.lane.trim().length === 0) {
     throw new Error("lane is required");
@@ -142,7 +179,10 @@ export function validateEvent(
     throw new Error("task is required");
   }
   const target = event.transition;
-  if (!ORCHESTRATION_STATES.includes(target)) {
+  const isOrchestration =
+    ORCHESTRATION_STATES.includes(target as OrchestrationState);
+  const isLifecycle = LANE_LIFECYCLE_STATES.includes(target as LaneLifecycleState);
+  if (!isOrchestration && !isLifecycle) {
     throw new Error(`unknown transition state: ${String(target)}`);
   }
   if (event.time !== undefined && Number.isNaN(Date.parse(event.time))) {
@@ -161,17 +201,33 @@ export function validateEvent(
   }
   assertRedactedSummary(event.summary);
 
-  if (currentState === null) {
+  if (isLaneId(event.lane)) {
+    // Lane lifecycle machine (report of start/hold/end for a physical lane).
+    const from = currentState as LaneLifecycleState | null;
+    if (from === null) {
+      if (target !== "IDLE" && target !== "RUNNING") {
+        throw new Error(`first event for a lifecycle lane must be IDLE or RUNNING, got ${target}`);
+      }
+      return;
+    }
+    if (!LANE_LIFECYCLE_TRANSITIONS[from].includes(target as LaneLifecycleState)) {
+      throw new Error(`invalid lane transition ${from} -> ${target}`);
+    }
+    return;
+  }
+
+  const taskPrior = currentState as OrchestrationState | null;
+  if (taskPrior === null) {
     if (target !== "QUEUED") {
       throw new Error(`first event for a lane must be QUEUED, got ${target}`);
     }
     return;
   }
-  if (TERMINAL.has(currentState)) {
-    throw new Error(`lane is terminal (${currentState}); no further transitions allowed`);
+  if (TERMINAL.has(taskPrior)) {
+    throw new Error(`lane is terminal (${taskPrior}); no further transitions allowed`);
   }
-  if (!ALLOWED_TRANSITIONS[currentState].includes(target)) {
-    throw new Error(`invalid transition ${currentState} -> ${target}`);
+  if (!ALLOWED_TRANSITIONS[taskPrior].includes(target as OrchestrationState)) {
+    throw new Error(`invalid transition ${taskPrior} -> ${target}`);
   }
 }
 
@@ -223,7 +279,7 @@ export class OrchestrationStateStore {
     return events;
   }
 
-  currentState(lane: string): OrchestrationState | null {
+  currentState(lane: string): string | null {
     const events = this.readEvents().filter((e) => e.lane === lane);
     if (events.length === 0) return null;
     return events[events.length - 1].transition;

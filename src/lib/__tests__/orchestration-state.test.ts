@@ -9,7 +9,9 @@ import {
   OrchestrationEvent,
   OrchestrationStateStore,
 } from "../orchestration-state";
-import { columnForState, trackForLane } from "../orchestration-board";
+
+const L = { lane: "lane-a", task: "LANE-A", transition: "IDLE", summary: "lane a idle" };
+import { columnForState, deriveCardStatus, laneCounters, trackForLane } from "../orchestration-board";
 
 function tempStore(t: { after: (fn: () => void) => void }): OrchestrationStateStore {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "orch-state-"));
@@ -194,4 +196,53 @@ test("wildcard transition table has the required chain shapes", () => {
   assert.equal(ALLOWED_TRANSITIONS.DONE.length, 0);
   assert.equal(ALLOWED_TRANSITIONS.BLOCKED.length, 0);
   assert.equal(ALLOWED_TRANSITIONS.FAILED.length, 0);
+});
+
+test("lane lifecycle machine accepts start/hold/resume/end", (t) => {
+  const store = tempStore(t);
+  store.append({ ...L, transition: "IDLE" }, C);
+  store.append({ ...L, transition: "RUNNING" }, C);
+  assert.equal(store.currentState("lane-a"), "RUNNING");
+  store.append({ ...L, transition: "HOLD_LANE", prerequisite: "lane-b" }, C);
+  assert.equal(store.currentState("lane-a"), "HOLD_LANE");
+  store.append({ ...L, transition: "RUNNING", summary: "resumed" }, C);
+  store.append({ ...L, transition: "HOLD_APPROVAL", prerequisite: "owner" }, C);
+  store.append({ ...L, transition: "RUNNING", summary: "approved" }, C);
+  store.append({ ...L, transition: "HOLD_TIME", prerequisite: "2026-08-30T01:00:00Z" }, C);
+  store.append({ ...L, transition: "RUNNING", summary: "time reached" }, C);
+  store.append({ ...L, transition: "DONE", summary: "lane finished" }, C);
+  assert.equal(store.currentState("lane-a"), "DONE");
+});
+
+test("lane lifecycle rejects illegal transitions and mirrors task machine untouched", (t) => {
+  const store = tempStore(t);
+  assert.throws(() => store.append({ ...L, transition: "HOLD_LANE" }, C), /first event.*IDLE or RUNNING/);
+  store.append({ ...L, transition: "IDLE" }, C);
+  assert.throws(() => store.append({ ...L, transition: "DONE" }, C), /invalid lane transition IDLE -> DONE/);
+  store.append({ ...L, transition: "RUNNING" }, C);
+  assert.throws(() => store.append({ ...L, transition: "QUEUED" }, C), /invalid lane transition/);
+  // task lanes keep their own machine
+  assert.throws(() => store.append(ev({ transition: "RUNNING" }), C), /first event.*QUEUED/);
+});
+
+test("lane counters split done/active/pending", () => {
+  assert.deepEqual(laneCounters(["DONE", "DONE", "RUNNING", "WAITING_ON", "QUEUED", "QUEUED"]), {
+    done: 2,
+    active: 2,
+    pending: 2,
+  });
+  assert.deepEqual(laneCounters([]), { done: 0, active: 0, pending: 0 });
+});
+
+test("card status derives from counters and lifecycle hold", () => {
+  assert.equal(deriveCardStatus({ done: 1, active: 2, pending: 0 }, "RUNNING"), "ACTIVE");
+  assert.equal(deriveCardStatus({ done: 0, active: 0, pending: 2 }), "IDLE_WITH_WORK");
+  assert.equal(deriveCardStatus({ done: 3, active: 0, pending: 0 }), "DONE");
+  assert.equal(deriveCardStatus({ done: 1, active: 0, pending: 1 }, "DONE"), "IDLE_WITH_WORK");
+  assert.equal(deriveCardStatus({ done: 0, active: 0, pending: 0 }), "IDLE");
+  assert.equal(
+    deriveCardStatus({ done: 0, active: 0, pending: 1 }, "HOLD_APPROVAL"),
+    "HOLD_APPROVAL",
+  );
+  assert.equal(deriveCardStatus({ done: 1, active: 0, pending: 0 }, "HOLD_INTERNAL"), "HOLD_INTERNAL");
 });
