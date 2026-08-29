@@ -61,8 +61,36 @@ export async function GET(request: Request) {
   }
 
   // ?compact=1: token-cheap summary for machine readers — short keys, no raw
-  // events/timelines/note history. Clocks are HH:mm:ss UTC slices.
-  if (new URL(request.url).searchParams.has("compact")) {
+  // events/timelines/note history. ?compact=state: state-only ultra-cheap
+  // polling, no message text at all. Clocks are HH:mm:ss UTC slices.
+  const compact = new URL(request.url).searchParams.get("compact");
+  if (compact !== null) {
+    if (compact === "state") {
+      return NextResponse.json({
+        schemaVersion: 1,
+        result: {
+          at: new Date().toISOString(),
+          lw: lastWrite && {
+            w: lastWrite.writer,
+            k: lastWrite.kind,
+            t: lastWrite.time.slice(11, 19),
+          },
+          sprint: deriveSprintRoadmap(),
+          cards: deriveBoardCards(lanes, notes).map((c) => ({
+            t: c.track,
+            s: c.status,
+            d: c.counters.done,
+            a: c.counters.active,
+            p: c.counters.pending,
+            lc: c.lifecycle ?? null,
+            pr: c.prerequisite ?? null,
+            w: c.lastWrite?.writer ?? null,
+            lt: c.lastWrite?.time?.slice(11, 19) ?? null,
+          })),
+        },
+        error: null,
+      });
+    }
     const latestText = (field: string) =>
       [...notes].reverse().find((n) => (n.field ?? "situation") === field)?.text ?? null;
     return NextResponse.json({

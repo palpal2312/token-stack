@@ -25,6 +25,8 @@
 #     returns lanes + events + sprint roadmap + notes + lastWrite (who wrote last).
 #     Append ?compact=1 for the token-cheap summary (cards + situation/close +
 #     lastWrite, short keys) — use it for routine polling, full only when needed.
+#     ?compact=state is the ultra-cheap variant: statuses/counters/lastWrite
+#     only, zero message text — for heartbeat-style polling.
 #
 # Writer identity + queueing:
 #   - -Writer names who appends (redacted label, never an account/secret);
