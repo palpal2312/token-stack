@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { OrchestrationStateStore } from "@/lib/orchestration-state";
+import { deriveSprintRoadmap, OrchestrationStateStore } from "@/lib/orchestration-state";
 
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 
@@ -43,7 +43,12 @@ export async function GET(request: Request) {
   return NextResponse.json({
     schemaVersion: 1,
     requestId: crypto.randomUUID(),
-    result: { lanes, events, generatedAt: new Date().toISOString() },
+    result: {
+      lanes,
+      events,
+      sprint: deriveSprintRoadmap(),
+      generatedAt: new Date().toISOString(),
+    },
     error: null,
   });
 }

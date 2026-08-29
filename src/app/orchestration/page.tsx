@@ -11,7 +11,11 @@ import type { BoardTrack } from "@/lib/orchestration-board";
 import type { OrchestrationLaneView } from "@/lib/orchestration-state";
 
 interface ApiEnvelope {
-  result: { lanes: OrchestrationLaneView[]; generatedAt: string } | null;
+  result: {
+    lanes: OrchestrationLaneView[];
+    generatedAt: string;
+    sprint?: { total: number; closed: number; doing: number; current: number | null } | null;
+  } | null;
   error: { code: string; status: number } | null;
 }
 
@@ -64,6 +68,7 @@ const NOTE_FIELDS: { key: NoteField; label: string; placeholder: string }[] = [
 
 export default function OrchestrationPage() {
   const [lanes, setLanes] = useState<OrchestrationLaneView[]>([]);
+  const [sprint, setSprint] = useState<NonNullable<ApiEnvelope["result"]>["sprint"]>(null);
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<MasterNote[]>([]);
@@ -82,6 +87,7 @@ export default function OrchestrationPage() {
           return;
         }
         setLanes(envelope.result.lanes);
+        setSprint(envelope.result.sprint ?? null);
         setGeneratedAt(envelope.result.generatedAt);
       })
       .catch((reason: unknown) => setError(String((reason as Error).message ?? reason)));
@@ -127,6 +133,19 @@ export default function OrchestrationPage() {
     (s) => s === "RUNNING" || (s ?? "").startsWith("HOLD_"),
   ).length;
 
+  // Roadmap counts sprints from Orca run-manifests; falls back to journal task counters.
+  const roadmap = sprint
+    ? {
+        doing: sprint.doing,
+        done: sprint.closed,
+        total: sprint.total,
+        label:
+          sprint.current === null
+            ? "no sprint active"
+            : `sprint ${String(sprint.current).padStart(2, "0")} active`,
+      }
+    : { doing: counter.active, done: counter.done, total: taskLanes.length, label: "journal tasks" };
+
   const latestNote = (field: NoteField): MasterNote | undefined =>
     [...notes].reverse().find((n) => (n.field ?? "situation") === field);
 
@@ -153,8 +172,9 @@ export default function OrchestrationPage() {
         <div className="space-y-3 text-sm">
           <p>
             <span className="font-semibold">ROAD MAP - SPRINT:</span>{" "}
-            {counter.active} (currently doing) / {counter.done} (done) /{" "}
-            {taskLanes.length} (total)
+            {roadmap.doing} (currently doing) / {roadmap.done} (done) /{" "}
+            {roadmap.total} (total)
+            <span className="text-xs text-slate-400 ml-2">— {roadmap.label}</span>
           </p>
           <p>
             <span className="font-semibold">LANE:</span> {laneWorking} (working) |{" "}

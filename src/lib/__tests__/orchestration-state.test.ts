@@ -6,6 +6,7 @@ import * as path from "node:path";
 
 import {
   ALLOWED_TRANSITIONS,
+  deriveSprintRoadmap,
   OrchestrationEvent,
   OrchestrationStateStore,
 } from "../orchestration-state";
@@ -245,4 +246,36 @@ test("card status derives from counters and lifecycle hold", () => {
     "HOLD_APPROVAL",
   );
   assert.equal(deriveCardStatus({ done: 1, active: 0, pending: 0 }, "HOLD_INTERNAL"), "HOLD_INTERNAL");
+});
+test("sprint roadmap derives closed/doing/total from orchestrate run-manifests", (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "orch-roadmap-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const mk = (name: string, manifest?: unknown) => {
+    fs.mkdirSync(path.join(dir, name), { recursive: true });
+    if (manifest !== undefined) {
+      fs.writeFileSync(path.join(dir, name, "run-manifest.json"), JSON.stringify(manifest));
+    }
+  };
+  mk("orchestrate-260825-sprint01-close");
+  mk("orchestrate-260825-sprint02-close");
+  mk("orchestrate-260825-sprint03-chat", { status: "closed_go" });
+  mk("orchestrate-260825-sprint04-orca-reconcile", { status: "closed_go" });
+  mk("orchestrate-260825-sprint05-07-multi-sprint", {
+    sprints: { "05": { status: "closed_go" }, "06": { status: "closed_go" }, "07": { status: "closed_go" } },
+  });
+  mk("orchestrate-260825-sprint08-11", {
+    sprints: {
+      "08": { status: "closed_with_arbiter_go" },
+      "09": { status: "active" },
+      "10": { status: "gated" },
+      "11": { status: "planned_after_08_10" },
+    },
+  });
+  const r = deriveSprintRoadmap(dir);
+  assert.ok(r);
+  assert.equal(r.total, 11);
+  assert.equal(r.closed, 8);
+  assert.equal(r.doing, 1);
+  assert.equal(r.current, 9);
+  assert.equal(deriveSprintRoadmap(path.join(dir, "missing")), null);
 });

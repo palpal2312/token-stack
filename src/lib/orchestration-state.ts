@@ -231,6 +231,69 @@ export function validateEvent(
   }
 }
 
+export interface SprintRoadmap {
+  total: number;
+  closed: number;
+  doing: number;
+  current: number | null;
+}
+
+/**
+ * Derive the sprint roadmap (closed/doing/total) from Orca orchestrate
+ * run-manifests under plans/reports. Closed = folder *-close, or manifest
+ * status/sprints.*.status starting with "closed". doing = status "active".
+ * ponytail: scanned per request; cache only if the preview ever lags.
+ */
+export function deriveSprintRoadmap(reportsDir: string = path.join(process.cwd(), "plans", "reports")): SprintRoadmap | null {
+  if (!fs.existsSync(reportsDir)) return null;
+  const closed = new Set<number>();
+  const doing = new Set<number>();
+  const seen = new Set<number>();
+  for (const entry of fs.readdirSync(reportsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !entry.name.startsWith("orchestrate-")) continue;
+    const nums = [...entry.name.matchAll(/sprint(\d{2})(?:-(\d{2}))?/g)].flatMap((m) =>
+      [m[1], m[2]].filter(Boolean).map((n) => parseInt(n, 10)),
+    );
+    // folder forms: sprint01-close, sprint03-chat, sprint05-07-multi-sprint
+    const rangeClosed = /-close\/?$/.test(entry.name);
+    if (rangeClosed && nums.length === 2 && nums[0] < nums[1]) {
+      for (let n = nums[0]; n <= nums[1]; n += 1) closed.add(n);
+    }
+    const manifestFile = path.join(reportsDir, entry.name, "run-manifest.json");
+    if (nums.length === 1 && rangeClosed) closed.add(nums[0]);
+    for (const n of nums) seen.add(n);
+    if (!fs.existsSync(manifestFile)) continue;
+    let manifest: { status?: string; sprints?: Record<string, { status?: string }> };
+    try {
+      manifest = JSON.parse(fs.readFileSync(manifestFile, "utf8"));
+    } catch {
+      continue;
+    }
+    if (manifest.sprints) {
+      for (const [num, value] of Object.entries(manifest.sprints)) {
+        const n = parseInt(num, 10);
+        seen.add(n);
+        const status = String(value?.status ?? "");
+        if (status.startsWith("closed")) closed.add(n);
+        else if (status === "active") doing.add(n);
+      }
+    } else if (typeof manifest.status === "string" && nums.length) {
+      for (const n of nums) {
+        if (manifest.status.startsWith("closed")) closed.add(n);
+        else if (manifest.status === "active") doing.add(n);
+      }
+    }
+  }
+  if (seen.size === 0) return null;
+  const active = [...doing].sort((a, b) => a - b);
+  return {
+    total: Math.max(...seen),
+    closed: closed.size,
+    doing: doing.size,
+    current: active[0] ?? null,
+  };
+}
+
 export class OrchestrationStateStore {
   readonly statePath: string;
 
