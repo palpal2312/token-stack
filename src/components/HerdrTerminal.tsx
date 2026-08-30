@@ -17,6 +17,8 @@ import { HERDR_TERMINAL_WS_PATH } from "@/lib/herdrTerminalProtocol";
 
 type Phase = "booting" | "live" | "error";
 type TermBackend = "xterm" | "ghostty";
+/** Observe-only WS diagnostic labels — never used to mutate Orca slots. */
+type WsObserve = "idle" | "connecting" | "open" | "closed" | "error";
 
 const TERM_STORAGE_KEY = "agentos.code-space.term";
 
@@ -105,6 +107,8 @@ export default function HerdrTerminal({
   const [notice, setNotice] = useState<string | null>(null);
   const [restartTick, setRestartTick] = useState(0);
   const [backend, setBackend] = useState<TermBackend>("xterm");
+  const [wsObserve, setWsObserve] = useState<WsObserve>("idle");
+  const [lastRestartAt, setLastRestartAt] = useState<string | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -138,7 +142,10 @@ export default function HerdrTerminal({
     }
 
     async function boot() {
-      if (!disposed) setNotice(null);
+      if (!disposed) {
+        setNotice(null);
+        setWsObserve("connecting");
+      }
       const preferred = resolveTermBackend();
       const { kind, mods, fellBack } = await resolveMods(preferred);
       if (!disposed) {
@@ -202,17 +209,22 @@ export default function HerdrTerminal({
 
       socket = new WebSocket(apiWsUrl(HERDR_TERMINAL_WS_PATH));
       socket.binaryType = "arraybuffer";
+      if (!disposed) setWsObserve("connecting");
 
       const wsFailTimerLocal = setTimeout(() => {
         if (disposed || socket?.readyState === WebSocket.OPEN) return;
         setPhase("error");
+        setWsObserve("error");
         setErr("Terminal WebSocket did not connect. Restart the dashboard with npm run dev (custom server.ts), not next dev alone.");
       }, 2500);
       wsFailTimer = wsFailTimerLocal;
 
       socket.onopen = () => {
         clearTimeout(wsFailTimerLocal);
-        if (!disposed) setPhase("live");
+        if (!disposed) {
+          setPhase("live");
+          setWsObserve("open");
+        }
         // Always push size on connect (force): start may have reused a PTY that
         // was spawned at a different cols×rows than this viewport.
         requestAnimationFrame(() => {
@@ -225,12 +237,14 @@ export default function HerdrTerminal({
         clearTimeout(wsFailTimerLocal);
         if (!disposed) {
           setPhase("error");
+          setWsObserve("error");
           setErr("Lost the terminal WebSocket. Press Restart (dashboard must run via npm run dev / npm start).");
         }
       };
       socket.onclose = () => {
         clearTimeout(wsFailTimerLocal);
         if (disposed) return;
+        setWsObserve("closed");
         setPhase((p) => (p === "error" ? p : "error"));
         setErr((e) => e ?? "Terminal WebSocket closed. Press Restart.");
       };
@@ -326,11 +340,29 @@ export default function HerdrTerminal({
           />
         </div>
         <button
-          onClick={() => { setErr(null); setNotice(null); setPhase("booting"); setRestartTick((t) => t + 1); }}
+          onClick={() => {
+            setErr(null);
+            setNotice(null);
+            setPhase("booting");
+            setWsObserve("idle");
+            setLastRestartAt(new Date().toISOString());
+            setRestartTick((t) => t + 1);
+          }}
           className="flex items-center gap-1.5 text-[11px] text-[var(--fg-dim)] hover:text-[var(--fg)] transition"
         >
           <RefreshCw size={11} /> Restart
         </button>
+      </div>
+      <div
+        className="px-3 py-1 border-b border-[var(--panel-border)] flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[9px] uppercase tracking-wide shrink-0"
+        style={{ color: "var(--fg-dimmer)" }}
+        aria-label="Herdr observe-only diagnostics"
+      >
+        <span>observe-only</span>
+        <span>phase {phase}</span>
+        <span>ws {wsObserve}</span>
+        <span>restart ×{restartTick}</span>
+        {lastRestartAt && <span title={lastRestartAt}>last restart {lastRestartAt.slice(11, 19)}Z</span>}
       </div>
       {notice && <div className="px-3 py-2 text-[11px] text-amber-200/90 border-b border-[var(--panel-border)] shrink-0">{notice}</div>}
       {err && <div className="px-3 py-2 text-[11px] text-rose-300 border-b border-[var(--panel-border)] shrink-0">{err}</div>}

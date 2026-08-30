@@ -5,7 +5,10 @@ import { RefreshCw, AlertTriangle, PanelLeft, PanelLeftClose, SquareTerminal, Ex
 import DebugShell from "./DebugShell";
 import HeaderStatPills from "./HeaderStatPills";
 import PageHeaderIcon from "./PageHeaderIcon";
+import WorkerHealth from "./WorkerHealth";
+import OrcaSlotStatus from "./OrcaSlotStatus";
 import { apiFetch } from "@/lib/apiFetch";
+import { parseRuntimeSlots, toSlotView, type OrcaRuntimeSlotsDTO } from "@/lib/agentRuntime/orca-slot-client";
 import {
   CachePresets,
   ClientCacheKeys,
@@ -37,6 +40,25 @@ interface RuntimeAttempt {
   status: "pending" | "attached" | "completed" | "failed" | "cancelled";
   last_heartbeat_at: string;
   terminal_summary?: string;
+}
+interface CodeSpaceSummary {
+  task_id: string;
+  attempt_id: string;
+  builder_id: string;
+  status: string;
+  updated_at: string;
+  worktree_id?: string | null;
+  checkpoint?: string | null;
+  blocker?: string | null;
+  artifact_refs?: string[] | null;
+}
+interface SandboxWorker {
+  worker_id: string;
+  profile?: { provider_id?: string; tier?: string; is_sandbox?: boolean; status?: string; reason?: string };
+  health: string;
+  effective_health: string;
+  active_sandboxes: number;
+  last_seen_at: string;
 }
 
 const LS_PANEL = "agentos.code-space.left-open";
@@ -95,12 +117,19 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
   const [runtimeAttempts, setRuntimeAttempts] = useState<RuntimeAttempt[]>([]);
   const [runtimeProjectionEnabled, setRuntimeProjectionEnabled] = useState(false);
   const [runtimeProjectionError, setRuntimeProjectionError] = useState<string | null>(null);
+  const [codespaceSummaries, setCodespaceSummaries] = useState<CodeSpaceSummary[] | null>(null);
+  const [codespaceSummaryError, setCodespaceSummaryError] = useState<string | null>(null);
+  const [sandboxWorkers, setSandboxWorkers] = useState<SandboxWorker[] | null>(null);
+  const [sandboxWorkersError, setSandboxWorkersError] = useState<string | null>(null);
+  const [runtimeSlots, setRuntimeSlots] = useState<OrcaRuntimeSlotsDTO | null>(null);
+  const [snapshotGeneratedAt, setSnapshotGeneratedAt] = useState<string | null>(null);
+  const [snapshotStale, setSnapshotStale] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [listUpdatedAt, setListUpdatedAt] = useState<number | null>(null);
   const [openingExt, setOpeningExt] = useState(false);
-  const [extMsg, setExtMsg] = useState<string | null>(null);
+  const [extMsg, setExtMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [debugShellOpen, setDebugShellOpen] = useState(false);
   const [leftOpen, setLeftOpen] = useState(true);
   const [leftReady, setLeftReady] = useState(false);
@@ -133,12 +162,12 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
       });
       const j = await r.json().catch(() => ({})) as { ok?: boolean; error?: string; via?: string };
       if (!r.ok || !j.ok) {
-        setExtMsg(String(j.error ?? "Could not open an external terminal."));
+        setExtMsg({ ok: false, text: String(j.error ?? "Could not open an external terminal.") });
         return;
       }
-      setExtMsg(j.via === "cmd" ? "Opened Herdr in a CMD window." : "Opened Herdr in a system terminal.");
+      setExtMsg({ ok: true, text: j.via === "cmd" ? "Opened Herdr in a CMD window." : "Opened Herdr in a system terminal." });
     } catch (e) {
-      setExtMsg(e instanceof Error ? e.message : String(e));
+      setExtMsg({ ok: false, text: e instanceof Error ? e.message : String(e) });
     } finally {
       setOpeningExt(false);
     }
@@ -157,6 +186,13 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
     setRuntimeAttempts((j.runtimeAttempts as RuntimeAttempt[]) ?? []);
     setRuntimeProjectionEnabled(j.runtimeProjectionEnabled === true);
     setRuntimeProjectionError((j.runtimeProjectionError as string) ?? null);
+    const cs = j.codespaceSummary as { summaries?: CodeSpaceSummary[] } | null | undefined;
+    setCodespaceSummaries(cs?.summaries ?? null);
+    setCodespaceSummaryError((j.codespaceSummaryError as string) ?? null);
+    setSandboxWorkers((j.sandboxWorkers as SandboxWorker[] | undefined) ?? null);
+    setSandboxWorkersError((j.sandboxWorkersError as string) ?? null);
+    setSnapshotGeneratedAt((j.snapshotGeneratedAt as string) ?? null);
+    setSnapshotStale(j.snapshotStale === true);
     setErr((j.snapshotError as string) ?? null);
     setLoaded(true);
     rememberListTime(fetchedAt);
@@ -180,18 +216,29 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
     loadInFlightRef.current = true;
     setRefreshing(true);
     try {
-      const { data: j } = await cachedFetchJson(
-        key,
-        async () => {
-          try {
-            return await (await fetch("/api/herdr/snapshot", { cache: "no-store" })).json() as Record<string, unknown>;
-          } catch {
-            return { error: "The dashboard did not answer." };
-          }
-        },
-        { ...policy, force: true },
-      );
-      if (mountedRef.current) applySnapshot(j, Date.now());
+      const [snapshotResult, slotsResult] = await Promise.all([
+        cachedFetchJson(
+          key,
+          async () => {
+            try {
+              return await (await fetch("/api/herdr/snapshot", { cache: "no-store" })).json() as Record<string, unknown>;
+            } catch {
+              return { error: "The dashboard did not answer." };
+            }
+          },
+          { ...policy, force: true },
+        ),
+        fetch("/api/herdr/slots", { cache: "no-store" })
+          .then(async (res) => {
+            const payload: unknown = await res.json().catch(() => null);
+            return res.ok ? parseRuntimeSlots(payload) : null;
+          })
+          .catch(() => null),
+      ]);
+      if (mountedRef.current) {
+        applySnapshot(snapshotResult.data, Date.now());
+        setRuntimeSlots(slotsResult);
+      }
     } finally {
       loadInFlightRef.current = false;
       if (mountedRef.current) setRefreshing(false);
@@ -281,6 +328,40 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
   const jobCount = attachedAttempts.length + busyPanes.length;
   liveWorkRef.current = jobCount > 0;
 
+  // Daemon-unreachable: projection read is unconditional, so a failed daemon
+  // always surfaces here — one combined actionable panel instead of probes.
+  const daemonError = runtimeProjectionError;
+  const summaryOnlyError = codespaceSummaryError && !runtimeProjectionError ? codespaceSummaryError : null;
+  const summariesByAttempt = useMemo(() => {
+    const m = new Map<string, CodeSpaceSummary>();
+    for (const s of codespaceSummaries ?? []) m.set(s.attempt_id, s);
+    return m;
+  }, [codespaceSummaries]);
+  // Attempt cards already surface their matching summary (checkpoint/blocker
+  // rows), so the Activity section shows only summaries with no visible card.
+  const cardedAttemptIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const a of attachedAttempts) ids.add(a.attempt_id);
+    for (const a of doneAttempts) ids.add(a.attempt_id);
+    return ids;
+  }, [attachedAttempts, doneAttempts]);
+  const sortedSummaries = useMemo(
+    () => [...(codespaceSummaries ?? [])]
+      .filter((s) => !cardedAttemptIds.has(s.attempt_id))
+      .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at)),
+    [codespaceSummaries, cardedAttemptIds],
+  );
+
+  const activitySummary = (codespaceSummaries !== null || summaryOnlyError) && (
+    <ActivitySummary summaries={sortedSummaries} error={summaryOnlyError} compact={embedded} />
+  );
+  const workerHealth = (sandboxWorkers !== null || sandboxWorkersError) && (
+    <WorkerHealth workers={sandboxWorkers ?? []} error={sandboxWorkersError} compact={embedded} />
+  );
+  const slotStatus = runtimeSlots?.lab_enabled
+    ? <OrcaSlotStatus view={toSlotView(runtimeSlots, "orca-lab")} />
+    : null;
+
   const jobBoard = (
     <JobBoard
       compact={embedded}
@@ -288,6 +369,7 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
       doneAttempts={doneAttempts}
       busyPanes={busyPanes}
       idlePanes={idlePanes}
+      summariesByAttempt={summariesByAttempt}
       onOpenDebug={() => setDebugShellOpen(true)}
     />
   );
@@ -301,11 +383,8 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
             <div className="text-[12px] text-rose-300">{err}</div>
           </div>
         )}
-        {runtimeProjectionError && (
-          <div className="panel p-3 flex items-start gap-2.5">
-            <AlertTriangle size={15} className="mt-0.5 shrink-0 text-amber-300" />
-            <div className="text-[12px] text-amber-200">Canonical runtime projection: {runtimeProjectionError}</div>
-          </div>
+        {daemonError && (
+          <DaemonDegradePanel error={daemonError} compact />
         )}
         {loaded && status && !status.running && (
           <StatusHint status={status} />
@@ -326,6 +405,9 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
           </button>
         </div>
         {jobBoard}
+        {workerHealth}
+        {slotStatus}
+        {activitySummary}
         {debugShellOpen && (
           <DebugShell open={debugShellOpen} onClose={() => setDebugShellOpen(false)} />
         )}
@@ -387,6 +469,15 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
             <div>Updated · {listUpdatedAt ? formatAgeShort(listUpdatedAt) : "—"}</div>
             <div>{jobCount > 0 ? "Live · 10s stale" : "Idle · 60s stale"}</div>
           </div>
+          {snapshotStale && (
+            <span
+              className="hidden sm:inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium"
+              style={{ borderColor: "rgba(251,191,36,.45)", background: "rgba(251,191,36,.10)", color: "#fbbf24" }}
+              title={`Snapshot cache is stale — generated ${snapshotGeneratedAt ? formatWhen(snapshotGeneratedAt) : "unknown"}. Force fetch to refresh.`}
+            >
+              <AlertTriangle size={10} /> Stale · generated {formatAgeShort(snapshotGeneratedAt)}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => void openExternal()}
@@ -415,9 +506,19 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
           </button>
         </div>
       </header>
-      {extMsg && (
-        <div className="mb-2 shrink-0 text-[11px] text-[var(--cream-mute)]">{extMsg}</div>
-      )}
+      {extMsg && (extMsg.ok ? (
+        <div className="mb-2 shrink-0 text-[11px] text-[var(--cream-mute)]">{extMsg.text}</div>
+      ) : (
+        <div className="mb-2 shrink-0 panel p-3 flex items-start gap-2.5">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0 text-rose-300" />
+          <div className="text-[12px] text-rose-300 space-y-1">
+            <div>{extMsg.text}</div>
+            <div className="text-[var(--fg-dim)]">
+              Open a CMD window yourself and run: <code className="mono px-1 rounded bg-[rgba(255,255,255,0.05)]">herdr</code>
+            </div>
+          </div>
+        </div>
+      ))}
 
       <div className="flex-1 min-h-0 flex rounded-xl border overflow-hidden" style={{ borderColor: "var(--line-soft)" }}>
         {leftOpen && (
@@ -439,15 +540,16 @@ export default function CodeSpaceView({ embedded = false }: { embedded?: boolean
                   <span>{err}</span>
                 </div>
               )}
-              {runtimeProjectionError && (
-                <div className="rounded-lg border p-2.5 flex items-start gap-2 text-[11px]" style={{ borderColor: "rgba(251,191,36,.35)", color: "#fde68a" }}>
-                  <AlertTriangle size={13} className="mt-0.5 shrink-0" />
-                  <span>Canonical runtime projection: {runtimeProjectionError}</span>
-                </div>
+              {daemonError && (
+                <DaemonDegradePanel error={daemonError} compact />
               )}
               {loaded && status && !status.running && (
                 <StatusHint status={status} compact />
               )}
+
+              {workerHealth}
+              {slotStatus}
+              {activitySummary}
 
               {runtimeAttempts.length > 0 && (
                 <section className="space-y-1.5">
@@ -541,6 +643,7 @@ function JobBoard({
   doneAttempts,
   busyPanes,
   idlePanes,
+  summariesByAttempt,
   onOpenDebug,
 }: {
   compact?: boolean;
@@ -548,6 +651,7 @@ function JobBoard({
   doneAttempts: RuntimeAttempt[];
   busyPanes: Pane[];
   idlePanes: Pane[];
+  summariesByAttempt: Map<string, CodeSpaceSummary>;
   onOpenDebug: () => void;
 }) {
   const attachedCount = attachedAttempts.length + busyPanes.length;
@@ -605,7 +709,7 @@ function JobBoard({
         ) : (
           <div className={compact ? "space-y-2" : "space-y-3"}>
             {attachedAttempts.map((attempt) => (
-              <AttemptCard key={attempt.attempt_id} attempt={attempt} compact={compact} />
+              <AttemptCard key={attempt.attempt_id} attempt={attempt} summary={summariesByAttempt.get(attempt.attempt_id)} compact={compact} />
             ))}
             {busyPanes.map((pane, i) => (
               <PaneCard key={pane.pane_id ?? `busy-${i}`} pane={pane} compact={compact} />
@@ -646,7 +750,7 @@ function JobBoard({
         ) : (
           <div className={compact ? "space-y-2" : "space-y-3"}>
             {doneAttempts.map((attempt) => (
-              <AttemptCard key={attempt.attempt_id} attempt={attempt} compact={compact} />
+              <AttemptCard key={attempt.attempt_id} attempt={attempt} summary={summariesByAttempt.get(attempt.attempt_id)} compact={compact} />
             ))}
           </div>
         )}
@@ -707,8 +811,11 @@ function StatusSection({
   );
 }
 
-function AttemptCard({ attempt, compact }: { attempt: RuntimeAttempt; compact?: boolean }) {
-  const summary = attempt.terminal_summary?.trim();
+function AttemptCard({ attempt, summary, compact }: { attempt: RuntimeAttempt; summary?: CodeSpaceSummary; compact?: boolean }) {
+  const termSummary = attempt.terminal_summary?.trim();
+  const checkpoint = summary?.checkpoint?.trim();
+  const blocker = summary?.blocker?.trim();
+  const refs = summary?.artifact_refs ?? [];
   return (
     <div className={`panel space-y-2 ${compact ? "p-3" : "p-4"}`}>
       <div className="flex items-center justify-between gap-3">
@@ -721,9 +828,9 @@ function AttemptCard({ attempt, compact }: { attempt: RuntimeAttempt; compact?: 
         </span>
         <StatusBadge status={attempt.status} />
       </div>
-      {summary ? (
+      {termSummary ? (
         <div className={`${compact ? "text-[12px]" : "text-[13px]"} leading-relaxed`} style={{ color: "var(--cream-mute)" }}>
-          {summary}
+          {termSummary}
         </div>
       ) : (
         <div className={`${compact ? "text-[12px]" : "text-[13px]"}`} style={{ color: "var(--fg-dim)" }}>
@@ -731,6 +838,17 @@ function AttemptCard({ attempt, compact }: { attempt: RuntimeAttempt; compact?: 
         </div>
       )}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]" style={{ color: "var(--fg-dim)" }}>
+        {checkpoint && (
+          <span title={checkpoint}><span className="text-[var(--fg-dimmer)]">Checkpoint:</span> {checkpoint}</span>
+        )}
+        {blocker && (
+          <span title={blocker} style={{ color: "#fbbf24" }}><span style={{ color: "#d97706" }}>Blocker:</span> {blocker}</span>
+        )}
+        {refs.map((ref) => (
+          <span key={ref} className="rounded-full border px-1.5 py-0.5 text-[9px]" style={{ borderColor: "var(--line-soft)" }} title={ref}>
+            {ref}
+          </span>
+        ))}
         <span title={attempt.task_id}><span className="text-[var(--fg-dimmer)]">Task:</span> {attempt.task_id}</span>
         <span><span className="text-[var(--fg-dimmer)]">Pane:</span> {attempt.pane_id}</span>
         {isRealTimestamp(attempt.last_heartbeat_at) && (
@@ -778,6 +896,89 @@ function PaneCard({ pane, compact }: { pane: Pane; compact?: boolean }) {
           <span className="text-[var(--fg-dimmer)]">Pane:</span> {pane.pane_id}
         </div>
       )}
+    </div>
+  );
+}
+
+function DaemonDegradePanel({ error, compact = false }: { error: string; compact?: boolean }) {
+  return (
+    <div className={`panel flex items-start gap-2.5 ${compact ? "p-2.5" : "p-4"}`}>
+      <AlertTriangle size={compact ? 14 : 16} className="mt-0.5 shrink-0 text-amber-300" />
+      <div className={`text-amber-200 space-y-1.5 ${compact ? "text-[11px]" : "text-[12px]"}`}>
+        <div>
+          Runtime services are not answering on 127.0.0.1:3738 — showing Herdr-only status.
+          Start sen-daemon; if it fails to start, check PostgreSQL bootstrap and that ports 3738
+          and 5432 are free (<span className="mono">docs/windows-runtime-contract.md</span>).
+        </div>
+        <div className="text-[var(--fg-dim)]">{error}</div>
+      </div>
+    </div>
+  );
+}
+
+function ActivitySummary({ summaries, error, compact = false }: { summaries: CodeSpaceSummary[]; error: string | null; compact?: boolean }) {
+  return (
+    <section className="space-y-1.5">
+      <h2 className="text-[10px] font-semibold uppercase tracking-[.16em]" style={{ color: "var(--cream-mute)" }}>
+        Activity summary
+      </h2>
+      {error ? (
+        <div className="rounded-lg border p-2.5 text-[11px]" style={{ borderColor: "rgba(251,191,36,.35)", color: "#fde68a" }}>
+          Structured summary unavailable: {error}. Showing attempt cards only.
+        </div>
+      ) : summaries.length === 0 ? (
+        <div className="text-[12px] text-[var(--fg-dimmer)] px-1 py-2">No structured activity yet.</div>
+      ) : (
+        summaries.map((s) => <SummaryCard key={s.attempt_id} summary={s} compact={compact} />)
+      )}
+    </section>
+  );
+}
+
+function SummaryCard({ summary, compact = false }: { summary: CodeSpaceSummary; compact?: boolean }) {
+  const blocker = summary.blocker?.trim();
+  const checkpoint = summary.checkpoint?.trim();
+  const refs = summary.artifact_refs ?? [];
+  return (
+    <div
+      className={`rounded-lg border text-[11.5px] space-y-1 ${compact ? "px-2.5 py-2" : "px-3 py-2.5"}`}
+      style={{ borderColor: "var(--line-soft)" }}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate font-medium" style={{ color: "var(--cream)" }} title={summary.builder_id}>
+          {summary.builder_id}
+        </span>
+        <span className="shrink-0 text-[9px] uppercase tracking-wide" style={{ color: summary.status === "failed" ? "#fda4af" : "var(--cream-mute)" }}>
+          {summary.status}
+        </span>
+      </div>
+      {checkpoint && (
+        <div className="text-[11px]" style={{ color: "var(--cream-mute)" }} title={checkpoint}>
+          {checkpoint}
+        </div>
+      )}
+      {blocker && (
+        <div className="text-[11px]" style={{ color: "#fbbf24" }} title={blocker}>
+          Blocker: {blocker}
+        </div>
+      )}
+      {refs.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {refs.map((ref) => (
+            <span
+              key={ref}
+              className="rounded-full border px-1.5 py-0.5 text-[9px]"
+              style={{ borderColor: "var(--line-soft)", color: "var(--fg-dim)" }}
+              title={ref}
+            >
+              {ref}
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="text-[10px]" style={{ color: "var(--fg-dimmer)" }}>
+        {formatAgeShort(summary.updated_at)}
+      </div>
     </div>
   );
 }
