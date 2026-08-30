@@ -1,0 +1,23 @@
+{
+  "marker": "JOB_DONE",
+  "runtime": "isolated-loopback-only",
+  "drills": [
+    "restart-recovery",
+    "snapshot-restore-monotonic-fencing",
+    "duplicate-outbox",
+    "expired-and-replaced-lease-fencing",
+    "backend-unavailable",
+    "approval-rejection-no-op",
+    "monitored-canary-invalid-observation-rollback",
+    "monitored-canary-threshold-breach-rollback",
+    "rollback"
+  ],
+  "sloMs": 15,
+  "rpoMs": 108,
+  "rtoMs": 224,
+  "elapsedMs": 1811,
+  "cleanupVerified": true,
+  "legacyWriter": "disabled",
+  "phase21": "blocked",
+  "secrets": "none"
+}
