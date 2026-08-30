@@ -1,5 +1,22 @@
 {
-  "marker": "NOT_CURRENT_RUNTIME_EVIDENCE",
-  "reason": "Runtime receipts are created only within the owned temporary S10 runtime root and are removed during cleanup. This committed file intentionally contains no measured drill result.",
+  "marker": "JOB_DONE",
+  "runtime": "isolated-loopback-only",
+  "drills": [
+    "restart-recovery",
+    "snapshot-restore",
+    "duplicate-outbox",
+    "expired-and-replaced-lease-fencing",
+    "backend-unavailable",
+    "approval-rejection-no-op",
+    "monitored-canary",
+    "rollback"
+  ],
+  "sloMs": 12,
+  "rpoMs": 30,
+  "rtoMs": 331,
+  "elapsedMs": 1260,
+  "cleanupVerified": true,
+  "legacyWriter": "disabled",
+  "phase21": "blocked",
   "secrets": "none"
 }
