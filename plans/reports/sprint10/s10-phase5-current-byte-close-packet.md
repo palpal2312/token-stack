@@ -9,10 +9,11 @@ or Phase 21 authorization. The final independent arbiter verdict at
 otherwise. `legacy_writer: disabled` and `phase_21: blocked` remain hard
 controls.
 
-Packet basis: clean worktree `s10-arbiter-b1-b2-remediation`, `master` byte
-set `061d581` (`docs(sprint10): record final arbiter no-go`). The untracked
-`pnpm-lock.yaml` was present before this phase and is excluded from the packet
-and every pin below.
+Packet basis: clean master byte set `d84a49c`
+(`docs(s10): record live runtime arbiter no-go`), recomputed 2026-08-31 from
+Git current bytes after the related live-runtime loopback evidence was
+recorded. The untracked `pnpm-lock.yaml` was present before this phase and is
+excluded from the packet and every pin below.
 
 ## Included current-byte evidence
 
@@ -36,6 +37,12 @@ de17ee4c1515653e2bf09c3d394d4abfc356e954666bcf531a0abdab84e1da08 src/lib/llmops/
 b8f010d3a4f2487f50ea623e1221b15fcd895431a8604168b53b287581129724 qa/tests/s10-phase3-replay-calibration.test.ts
 f8e55048bdfc3d959fe225f059544a23cce0b056e7a266625d67388b849c71cf qa/tests/s10-phase4-canary-recovery.test.ts
 b226df9edb38e72af439daec11b2a6e0d9517e0dbbb5317d0d57930c5597f224 qa/tests/s10-lane-c-recovery-drill.test.ts
+49bd5eaa475fe206212045336d0ff71ad6f4fa0dc84762ac1a45027d508bbed0 plans/reports/sprint10/s10-live-runtime-receipt-20260830-final-safety.json
+da8fd39d651b21dd404fc4ef36e3d33e295d73e3c1810e5e89491b94298bc111 plans/reports/sprint10/s10-live-runtime-receipt.json
+a07731ec7a6deab23b0db0201f4f8bf144b33dd191b1d28e328d2bac66d9f223 plans/reports/sprint10/s10-live-runtime-independent-arbiter-verdict.md
+3135a1a25fb0b11492852325a56f5b283d9fd12e7f6c6d72a3dcf35660b3db94 qa/tests/s10-live-runtime.integration.test.ts
+6ef0fdd0dd3d5293ce0c0a2d72f807ddc4e8f6bf190f8ace59f46a66ea0a74b5 scripts/s10-live-runtime-drill.ts
+765dbaae1a2ff4b38c3f4f2c093c608f07f84984b4dac99e6b6088de9ca7c0b9 tools/s10-live-runtime/daemon.ts
 ```
 
 ## Acceptance evidence and limits
@@ -46,6 +53,7 @@ b226df9edb38e72af439daec11b2a6e0d9517e0dbbb5317d0d57930c5597f224 qa/tests/s10-la
 | Replay/calibration | Frozen local baseline/candidate replay; seven metrics, confidence/OOD, critical-path and useful-lane signals; focused test. | Advisory only; no private lookup, network, dispatch, or policy authority. |
 | Controlled delivery | Approved simulated canary, rejection/no-op, threshold rollback and supersession; focused test. | Simulated-redacted only; no live promotion/cutover. |
 | Operations | Six recovery classifications, portable runbook, bounded simulated SLO/RPO/RTO; focused test. | No daemon/restore/outbox/lease/backend/snapshot live-operation claim. |
+| Live runtime | Loopback-only daemon/drill evidence at `a29362e` with durable restart, fencing, outbox suppression, lease rejection, fail-closed backend, approval gate, rollback, and measured bounded `sloMs`/`rpoMs`/`rtoMs`; 33/33 focused tests. | Loopback-only. The live-runtime arbiter still returned NO_GO for closure because reconciliation and the complete chain were not present; no production daemon or live network claim. |
 
 ## Required independent checks after this packet is promoted
 
