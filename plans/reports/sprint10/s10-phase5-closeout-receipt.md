@@ -25,11 +25,11 @@ from another worktree must not be substituted.
 ## Machine-readable current-byte pins
 
 ```text
-8555ca04e5ee15ccb89e61ff059d987fd7f8703dfda4fbd3c4f1044228e178bb plans/reports/sprint10/s10-phase5-current-byte-close-packet.md
+0aeb21ec982863b2bb1e59c7530749a058e2500be18a32b06f4e77cf6f2d1bc2 plans/reports/sprint10/s10-phase5-current-byte-close-packet.md
 fa7e952b591e0ea09abe232b5bab59f5ff4d35bdf501965a0f3d36a0a49395c3 plans/reports/sprint10/s10-phase5-unresolved-risk-ledger.md
 a278b271fabb908cc29d641d4f65ce8fe7c381db9dccc193b533104b7edf7f85 plans/reports/sprint10/s10-phase5-reconciliation-report.md
 4dac2e2f78684d5fac929dc79401c2347e89513b47ea24609753111d4e7d2f67 plans/handoffs/s10-phase5-next-controller-handoff.md
-59ce1797ceeb9ba0b3e8946bebbbcdd26a09452b239c46c3d7219268026ecf96 plans/reports/sprint10/s10-phase5-task-reconciliation-supersession-ledger.md
+f6c0446fdb2ceb1792a6fa2bba343f3f25f42f7bcd5eb3cdbae1c0cccfdee19d plans/reports/sprint10/s10-phase5-task-reconciliation-supersession-ledger.md
 ```
 
 ## Next authority gate
