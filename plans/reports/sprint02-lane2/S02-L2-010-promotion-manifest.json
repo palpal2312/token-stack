@@ -1,0 +1,164 @@
+{
+  "manifest_version": "2.0.0",
+  "task_id": "S02-L2-010",
+  "lane": "sprint-02-lane-2",
+  "target_component": "community-queue",
+  "database_name": "community-queue.db",
+  "timestamp": "2026-08-25T13:25:00Z",
+  "composite_ao15_hash": "87c566615f76303a737b1659cb1bc1c85e84f643ea1fd411f23e738504d5cd78",
+  "community_source_files": [
+    {
+      "file": "adversarial_test.go",
+      "path": "go/internal/localdb/community/adversarial_test.go",
+      "sha256": "5325f6e414e117df4b1ae9c38cf84b6f31d8a346cf136518dcb285e465df81b9"
+    },
+    {
+      "file": "community_test.go",
+      "path": "go/internal/localdb/community/community_test.go",
+      "sha256": "b3fec54c35e56d2b8f5d0a0c11d8ee0ed4f1a8554c5c8554f82e55b7753addd2"
+    },
+    {
+      "file": "export_envelope.go",
+      "path": "go/internal/localdb/community/export_envelope.go",
+      "sha256": "baf0392afa3882ee10f45ce274a46982f4946d54fd2b5ede8151c833bdad517f"
+    },
+    {
+      "file": "migrations.go",
+      "path": "go/internal/localdb/community/migrations.go",
+      "sha256": "d1cab61a22c6f5833d4d8ab481c0dbb7da5eb47f311ff5a3a5c1dac58eab468b"
+    },
+    {
+      "file": "sanitizer.go",
+      "path": "go/internal/localdb/community/sanitizer.go",
+      "sha256": "6ce96f5c7837cadf2c8825fdd477a67655b3ee39d585f1b81b851879f2cc57df"
+    },
+    {
+      "file": "schema.go",
+      "path": "go/internal/localdb/community/schema.go",
+      "sha256": "6c5725c176a701db0b6074345a00fcf7a3772f226cf7ea9477f9bc1dd344a14c"
+    },
+    {
+      "file": "sqlite_store.go",
+      "path": "go/internal/localdb/community/sqlite_store.go",
+      "sha256": "acf10e107e7db864e29961f4321b9ba1bde574affe1124257d47d79d6e05952f"
+    },
+    {
+      "file": "store.go",
+      "path": "go/internal/localdb/community/store.go",
+      "sha256": "f795f12a5e3567fd46cf2e8733bae53eda676d4f14b91612250b86f1fdc7603c"
+    }
+  ],
+  "receipt_files": [
+    {
+      "file": "S02-L2-001-report.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-001-report.md",
+      "sha256": "0cf2b1df30a4f434f396f33418560a4946cafac2c44dd68be3cb6dee741921d0"
+    },
+    {
+      "file": "S02-L2-002-report.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-002-report.md",
+      "sha256": "30f1f6aac694537e35c8004234b17b5a8496fc26bb2a10ab3a76446e50a2f908"
+    },
+    {
+      "file": "S02-L2-003-report.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-003-report.md",
+      "sha256": "e2e02efd63fac68fa7c72a29eaf57d582b36adf568fbc227029a054a70596900"
+    },
+    {
+      "file": "S02-L2-004-report.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-004-report.md",
+      "sha256": "efc8ecb201be4cbe76a4d0df0ae5a7d1badd2eadd470d9f32913604dd65aed3d"
+    },
+    {
+      "file": "S02-L2-005-product-cross-review.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-005-product-cross-review.md",
+      "sha256": "f89f281acc80c9d75ecd9b60a60f7c84e7f38cbb5ce0a98d964a6a2e4c63cf8e"
+    },
+    {
+      "file": "S02-L2-005B-promotion-manifest.json",
+      "path": "plans/reports/sprint02-lane2/S02-L2-005B-promotion-manifest.json",
+      "sha256": "a369fb10ea006953166b0514f45c28b502169383001cc4c7a7f287f1a2c0279d"
+    },
+    {
+      "file": "S02-L2-005B-promotion-manifest.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-005B-promotion-manifest.md",
+      "sha256": "c2499cdaf3fb696d25ad11a29fb7922e7bc3eff320db0880031515d150d65575"
+    },
+    {
+      "file": "S02-L2-005C-runtime-introspection.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-005C-runtime-introspection.md",
+      "sha256": "1b10c08136e4402633c5aad8268b4c68b8fb6cbcbc933644d6cd0dc678a6691a"
+    },
+    {
+      "file": "S02-L2-006-report.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-006-report.md",
+      "sha256": "57ae22686f8c683a5fb1310cff0aced644bb732b0d060346ad184a2d649a101e"
+    },
+    {
+      "file": "S02-L2-007-report.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-007-report.md",
+      "sha256": "03d5cbcbb3c3eb6d1c3e30b4738bd081e488d0a7ba19741914c674d3c1beaaeb"
+    },
+    {
+      "file": "S02-L2-008-report.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-008-report.md",
+      "sha256": "786886059805b45a2b106a7b1a374ceb2f612a80791fed21a7187639bdfd0e1c"
+    },
+    {
+      "file": "S02-L2-009-report.md",
+      "path": "plans/reports/sprint02-lane2/S02-L2-009-report.md",
+      "sha256": "c21d3aaf37c2f3f9b48921090bd1e2ef785166c8dff1b4ae00bcf01a522d01d2"
+    }
+  ],
+  "verification_commands": [
+    "cd go && go test -v -count=1 ./internal/localdb/community/...",
+    "cd go && go vet ./internal/localdb/community/...",
+    "cd go && go build ./internal/localdb/community/..."
+  ],
+  "schema_contract": {
+    "engine": "modernc.org/sqlite (pure Go)",
+    "pragmas": {
+      "journal_mode": "WAL",
+      "synchronous": "FULL",
+      "foreign_keys": "ON",
+      "busy_timeout": 5000
+    },
+    "tables": [
+      "schema_migrations",
+      "community_queue_meta",
+      "sanitized_contributions",
+      "delivery_attempts",
+      "publication_receipts",
+      "removal_reports",
+      "sync_watermarks"
+    ],
+    "exact_indexes": [
+      "idx_contrib_hash",
+      "idx_contrib_status",
+      "idx_delivery_status"
+    ]
+  },
+  "git_status": {
+    "branch": "sprint-02-lane-2",
+    "tracked_modified": [
+      "go/go.mod"
+    ],
+    "untracked_new": [
+      "go/go.sum",
+      "go/internal/localdb/community/",
+      "plans/reports/sprint02-lane2/"
+    ],
+    "clean_outside_owned": true
+  },
+  "explicit_exclusions": [
+    "No changes to go/cmd/sen-daemon/",
+    "No changes to go/internal/allocator/",
+    "No changes to go/internal/builderexec/",
+    "No changes to go/internal/projections/",
+    "No changes to go/internal/sandbox/",
+    "No changes to go/internal/scheduler/",
+    "No changes to member-pack/",
+    "No changes to docs/",
+    "No changes to package.json / node_modules"
+  ]
+}

@@ -1,0 +1,96 @@
+# S02-L2-014 Final Lane 2 Integration Bundle & Promotion Manifest
+
+## Status: COMPLETE / PROMOTION-FROZEN
+
+- **Task ID**: S02-L2-014
+- **Sprint / Lane**: Sprint 02 / Lane 2 (`sprint-02-lane-2`)
+- **Promoted Components**:
+  1. `community-queue` (`go/internal/localdb/community/`)
+  2. `handoff-bridge` (`go/internal/localdb/handoff/`)
+- **Staging Input Boundary**:
+  - `core` (`go/internal/localdb/core/`) and `product` (`go/internal/localdb/product/`) verified byte-for-byte against staged Lane 1 outputs and marked as **staging inputs** (not Lane 2-owned promotion).
+
+---
+
+## 1. Canonical Hashes: Lane 2-Owned Promotion
+
+### 1.1 Community Queue (`go/internal/localdb/community`)
+Composite AO-15 Hash: `03a29aaefb6b1e063ebbfa9b05444103dfeea8f04e579cc0773e7970fe8a0109`
+
+| File | SHA-256 Checksum |
+|---|---|
+| `adversarial_test.go` | `2d1ab1242e358321dafa5380dde1b1f7ceac999c8eed905a2ed3fbedbb61aca7` |
+| `community_test.go` | `64090203c79e522a0f962193da280d3c43b8b21462094bf2255161784cd9cc7e` |
+| `export_envelope.go` | `baf0392afa3882ee10f45ce274a46982f4946d54fd2b5ede8151c833bdad517f` |
+| `migrations.go` | `2b5a4ad98a6db31e0a8e84e004acba71eef1e60daea2acc86478c942c6730236` |
+| `sanitizer.go` | `6ce96f5c7837cadf2c8825fdd477a67655b3ee39d585f1b81b851879f2cc57df` |
+| `schema.go` | `6c5725c176a701db0b6074345a00fcf7a3772f226cf7ea9477f9bc1dd344a14c` |
+| `sqlite_store.go` | `8a9e276337e18fe7fdfc19b8a2016522da6596884aae580c5869924bb7b82c70` |
+| `store.go` | `533c15bad7acad409936d02f1d6cb6d46b34d7a5db3521d42eab3f54e59b6494` |
+
+### 1.2 Handoff Adapter (`go/internal/localdb/handoff`)
+
+| File | SHA-256 Checksum |
+|---|---|
+| `adapter.go` | `3fe889d56c8202ea81ea89b3a73d44ae5e8c6fdcdddd01d996b08fa4592eefe0` |
+| `adapter_test.go` | `ccc7575ff1e0149edbd733c87620d4bd2d83e3c8f192681bc25d39caec08cda7` |
+
+---
+
+## 2. Staged Inputs from Lane 1 (Read-Only)
+
+| Package | File | SHA-256 Checksum | Classification |
+|---|---|---|---|
+| `core` | `backup.go` | `0c116ed193885f4ba19c1764e95da2f62259a118191d5a180fb6abe700875fa6` | Staging input |
+| `core` | `backup_test.go` | `fd2442e6f5ffc17703c508418b9edd44588da38d09d29cfc0ebeb5da60bd1a1b` | Staging input |
+| `core` | `database.go` | `2d62571856c98f335107c1400c12a4dd8d544724bcd611474a0572b7c6840fd2` | Staging input |
+| `core` | `database_test.go` | `343025c90d6c9e5d48c437f343edcd10a8919a10477ecc89cd923709ce8d5ea1` | Staging input |
+| `core` | `migration.go` | `b005ca461e4595b7c8c947ecad37c348369f0f0df1a781c6141378624275c2a4` | Staging input |
+| `product` | `acknowledgement_test.go` | `5a30496ab7b7364bb34ff8972d464ad20b16953e1ee663c270eb37fe097adcbf` | Staging input |
+| `product` | `conformance_test.go` | `2ca60dfde217b825fc5c86db3ba5f27ca5859806e5f7e6f2483fe64c601a7732` | Staging input |
+| `product` | `database.go` | `126c61c737e9329b95d4099ab00f569c5bd49aed9ef71293dc788107b230d9cb` | Staging input |
+| `product` | `database_test.go` | `2be2875edcc0be7f4506252686f201afbc623622dbf8bb64b84a8ed1914ce822` | Staging input |
+| `product` | `schema.go` | `1f5c4629135d3de7b6071a39a4d7f2eebd4ad90c827039e7f70f4f2660a77cbd` | Staging input |
+| `product` | `store.go` | `c33fd53de994c6259ad025c8a062aafd50693fd74d8c83ef3c23df8938be81ea` | Staging input |
+
+---
+
+## 3. Receipt Inventory & Hashes
+
+All 17 sprint reports and manifests under `plans/reports/sprint02-lane2/` indexed:
+
+| Report File | SHA-256 Checksum |
+|---|---|
+| `S02-L2-001-report.md` | `0cf2b1df30a4f434f396f33418560a4946cafac2c44dd68be3cb6dee741921d0` |
+| `S02-L2-002-report.md` | `30f1f6aac694537e35c8004234b17b5a8496fc26bb2a10ab3a76446e50a2f908` |
+| `S02-L2-003-report.md` | `e2e02efd63fac68fa7c72a29eaf57d582b36adf568fbc227029a054a70596900` |
+| `S02-L2-004-report.md` | `efc8ecb201be4cbe76a4d0df0ae5a7d1badd2eadd470d9f32913604dd65aed3d` |
+| `S02-L2-005-product-cross-review.md` | `f89f281acc80c9d75ecd9b60a60f7c84e7f38cbb5ce0a98d964a6a2e4c63cf8e` |
+| `S02-L2-005B-promotion-manifest.json` | `a369fb10ea006953166b0514f45c28b502169383001cc4c7a7f287f1a2c0279d` |
+| `S02-L2-005B-promotion-manifest.md` | `c2499cdaf3fb696d25ad11a29fb7922e7bc3eff320db0880031515d150d65575` |
+| `S02-L2-005C-runtime-introspection.md` | `1b10c08136e4402633c5aad8268b4c68b8fb6cbcbc933644d6cd0dc678a6691a` |
+| `S02-L2-006-report.md` | `57ae22686f8c683a5fb1310cff0aced644bb732b0d060346ad184a2d649a101e` |
+| `S02-L2-007-report.md` | `03d5cbcbb3c3eb6d1c3e30b4738bd081e488d0a7ba19741914c674d3c1beaaeb` |
+| `S02-L2-008-report.md` | `786886059805b45a2b106a7b1a374ceb2f612a80791fed21a7187639bdfd0e1c` |
+| `S02-L2-009-report.md` | `c21d3aaf37c2f3f9b48921090bd1e2ef785166c8dff1b4ae00bcf01a522d01d2` |
+| `S02-L2-010-promotion-manifest.json` | `9f0a88ca31075d611d77050eb40760ca6d24d83d97a5e70645f067e65cc7b452` |
+| `S02-L2-010-report.md` | `5e4ef515f0e560b12658143dde87c81f9cafe9113ad64ab376ed16d900c1966d` |
+| `S02-L2-011-report.md` | `dbc82ea5ce9e0ce3d5419c0a2938af916a1f7eac0ff8207fd263b34d2050df10` |
+| `S02-L2-012-report.md` | `d19296f484ce87573f9f67604d025b01ed2e7ec71a629422b4ca2ab6383eb107` |
+| `S02-L2-013-report.md` | `a01bd807296285c71ce6669e8ecfe15f612bab83af536b070100276beaf97fd4` |
+
+---
+
+## 4. Quality Gate & Materialization Evidence
+
+1. **Soak Test Execution (`go test -count=10 ./internal/localdb/...`)**:
+   - 630/630 test executions passed cleanly (100% pass rate across 63 tests).
+2. **Go Toolchain Checks**:
+   - `go vet ./internal/localdb/...`: 0 issues.
+   - `go build ./internal/localdb/...`: 0 errors.
+3. **Producer DB Materialization**:
+   - Run in fresh dynamic temp directory with `S02_GATE_DB_DIR`.
+   - Verified exactly two DB files generated:
+     - `sen-product.db` (69,632 bytes, cleanly checkpointed).
+     - `community-queue.db` (122,880 bytes, cleanly checkpointed).
+   - Zero locks or journal/wal artifacts remained.

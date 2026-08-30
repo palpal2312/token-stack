@@ -1,0 +1,18 @@
+{
+  "hostOS": "Windows",
+  "observedAt": "2026-08-25",
+  "candidates": [
+    {"id":"claude-fugu","kind":"cli","state":"constrained","version":"2.1.243","authenticated":true,"models":["fugu-ultra"],"cwdControl":"worktree","approval":"auto","toolGating":"coarse","isolation":"worktree","externalTimeout":true,"capture":["terminal-output","artifacts"],"evidence":["live --version","live Orca terminal"]},
+    {"id":"cursor","kind":"cli","state":"constrained","version":"2026.08.11-e8db854","authenticated":true,"models":[],"cwdControl":"worktree","approval":"auto","toolGating":"coarse","isolation":"worktree","externalTimeout":true,"capture":["terminal-output","artifacts"],"evidence":["live --version","Sprint 01 observed route"]},
+    {"id":"claude-sub2api-02","kind":"cli","state":"constrained","version":"2.1.243","authenticated":true,"models":["Opus 4.5"],"cwdControl":"worktree","approval":"auto","toolGating":"coarse","isolation":"worktree","externalTimeout":true,"capture":["terminal-output","artifacts"],"evidence":["live --version","live Orca terminal"]},
+    {"id":"claude-kimicode","kind":"cli","state":"constrained","version":"2.1.243","authenticated":true,"models":["kimi-k3"],"cwdControl":"worktree","approval":"auto","toolGating":"coarse","isolation":"worktree","externalTimeout":true,"capture":["terminal-output","artifacts"],"evidence":["live --version","live Orca terminal"]},
+    {"id":"pi","binary":"claude-alibaba-01","kind":"cli","state":"constrained","version":"2.1.243","authenticated":true,"models":[],"cwdControl":"worktree","approval":"auto","toolGating":"coarse","isolation":"worktree","externalTimeout":true,"capture":["terminal-output","artifacts"],"evidence":["live --version","declared user fallback"]}
+  ],
+  "routing": {
+    "lane1-product-foundation":{"capabilityTier":"C3","riskTier":"R2","primary":"claude-fugu","fallback":"cursor"},
+    "lane2-community-foundation":{"capabilityTier":"C3","riskTier":"R2","primary":"claude-sub2api-02"},
+    "lane3-preregister-gate":{"capabilityTier":"C3","riskTier":"R2","primary":"claude-kimicode","fallback":"pi"},
+    "lane3-integrated-arbiter":{"capabilityTier":"C3","riskTier":"R0","primary":"claude-kimicode","fallback":"pi"}
+  }
+}
+

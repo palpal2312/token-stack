@@ -1,0 +1,8 @@
+{
+  "hostOS": "win32",
+  "candidates": [
+    {"id":"cursor","kind":"cli","state":"constrained","version":"2026.08.11-e8db854","authenticated":true,"cwdControl":"worktree","approval":"auto","isolation":"worktree","capture":["terminal-stream","artifacts"],"evidence":["agent --version","agent --help","live Orca terminal"]},
+    {"id":"claude-sub2api-02","kind":"cli","state":"constrained","version":"2.1.243","authenticated":true,"cwdControl":"worktree","approval":"auto","isolation":"worktree","capture":["terminal-screen","artifacts"],"evidence":["claude-sub2api-02 --version","claude-sub2api-02 --help","live Orca terminal"]},
+    {"id":"claude-kimicode","kind":"cli","state":"constrained","version":"2.1.243","authenticated":true,"cwdControl":"worktree","approval":"auto","isolation":"worktree","capture":["terminal-screen","artifacts"],"evidence":["claude-kimicode --version","claude-kimicode --help","live Orca terminal"]}
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "run": "orchestrate-260825-sprint04-orca-reconcile",
+  "runId": "run_0c3db1f2dee5",
+  "taskId": "task_2ad230532b30",
+  "dispatchId": "ctx_4a3d47ba7b4e",
+  "lane": 2,
+  "status": "succeeded",
+  "marker": "S04-L2-FB",
+  "workingTree": {
+    "modified": ["src/components/HerdrTerminal.tsx"],
+    "untracked": [
+      "src/lib/agentRuntime/orca-slot-client.ts",
+      "src/lib/query/realtime-reconciler.ts",
+      "src/components/OrcaSlotStatus.tsx",
+      "qa/tests/orca-reconcile.spec.ts",
+      "qa/tests/orca-reconcile-ui.spec.ts",
+      "plans/reports/orchestrate-260825-sprint04-orca-reconcile/lane2/"
+    ]
+  },
+  "tests": { "orca-reconcile*": { "pass": 18, "fail": 0 } },
+  "receipt": "plans/reports/orchestrate-260825-sprint04-orca-reconcile/lane2/S04-L2-receipt.md",
+  "commits": false,
+  "phase21": false
+}

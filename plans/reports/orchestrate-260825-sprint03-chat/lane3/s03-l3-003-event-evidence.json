@@ -1,0 +1,54 @@
+{
+  "runner": "event-evidence-runner.ts",
+  "ranAt": "2026-08-25T10:41:03.310Z",
+  "exercises": "real Lane 2 mergeEventsBySeq/hasEventGap (src/lib/sen/chat-client.ts)",
+  "scenarios": [
+    {
+      "id": "FI-04-duplicate-tail-dedupe",
+      "passed": true,
+      "detail": "merged=140 unique=true ordered=true complete=true"
+    },
+    {
+      "id": "FI-05-loss-gap-refetch",
+      "passed": true,
+      "detail": "gapDetected=true gapAfterRefetch=false finalEvents=100/100"
+    },
+    {
+      "id": "reorder-sorted-merge",
+      "passed": true,
+      "detail": "merged=50 ordered=true"
+    }
+  ],
+  "latency": {
+    "id": "latency",
+    "passed": true,
+    "coldMergeMs": [
+      {
+        "n": 1000,
+        "p50": 0.19,
+        "p95": 1.24,
+        "max": 1.24
+      },
+      {
+        "n": 10000,
+        "p50": 2.05,
+        "p95": 3.93,
+        "max": 3.93
+      },
+      {
+        "n": 50000,
+        "p50": 10.58,
+        "p95": 21.74,
+        "max": 21.74
+      }
+    ],
+    "tailMergeMs": {
+      "appliedBase": 10000,
+      "incoming": 400,
+      "p50": 0.49,
+      "p95": 0.64
+    }
+  },
+  "passed": 3,
+  "failed": 0
+}

@@ -1,0 +1,94 @@
+{
+  "audit": "S03-L3-002 privacy + Orca/Gateway boundary",
+  "ranAt": "2026-08-25T10:40:43Z",
+  "filesScannedForSecrets": 148,
+  "findings": [
+    {
+      "id": "static-loopback-allowlist",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "Go listener host restricted to loopback; other hosts disable the proxy"
+    },
+    {
+      "id": "static-proxy-fails-closed",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "missing token => proxy disabled, never an unauthenticated request"
+    },
+    {
+      "id": "static-local-request-guard",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "every chat verb passes the local-request guard; query tokens rejected"
+    },
+    {
+      "id": "static-legacy-writer-gate",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "legacy writer only behind explicit flag; metadata writes fail closed in canonical mode"
+    },
+    {
+      "id": "static-shadow-shape-only",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "shadow parity compares shapes, mutating commands are observation-only"
+    },
+    {
+      "id": "static-shadow-log-outside-repo",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "shadow log lives under AGENTIC_HOME/logs, not the repo"
+    },
+    {
+      "id": "static-redaction-class",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "stream events carry a redaction class end to end"
+    },
+    {
+      "id": "secret-sen-token",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-bearer",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-dispatch-cap",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-agentic-token-header",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-aws-style",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-private-key",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-sen-env-in-repo",
+      "status": "pass",
+      "detail": "absent",
+      "why": "the shared Go token file belongs in AGENTIC_OS_HOME, never the repo"
+    }
+  ],
+  "passed": 14,
+  "failed": 0,
+  "scopeNote": "static checks read Lane 1/Lane 2 sources read-only; secret scan covers plans/, qa/, docs/ only"
+}

@@ -1,0 +1,20 @@
+﻿[
+    {
+        "name":  "chat-client",
+        "status":  "PASS",
+        "tests":  "7",
+        "pass":  "7",
+        "fail":  "0",
+        "durationMs":  "274.9689",
+        "rawTail":  "Γä╣ tests 7\r\nΓä╣ suites 0\r\nΓä╣ pass 7\r\nΓä╣ fail 0\r\nΓä╣ cancelled 0\r\nΓä╣ skipped 0\r\nΓä╣ todo 0\r\nΓä╣ duration_ms 274.9689"
+    },
+    {
+        "name":  "tsc",
+        "status":  "PASS",
+        "tests":  null,
+        "pass":  null,
+        "fail":  null,
+        "durationMs":  null,
+        "rawTail":  ""
+    }
+]

@@ -1,0 +1,48 @@
+version: 1
+concurrency: 3
+defaults:
+  timeout: 45m
+  effect: scoped-write
+  approval: inherit
+  capture: true
+jobs:
+  - id: s05-l1-home-registry
+    runtime: pi
+    fallback_runtime: [cursor]
+    task: implement
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/sprint-05-lane-1-home-registry
+    isolation: worktree
+    prompt: "Use AgentKit routing and the project's approved dynamic workflow. Implement Sprint 05 Lane 1: Home/Project registry, preferences, bounded project digest surface. Own only go/internal/senidentity/**, src/lib/sen-scope/**, src/app/api/sen/home/**, src/app/api/sen/projects/** and sprint-05 reports. End with JOB_DONE: S05-L1-001 and a hash receipt. Do not edit shared SQLite schema, Sprint 06/07 paths, Phase 21 or master files."
+    expected_output: "Home/Project registry and bounded digest implementation, focused tests, receipt and report."
+    checks: ["focused tests pass", "digest fields are allowlisted", "no cross-project payload leak"]
+  - id: s05-l2-project-context
+    runtime: claude-sub2api-02
+    fallback_runtime: [agent]
+    task: implement
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/sprint-05-lane-2-project-context
+    isolation: worktree
+    prompt: "Use AgentKit routing and the project's approved dynamic workflow. Implement Sprint 05 Lane 2: scoped conversations, memory/context packs and replaceable CLI/model session bindings. Own only go/internal/senidentity/**, src/lib/sen-scope/**, designated Sprint 05 reports; coordinate any overlap through an interface note. End with JOB_DONE: S05-L2-001 and a hash receipt. Do not edit shared schema, Sprint 06/07 paths, Phase 21 or master files."
+    expected_output: "Scoped context/session ports and tests with privacy evidence and receipt."
+    checks: ["project scope predicates pass", "session replacement preserves identity", "receipt hashes current bytes"]
+  - id: s05-l3-privacy-continuity
+    runtime: claude-kimicode
+    fallback_runtime: [pi]
+    task: test
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/sprint-05-lane-3-privacy-continuity
+    isolation: worktree
+    prompt: "Use AgentKit routing and the project's approved dynamic workflow. Build Sprint 05 Lane 3 verification fixtures for exactly-one Project SEN, cross-project privacy, restart/rebind and replaceable-session continuity. Do not edit producer-owned files; own only qa/fixtures/sprint05/** and sprint-05 reports. End with JOB_DONE: S05-L3-001 and a machine-readable receipt."
+    expected_output: "Independent Sprint 05 privacy/continuity fixture matrix and receipt."
+    checks: ["fixture runner exits nonzero on failure", "no credentials/capabilities in evidence", "restart/rebind matrix passes"]
+  - id: s05-g1-contract-freeze
+    runtime: cursor
+    task: review
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/sprint-05-lane-3-privacy-continuity
+    isolation: worktree
+    depends_on: [s05-l1-home-registry, s05-l2-project-context, s05-l3-privacy-continuity]
+    prompt: "Independently verify Sprint 05 G1 against current bytes: identity IDs, scope predicates, digest envelope, replaceable-session interface and privacy fixtures. Produce a hash-pinned S05-G1 contract. Do not edit producer code. End with JOB_DONE: S05-G1. Only GO unlocks Sprint 06/07 dispatch."
+    expected_output: "Independent S05-G1 GO/NO-GO with hashes and exact dependency decision."
+    checks: ["current-byte hashes match", "ownership collision is zero", "Phase 21 remains blocked"]

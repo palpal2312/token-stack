@@ -1,0 +1,25 @@
+{
+  "sprint": "03",
+  "lane": 2,
+  "runId": "run_9e31ed9e73d5",
+  "taskId": "task_13cb3ef74851",
+  "dispatchId": "ctx_ce34449df62b",
+  "verifiedAt": "2026-08-25T11:34:00Z",
+  "status": "succeeded",
+  "jobs": {
+    "S03-L2-001": "DONE",
+    "S03-L2-002": "DONE",
+    "S03-L2-003": "DONE",
+    "S03-L2-004": "DONE"
+  },
+  "tests": {
+    "unit": { "pass": 7, "fail": 0, "durationMs": 636.0915 },
+    "qa": { "pass": 15, "fail": 0, "durationMs": 358.1788 },
+    "tsc": { "exit": 0, "errors": 0 }
+  },
+  "active": "cursor-fb2 sole Lane 2 writer complete",
+  "next": "lane3-live-e2e; phase-21-promotion-gate",
+  "fallback": null,
+  "reportPath": "plans/reports/orchestrate-260825-sprint03-chat/lane2/S03-L2-receipt.md",
+  "commits": false
+}

@@ -1,0 +1,106 @@
+{
+  "audit": "S04-L3-002 privacy + reconcile boundary",
+  "ranAt": "2026-08-25T15:21:18Z",
+  "filesScannedForSecrets": 180,
+  "findings": [
+    {
+      "id": "static-reconciler-orphan-only-cleanup",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "cleanup phase touches orphans only; probe-error/unknown resources are never destroyed"
+    },
+    {
+      "id": "static-reconciler-unknown-on-probe-error",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "a probe error marks the resource unknown, never orphan (no destructive action on uncertainty)"
+    },
+    {
+      "id": "static-reconciler-retain-on-cleanup-failure",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "a failed cleanup keeps the resource tracked so the next pass retries"
+    },
+    {
+      "id": "static-reconciler-attempt-self-clean",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "orphan attempts get action=cleanup with no external destroy/kill call"
+    },
+    {
+      "id": "static-slot-client-parse-boundary",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "runtime-slots wire data is fail-closed parsed; unsafe fields never reach the view"
+    },
+    {
+      "id": "static-slot-client-safe-text",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "slot strings are length-capped, control-char stripped, state enum restricted"
+    },
+    {
+      "id": "static-herdr-terminal-guard",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "the shell-spawning terminal route is origin-guarded and loopback-bound"
+    },
+    {
+      "id": "static-loopback-allowlist",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "Go listener host restricted to loopback; other hosts disable the proxy"
+    },
+    {
+      "id": "static-proxy-fails-closed",
+      "status": "pass",
+      "detail": "guards present",
+      "why": "missing token => proxy disabled, never an unauthenticated request"
+    },
+    {
+      "id": "secret-sen-token",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-bearer",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-dispatch-cap",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-agentic-token-header",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-aws-style",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-private-key",
+      "status": "pass",
+      "detail": "no matches",
+      "why": "evidence trees must never carry credential-shaped strings"
+    },
+    {
+      "id": "secret-sen-env-in-repo",
+      "status": "pass",
+      "detail": "absent",
+      "why": "the shared Go token file belongs in AGENTIC_OS_HOME, never the repo"
+    }
+  ],
+  "passed": 16,
+  "failed": 0,
+  "scopeNote": "static checks read Lane 1/Lane 2 sources read-only; secret scan covers plans/, qa/, docs/ only"
+}

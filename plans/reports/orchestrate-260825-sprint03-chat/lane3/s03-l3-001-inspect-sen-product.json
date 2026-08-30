@@ -1,0 +1,16 @@
+{
+  "source": "C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\sen-product.db",
+  "integrityCheck": "ok",
+  "tables": {
+    "schema_migrations": 2,
+    "schema_migration_checksums": 2,
+    "sen_messages": 1,
+    "run_refs": 0,
+    "command_receipts": 1,
+    "export_candidates": 2
+  },
+  "schemaStatements": 12,
+  "sourceBytesChanged": [],
+  "newSidecarFiles": [],
+  "ok": true
+}

@@ -1,0 +1,64 @@
+version: 1
+concurrency: 3
+defaults:
+  timeout: 45m
+  effect: scoped-write
+  approval: inherit
+  capture: true
+jobs:
+  - id: lane1-product-foundation
+    runtime: claude-fugu
+    fallback_runtime: [cursor]
+    task: implement
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/source-sprint-02-lane-1
+    isolation: worktree
+    prompt: Implement the shared SQLite core and sen-product.db foundation from frozen Sprint 01 contracts.
+    expected_output: Product database, migrations, audit/outbox/read models, focused tests and receipt.
+    checks: [focused Go tests pass, WAL and FULL effective, migration checksums enforced]
+  - id: lane2-community-foundation
+    runtime: claude-sub2api-02
+    task: implement
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/source-sprint-02-lane-2
+    isolation: worktree
+    prompt: Implement community-queue.db, typed sanitizer and replay-safe cross-database handoff.
+    expected_output: Queue database, sanitizer/handoff, idempotency tests and receipt.
+    checks: [focused Go tests pass, forbidden privacy fields rejected, replay idempotent]
+  - id: lane3-preregister-gate
+    runtime: claude-kimicode
+    fallback_runtime: [pi]
+    task: test
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/source-sprint-02-lane-3
+    isolation: worktree
+    prompt: Pre-register a machine-checkable Sprint 02 gate and adversarial fixtures without editing producer-owned files.
+    expected_output: Gate script, acceptance matrix and receipt.
+  - id: lane3-integrated-arbiter
+    runtime: claude-kimicode
+    fallback_runtime: [pi]
+    task: review
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/source-sprint-02-lane-3
+    isolation: worktree
+    depends_on: [lane1-product-foundation, lane2-community-foundation, lane3-preregister-gate]
+    prompt: Independently verify promoted Sprint 02 implementation and issue GO only with zero blockers.
+    expected_output: Read-only A1-A5 verdict with hashes, commands and exact remediation.
+  - id: controller-continuity-review
+    runtime: cursor
+    task: review
+    importance: high
+    cwd: C:/Users/ADMIN/orca/workspaces/source/source-sprint-02-lane-1
+    isolation: worktree
+    depends_on: [lane3-integrated-arbiter]
+    prompt: Independently threat-model and re-review the token-free controller failover lease after remediation.
+    expected_output: GO only after authorization, split-brain, crash-window, scheduler and isolated-drill checks pass.
+  - id: newos-master-forward-test
+    runtime: pi
+    task: review
+    importance: high
+    cwd: C:/Users/ADMIN/Documents/Agent OS/source
+    isolation: read-only
+    depends_on: [controller-continuity-review]
+    prompt: Forward-test the project-local newos-master skill against a healthy lease without mutating controller state.
+    expected_output: Read-only GO/NO-GO proving discovery, no lease theft, safe next action and durable memory behavior.

@@ -1,0 +1,12 @@
+{
+  "runId": "orchestrate-260825-sprint01-close",
+  "specPath": "jobs.yaml",
+  "jobs": {
+    "lane1-ao10-cleanup": {"status":"success","runtime":"cursor","model":null,"attempts":1,"worktree":"C:/Users/ADMIN/orca/workspaces/source/sprint-01-lane-1"},
+    "lane2-ao26": {"status":"success","runtime":"claude-sub2api-02","model":null,"attempts":1,"worktree":"C:/Users/ADMIN/orca/workspaces/source/sprint-01-lane-2"},
+    "lane3-orca-probe-deltas": {"status":"success","runtime":"claude-kimicode","model":null,"attempts":1,"worktree":"C:/Users/ADMIN/orca/workspaces/source/sprint-01-lane-3"},
+    "lane2-pin-ao16": {"status":"success","runtime":"claude-sub2api-02","model":null,"attempts":1,"worktree":"C:/Users/ADMIN/orca/workspaces/source/sprint-01-lane-2"},
+    "lane3-final-gate": {"status":"success","runtime":"claude-kimicode","model":null,"attempts":1,"worktree":"C:/Users/ADMIN/orca/workspaces/source/sprint-01-lane-3"},
+    "lane3-final-readonly-regate": {"status":"success","runtime":"claude-kimicode","model":null,"attempts":1,"worktree":"C:/Users/ADMIN/orca/workspaces/source/sprint-01-lane-3"}
+  }
+}

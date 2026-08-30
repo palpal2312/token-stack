@@ -1,0 +1,51 @@
+{
+  "runner": "failure-inject.py",
+  "ranAt": "2026-08-25T10:40:33Z",
+  "sqliteVersion": "3.49.1",
+  "cells": [
+    {
+      "id": "FI-01",
+      "status": "pass",
+      "evidenceLevel": "fixture",
+      "detail": "after reopen: turns=0 events=0 sessionVersion=1"
+    },
+    {
+      "id": "FI-02",
+      "status": "pass",
+      "evidenceLevel": "fixture",
+      "detail": "replayed=True turnRows=1 sameTurnId=True"
+    },
+    {
+      "id": "FI-03",
+      "status": "pass",
+      "evidenceLevel": "fixture",
+      "detail": "turnRows=1 receipts=1 identicalReceipt=True"
+    },
+    {
+      "id": "FI-06",
+      "status": "pass",
+      "evidenceLevel": "fixture",
+      "detail": "walBytes=1071232 copiedRows=50/50 integrity=ok"
+    },
+    {
+      "id": "FI-08",
+      "status": "pass",
+      "evidenceLevel": "fixture",
+      "detail": "reclaimed=True staleWriteRejected=True finalState=failed gen=2 turnSeqConflicts=0"
+    },
+    {
+      "id": "FI-09",
+      "status": "pass",
+      "evidenceLevel": "fixture",
+      "detail": "secondWriterRejected=True committedTurns=1 integrity=ok"
+    }
+  ],
+  "externalCells": {
+    "FI-04": "event-evidence-runner.ts",
+    "FI-05": "event-evidence-runner.ts",
+    "FI-07": "sqlite-inspect.py on go/internal/localdb/*.db",
+    "FI-10": "pending-lane1"
+  },
+  "passed": 6,
+  "failed": 0
+}

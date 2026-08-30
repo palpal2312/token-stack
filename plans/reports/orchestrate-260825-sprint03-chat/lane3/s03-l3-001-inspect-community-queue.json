@@ -1,0 +1,17 @@
+{
+  "source": "C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\community-queue.db",
+  "integrityCheck": "ok",
+  "tables": {
+    "schema_migrations": 6,
+    "community_queue_meta": 0,
+    "removal_reports": 1,
+    "sync_watermarks": 1,
+    "sanitized_contributions": 2,
+    "delivery_attempts": 1,
+    "publication_receipts": 1
+  },
+  "schemaStatements": 13,
+  "sourceBytesChanged": [],
+  "newSidecarFiles": [],
+  "ok": true
+}
