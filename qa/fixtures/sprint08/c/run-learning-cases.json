@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "migrationReservation": "s08c_001",
+  "cases": [
+    "terminal-run-unique-and-immutable",
+    "crash-replay-returns-original",
+    "feature-derivation-deterministic",
+    "recursive-forbidden-alias-rejected",
+    "candidate-strict-allowlist-idempotent-local-only",
+    "calibration-estimate-actual-lineage",
+    "snapshot-rebuild-byte-equivalent",
+    "durable-journal-rebuild-after-process-restart",
+    "allowlisted-value-private-content-rejected"
+  ],
+  "publication": "disabled",
+  "authority": "advisory-only"
+}

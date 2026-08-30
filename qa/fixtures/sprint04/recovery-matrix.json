@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "sprint": "orchestrate-260825-sprint04-orca-reconcile",
+  "lane": 3,
+  "domain": "ADP-05 Orca reconciliation + reattach recovery",
+  "subject_under_test": "go/internal/builderexec/reconciler.go (4-way lifecycle reconciler: attempt x pane x sandbox x process)",
+  "runner": "qa/fixtures/sprint04/reconcile-runner (Go module, imports real reconciler read-only)",
+  "evidence_levels": {
+    "fixture": "executed by reconcile-runner against the real builderexec.Reconciler with scripted probes",
+    "unit": "covered by Lane 1 reconciler_test.go (go test ./internal/builderexec/)",
+    "pending-lane1": "requires the not-yet-landed canonical daemon package (go/internal/orcaslots)"
+  },
+  "cells": [
+    {
+      "id": "RC-01",
+      "failure_class": "orphan-pane-after-attempt-death",
+      "inject": "attempt probe reports dead; pane probe reports open",
+      "expect": "pane marked orphan; DestroyPane called exactly once; resource untracked; OrphansCleaned=1",
+      "evidence_level": "fixture",
+      "unit_coverage": "TestReconcilerDetectsAndCleansOrphans"
+    },
+    {
+      "id": "RC-02",
+      "failure_class": "orphan-sandbox-after-attempt-death",
+      "inject": "attempt dead; sandbox container still listed",
+      "expect": "DestroySandbox called; orphan cleaned; untracked",
+      "evidence_level": "fixture",
+      "unit_coverage": "TestReconcilerDetectsAndCleansOrphans"
+    },
+    {
+      "id": "RC-03",
+      "failure_class": "orphan-process-after-attempt-death",
+      "inject": "attempt dead; builder process still running",
+      "expect": "KillProcess called; action=kill; orphan cleaned; untracked",
+      "evidence_level": "fixture",
+      "unit_coverage": "TestReconcilerDetectsAndCleansOrphans"
+    },
+    {
+      "id": "RC-04",
+      "failure_class": "false-orphan-guard",
+      "inject": "all attempts alive; all resources alive",
+      "expect": "OrphansDetected=0; zero cleanup actions; all states alive",
+      "evidence_level": "fixture",
+      "unit_coverage": "TestReconcilerNoOrphans"
+    },
+    {
+      "id": "RC-05",
+      "failure_class": "resource-probe-error-fail-safe",
+      "inject": "attempt alive; pane probe returns error",
+      "expect": "state=unknown; NO cleanup action recorded; error logged; resource stays tracked (no destructive action on uncertainty)",
+      "evidence_level": "fixture",
+      "unit_coverage": "TestReconcilerProbeError"
+    },
+    {
+      "id": "RC-06",
+      "failure_class": "cleanup-failure-retained",
+      "inject": "attempt dead; DestroyPane returns error",
+      "expect": "action.success=false; error recorded; resource REMAINS tracked for next pass (retry semantics)",
+      "evidence_level": "fixture",
+      "unit_coverage": "partial (mixed test)"
+    },
+    {
+      "id": "RC-07",
+      "failure_class": "reattach-idempotent-second-pass",
+      "inject": "run Reconcile; then run Reconcile again after successful cleanup",
+      "expect": "second pass: ResourcesChecked=0, OrphansDetected=0, zero actions, zero errors (reattach recovery is idempotent)",
+      "evidence_level": "fixture",
+      "unit_coverage": "none"
+    },
+    {
+      "id": "RC-08",
+      "failure_class": "orphan-attempt-self-clean",
+      "inject": "tracked resource of kind=attempt whose attempt is dead",
+      "expect": "action=cleanup with no external destroy/kill call; counted cleaned; untracked",
+      "evidence_level": "fixture",
+      "unit_coverage": "partial"
+    },
+    {
+      "id": "RC-09",
+      "failure_class": "attempt-probe-error-skips-cleanup",
+      "inject": "attempt probe returns error for owning attempt",
+      "expect": "resources of that attempt NOT marked orphan; zero cleanup actions; error recorded",
+      "evidence_level": "fixture",
+      "unit_coverage": "TestReconcilerProbeError"
+    },
+    {
+      "id": "RC-10",
+      "failure_class": "untrack-exemption",
+      "inject": "untrack a resource before reconcile; attempt of remaining resources alive",
+      "expect": "untracked resource never probed, never cleaned, absent from TrackedResources",
+      "evidence_level": "fixture",
+      "unit_coverage": "TestReconcilerUntrack"
+    },
+    {
+      "id": "RC-11",
+      "failure_class": "concurrent-reconcile-snapshot",
+      "inject": "two Reconcile passes from separate goroutines over shared tracker with dead attempt",
+      "expect": "no data race (run with -race); exactly one cleaner wins per resource; no double-destroy panic",
+      "evidence_level": "fixture",
+      "unit_coverage": "none"
+    },
+    {
+      "id": "RC-12",
+      "failure_class": "canonical-slot-reconcile-runtime",
+      "inject": "runtime probe against go/internal/orcaslots daemon slot reconciler",
+      "expect": "PENDING — package not landed at run time; orca-slot-client.ts comment mirrors go/internal/orcaslots",
+      "evidence_level": "pending-lane1",
+      "unit_coverage": "n/a"
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "matrixId": "S03-L3-001-recovery-failure-injection",
+  "sprint": "orchestrate-260825-sprint03-chat",
+  "generatedAt": "2026-08-25",
+  "scope": "Durable SEN chat recovery: sessions, turns, attempts, sequenced events, command receipts, checkpoints on the promoted SQLite interfaces.",
+  "evidenceLevels": {
+    "fixture": "executed against a synthetic SQLite store reconstructed from chat-contract.json",
+    "live-promoted": "executed copy-first against the real promoted DBs in go/internal/localdb",
+    "pending-lane1": "requires the canonical Lane 1 chat store/schema; not landed at generation time"
+  },
+  "cells": [
+    {
+      "id": "FI-01",
+      "failureClass": "crash-before-commit",
+      "injection": "begin turn+events insert, roll back before commit (simulated writer crash mid-transaction)",
+      "invariant": "atomicity: no partial turn or orphan events visible after reopen",
+      "expected": "zero rows from the aborted transaction; session version unchanged",
+      "evidenceLevel": "fixture",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-02",
+      "failureClass": "crash-after-commit-before-ack",
+      "injection": "commit turn+receipt, then drop the ack; client retries with the same commandId",
+      "invariant": "persist-before-ack + command-id replay",
+      "expected": "replay returns the original receipt; exactly one turn row for the commandId",
+      "evidenceLevel": "fixture",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-03",
+      "failureClass": "duplicate-command-retry",
+      "injection": "send the same commandId twice (network retry), both acked",
+      "invariant": "command-id-replay",
+      "expected": "second send replays receipt; turn count for commandId stays 1; receipts identical",
+      "evidenceLevel": "fixture",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-04",
+      "failureClass": "duplicate-event-delivery",
+      "injection": "refetch an event tail overlapping already-applied seqs (reconnect overlap)",
+      "invariant": "seq-dedupe",
+      "expected": "mergeEventsBySeq yields each seq exactly once, strictly ordered",
+      "evidenceLevel": "fixture",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-05",
+      "failureClass": "lost-event-gap",
+      "injection": "delete one middle event from the delivered stream",
+      "invariant": "gap-refetch",
+      "expected": "hasEventGap reports true at the missing seq; refetch from after_seq restores continuity",
+      "evidenceLevel": "fixture",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-06",
+      "failureClass": "wal-uncheckpointed-frames",
+      "injection": "leave committed frames in the WAL (no checkpoint), then copy-first inspect",
+      "invariant": "copy preserves committed state; WAL+SHM travel with the copy",
+      "expected": "copied DB reads all committed rows; integrity_check ok on the copy",
+      "evidenceLevel": "fixture",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-07",
+      "failureClass": "inspection-sidecar-pollution",
+      "injection": "run the copy-first inspector against a live promoted DB",
+      "invariant": "read-only inspection never mutates the source (Sprint 02 debt: gate inspection created empty WAL/SHM sidecars)",
+      "expected": "source byte hash unchanged; zero new sidecar files beside the source DB",
+      "evidenceLevel": "live-promoted",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-08",
+      "failureClass": "orphan-attempt-lease",
+      "injection": "worker crash leaving an attempt in running with a stale leaseOwner",
+      "invariant": "attempt-lease: a higher lease generation may fence and reclaim; single-writer preserved",
+      "expected": "reclaim with generation+1 succeeds; old owner write is rejected; no duplicate turn_seq",
+      "evidenceLevel": "fixture",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-09",
+      "failureClass": "concurrent-second-writer",
+      "injection": "second process opens the same store and writes while the first writer holds it",
+      "invariant": "single-writer (SQLITE_BUSY or lease rejection, never silent interleave)",
+      "expected": "no interleaved commit; busy_timeout surfaced as an error, data stays consistent",
+      "evidenceLevel": "fixture",
+      "status": "unrun"
+    },
+    {
+      "id": "FI-10",
+      "failureClass": "canonical-store-unavailable",
+      "injection": "Go listener unconfigured/unreachable while legacy flag is off",
+      "invariant": "fail-closed: proxy answers 503 offline; never silently dual-writes to legacy",
+      "expected": "POST/GET return 503 with the offline error; PATCH/DELETE return 501",
+      "evidenceLevel": "pending-lane1",
+      "status": "pending-lane1",
+      "note": "Static contract confirmed in src/app/api/sen/chat/route.ts; runtime probe needs a configured listener"
+    }
+  ]
+}

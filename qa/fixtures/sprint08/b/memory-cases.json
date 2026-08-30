@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "migrationReservation": "s08b_001",
+  "cases": [
+    "acl-before-ranking",
+    "superseded-exclusion",
+    "correction-audit",
+    "deletion-export",
+    "stale-source-marking",
+    "parser-byte-cap",
+    "parser-item-cap",
+    "secret-redaction",
+    "quarantine-missing-provenance",
+    "fts-fallback",
+    "projection-rebuild",
+    "ingestion-replay-idempotency",
+    "deterministic-pack-hash",
+    "cited-pack-integrity",
+    "privacy-safe-errors"
+  ]
+}

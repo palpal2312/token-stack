@@ -1,0 +1,29 @@
+{
+  "contractId": "sen-chat-canonical-v1",
+  "capturedAt": "2026-08-25",
+  "sources": [
+    "src/lib/sen/chat-client.ts",
+    "src/app/api/sen/chat/route.ts",
+    "src/lib/goApiProxy.ts"
+  ],
+  "note": "Reconstructed from the Lane 2 typed client and the Next.js compatibility proxy. The canonical Go chat schema (Lane 1) had not landed in go/ at capture time; cells depending on the real store are marked pending-lane1.",
+  "ids": {
+    "sessionId": "client-minted `s-<uuid>`; proxy must not mint (breaks command-id replay)",
+    "commandId": "client uuid; replay key for persist-before-ack receipts",
+    "turnId/chatAttemptId": "canonical, assigned by the Go writer"
+  },
+  "invariants": {
+    "persist-before-ack": "a SendTurn receipt exists only after the canonical commit; a retried command id replays the original receipt",
+    "command-id-replay": "same commandId + same sessionId => same receipt, exactly one turn row",
+    "single-writer": "the Go side owns writes; the proxy is a pure forward and is never a second writer; legacy writer only behind SEN_CHAT_LEGACY_WRITER=1, never dual-write",
+    "seq-dedupe": "stream events dedupe by (chatAttemptId, seq); a refetched tail never double-renders (mergeEventsBySeq)",
+    "gap-refetch": "hasEventGap(lastApplied, incoming) detects a lost seq; client refetches from after_seq",
+    "attempt-lease": "attempts carry leaseOwner + leaseGeneration; state machine queued|claimed|running|succeeded|failed|cancelled|no_response",
+    "redaction-class": "every stream event carries redactionClass",
+    "loopback-token": "Go listener is loopback-only with shared token from sen.env; a non-loopback host disables the proxy instead of leaking"
+  },
+  "endpoints": {
+    "proxy": ["GET /api/sen/chat", "POST /api/sen/chat", "GET /api/sen/chat/sessions/{id}/thread", "GET /api/sen/chat/sessions/{id}/active", "GET /api/sen/chat/attempts/{id}/events"],
+    "canonical": ["/v1/sen/chat/sessions", "/v1/sen/chat/sessions/{id}/thread", "/v1/sen/chat/send"]
+  }
+}

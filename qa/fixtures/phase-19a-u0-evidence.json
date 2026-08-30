@@ -1,0 +1,62 @@
+{
+  "phase": "19a",
+  "slice": "U0",
+  "status": "baseline-recorded",
+  "capturedAt": "2026-08-13",
+  "repository": {
+    "path": "source",
+    "commit": "dffa4f0e049da50595a28fc9397f314286ff313c",
+    "branch": "master",
+    "workingTreeAtCapture": "non-clean; pre-existing changes were not modified by U0"
+  },
+  "reviewedPaths": [
+    "src/app/layout.tsx",
+    "src/app/sen/page.tsx",
+    "src/components/SenView.tsx",
+    "src/components/CodeSpaceView.tsx",
+    "src/context/sen-panel-context.tsx",
+    "src/lib/config.ts",
+    "src/lib/sen-config.ts",
+    "src/app/api/sen/config/route.ts",
+    "plans/260804-0518-sen-news-os-implementation/phase-19-next-js-cutover-code-space-and-performance.md",
+    "plans/260804-0518-sen-news-os-implementation/research/04-cross-platform-desktop-app-research.md",
+    "plans/260803-multica-news-os/reports/260804-0159-sen-news-os-product-architecture.md"
+  ],
+  "upstreamResearch": {
+    "snapshot": ".tmp/multica-research-260803",
+    "commit": "e92d828f0c3c9e92ac23932787904f3cd0b043ea",
+    "licensePath": ".tmp/multica-research-260803/LICENSE",
+    "licenseSha256": "7505297a2a4bf866354d482699db44ef8b50e8893674e674c5844d3f75da4464",
+    "use": "behavior observations only; no source, tests, comments, assets, DOM structure, tokens, or product copy copied"
+  },
+  "baseline": {
+    "productionBuild": {
+      "command": "npm run build",
+      "result": "pass",
+      "nextVersion": "16.2.6",
+      "buildDurationSeconds": 82,
+      "warnings": [
+        "Turbopack NFT tracing warning references next.config.ts and dynamic filesystem imports"
+      ]
+    },
+    "numericBudgets": "frozen 2026-08-14 in qa/fixtures/frontend-performance-budget.json (mechanicalBudgets + measured routes) from the reproducible production-build browser harness qa/tests/frontend-performance-baseline.spec.ts",
+    "routeSwitchTraces": "captured 2026-08-14: senInit (direct /sen) 368799 js bytes / 576 dom / 4 React commits; /sen->/kanban click-to-commit 1187.8ms, commits 9, dom 583; /sen->/code-space 778.1ms; /code-space->/sen 501.2ms; shell <aside>/<nav> object identity stable across all three client-side switches (zero shell remount proven)",
+    "reactCommitCounts": "captured via injected minimal __REACT_DEVTOOLS_GLOBAL_HOOK__ counting onCommitFiberRoot: initial /sen 4, /kanban switch +9, /code-space +7, /sen back +9",
+    "globalListenerCounts": "captured via CDP Network.webSocketCreated: 0 distinct workspace realtime WebSockets in the QA env (no live daemon); invariant structurally holds (<=1). Positive-path evidence needs a live-session fixture",
+    "longListFixtures": "not captured: no production-sized list fixture route exists yet; DOM boundedness measured instead (576-600 nodes on /sen, /kanban, /code-space)",
+    "memoryUse": "captured: heap 8.0 MiB after the full /sen->/kanban->/code-space->/sen cycle (Runtime.getHeapUsage)",
+    "inputNavigationLatency": "frozen as relative baseline: first route switch 1187.8ms, code-space 778.1ms, back 501.2ms (click->React-commit, includes cold route chunk fetch)"
+  },
+  "frozenInvariants": [
+    "heavy features remain absent from the initial SEN shell until requested",
+    "one workspace realtime listener",
+    "zero steady-state request-path spawn",
+    "zero shell remount on normal module switch",
+    "bounded fixture DOM"
+  ],
+  "constraints": [
+    "No execution authority, desktop packaging, or unverified config schema was added.",
+    "No dependency was added.",
+    "U0 is evidence-only; implementation seams remain deferred until prerequisites and measurements exist."
+  ]
+}
