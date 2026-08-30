@@ -72,6 +72,21 @@ The independent S10 arbiter rendered its verdict at `1eed104`:
 protected controls remain: `legacy_writer: disabled`, `phase_21: blocked`, and
 no release, cutover, Finalize, or legacy reactivation anywhere.
 
+## Finalize attempt (2026-08-31)
+
+Controller Finalize was attempted (`newos-master -Mode Finalize`) and returned
+**BLOCKED at startup with zero side effects**: `scripts/controller-failover.ps1`
+(the lease controller) is not present in `master`, in git history, or on disk
+in this checkout, so the failover state machine cannot run here. Read-only
+reconciliation of the intended effects: the `NEWSOS-Controller-Failover`
+scheduled task is **already Disabled** (last ran 2026-08-25 against the
+`sprint04` config, result 0) and no S10 lease exists in any
+`plans/reports/orchestrate-*/controller-failover.json`. Therefore no active
+lease remains to release and no active detector remains to disable in this
+checkout; the Sprint 10 authoritative close is the `CLOSED_GO` record. If the
+owner later operates the failover state machine (by restoring
+`scripts/controller-failover.ps1`), `-Mode Finalize` can be rerun.
+
 ## S10 CLOSED_GO (2026-08-31)
 
 After the owner restored the note channel (C10 §4) and settled all four
