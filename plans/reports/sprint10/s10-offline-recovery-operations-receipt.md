@@ -52,20 +52,22 @@ Get-FileHash -Algorithm SHA256 qa/fixtures/sprint10/redacted-recovery-v1.json
 Get-FileHash -Algorithm SHA256 qa/tests/s10-offline-recovery-operations.test.ts
 ```
 
-The resulting SHA-256 values are recorded below after the focused test passes.
-Consumers must recompute them against the current bytes before relying on this
-receipt.
+The standard Windows clean checkout materializes these tracked artifacts with
+CRLF line endings. The canonical pins below therefore cover the physical bytes
+observed by that clean checkout, rather than the LF bytes that may exist in an
+authoring worktree. Consumers must recompute their own current bytes before
+relying on this receipt.
 
 | Artifact | SHA-256 |
 |---|---|
-| `qa/fixtures/sprint10/redacted-recovery-v1.json` | `1D1C919AD91857AF92AF5C5617E524C307D58B8687EA1BFD945DD8A507DE066E` |
-| `qa/tests/s10-offline-recovery-operations.test.ts` | `7CC1EBBB099FCD768BEC78D9E8E8D5F05C022721E2C9862794104DC11E712187` |
+| `qa/fixtures/sprint10/redacted-recovery-v1.json` | `AB01150A1A7AD3FC288836FEF090D4CB9CDAE76623AAF5C6899C4E94DC0D1F2A` |
+| `qa/tests/s10-offline-recovery-operations.test.ts` | `F3A02ABF954EF79B59EF1142BBE777AC74130C82E70E2A3B40A335B5BF595669` |
 
 Machine-verifiable current-byte pins:
 
 ```text
-1D1C919AD91857AF92AF5C5617E524C307D58B8687EA1BFD945DD8A507DE066E qa/fixtures/sprint10/redacted-recovery-v1.json
-7CC1EBBB099FCD768BEC78D9E8E8D5F05C022721E2C9862794104DC11E712187 qa/tests/s10-offline-recovery-operations.test.ts
+AB01150A1A7AD3FC288836FEF090D4CB9CDAE76623AAF5C6899C4E94DC0D1F2A qa/fixtures/sprint10/redacted-recovery-v1.json
+F3A02ABF954EF79B59EF1142BBE777AC74130C82E70E2A3B40A335B5BF595669 qa/tests/s10-offline-recovery-operations.test.ts
 ```
 
 ## Limits and next gate
