@@ -29,7 +29,7 @@ from another worktree must not be substituted.
 fa7e952b591e0ea09abe232b5bab59f5ff4d35bdf501965a0f3d36a0a49395c3 plans/reports/sprint10/s10-phase5-unresolved-risk-ledger.md
 a278b271fabb908cc29d641d4f65ce8fe7c381db9dccc193b533104b7edf7f85 plans/reports/sprint10/s10-phase5-reconciliation-report.md
 4dac2e2f78684d5fac929dc79401c2347e89513b47ea24609753111d4e7d2f67 plans/handoffs/s10-phase5-next-controller-handoff.md
-f6c0446fdb2ceb1792a6fa2bba343f3f25f42f7bcd5eb3cdbae1c0cccfdee19d plans/reports/sprint10/s10-phase5-task-reconciliation-supersession-ledger.md
+e3ecd58d659f6400f0768b2b1dc674d356eef4310c4d842cdb3f5169ccc826cf plans/reports/sprint10/s10-phase5-task-reconciliation-supersession-ledger.md
 ```
 
 ## Next authority gate

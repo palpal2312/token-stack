@@ -37,6 +37,6 @@ independent unresolved work; this ledger makes no live-readiness claim.
 ## Related current-byte evidence
 
 061d58165ee69d4354daf77bc93832ee75f51db2 plans/reports/sprint10/s10-final-independent-arbiter-verdict.md
-73b841e75f60d297236348d70a0d1c3b46dd84dd454e45a2f7ae8d630e357b35 plans/reports/sprint10/s10-controller-current-byte-repin-manifest.md
+97d1a6a9f74004e7832feb8125c5875e6124aad35a3700ca114f193f04443ada plans/reports/sprint10/s10-controller-current-byte-repin-manifest.md
 
 JOB_DONE: S10 B2 task-reconciliation/supersession evidence recorded; controller task settlement and fresh arbitration remain required.
