@@ -1,6 +1,6 @@
-/** Disposable S10 drill daemon. It accepts only a caller-owned temp root. */
+/** Disposable S10 drill daemon. It creates and cleans up only a token-owned temp root. */
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
@@ -10,16 +10,25 @@ const now = () => Date.now(); const clone = <T>(value: T): T => JSON.parse(JSON.
 const rootArg = process.argv.indexOf("--runtime-root"); const portArg = process.argv.indexOf("--port");
 if (rootArg < 0 || !process.argv[rootArg + 1]) throw new Error("--runtime-root must be explicitly supplied.");
 const root = resolve(process.argv[rootArg + 1]); const tempRoot = resolve(tmpdir());
-function assertRuntimeRoot(runtimeRoot: string, allowInitialize = false) {
+const runtimeToken = process.env.S10_RUNTIME_OWNERSHIP_TOKEN;
+if (!runtimeToken || !/^[A-Za-z0-9_-]{43}$/.test(runtimeToken)) throw new Error("S10_RUNTIME_OWNERSHIP_TOKEN must be an unguessable 32-byte base64url token.");
+const reuseOwnedRoot = process.argv.includes("--reuse-owned-root"); const cleanupOnly = process.argv.includes("--cleanup");
+function assertRuntimeRoot(runtimeRoot: string, token: string, allowReuse = false) {
   const target = resolve(runtimeRoot);
   if (dirname(target) !== tempRoot || !/^s10-live-runtime-[A-Za-z0-9_-]+$/.test(basename(target))) throw new Error("runtime root must be an immediate s10-live-runtime-* child of the OS temp directory.");
-  if (!existsSync(target) || lstatSync(target).isSymbolicLink() || !statSync(target).isDirectory()) throw new Error("runtime root must be a non-link directory created by the caller.");
+  if (!existsSync(target)) {
+    if (allowReuse) throw new Error("owned runtime root is missing.");
+    mkdirSync(target); // Exclusive creation is the ownership boundary; never adopt an existing directory.
+    writeFileSync(join(target, markerName), `${token}\n`, { encoding: "utf8", flag: "wx" });
+    return target;
+  }
+  if (lstatSync(target).isSymbolicLink() || !statSync(target).isDirectory()) throw new Error("runtime root must be a non-link directory.");
+  if (!allowReuse) throw new Error("runtime root already exists; refusing to adopt a pre-existing directory.");
   const marker = join(target, markerName);
-  if (!existsSync(marker)) { if (!allowInitialize || readdirSync(target).length !== 0) throw new Error("runtime root is not an owned empty S10 runtime directory."); writeFileSync(marker, "s10-live-runtime\n", { encoding: "utf8", flag: "wx" }); }
-  else if (readFileSync(marker, "utf8") !== "s10-live-runtime\n") throw new Error("runtime root ownership marker is invalid.");
+  if (!existsSync(marker) || readFileSync(marker, "utf8") !== `${token}\n`) throw new Error("runtime root ownership token is invalid.");
   return target;
 }
-assertRuntimeRoot(root, true);
+assertRuntimeRoot(root, runtimeToken, reuseOwnedRoot);
 const port = portArg >= 0 ? Number(process.argv[portArg + 1]) : 0;
 if (!Number.isSafeInteger(port) || port < 0 || port > 65535) throw new Error("port must be valid.");
 const stateFile = join(root, "state", "state.json");
@@ -49,7 +58,11 @@ const server = createServer(async (req, res) => { try {
   if (action === "restore") { const name = requireText(input.name, "name"); let snapshot: unknown; try { snapshot = state.snapshots[name] ?? JSON.parse(readFileSync(join(root, "snapshots", `${name}.json`), "utf8")); } catch { throw new Error("snapshot is unreadable"); } if (!isState(snapshot)) throw new Error("snapshot is malformed"); state = clone(snapshot); save(state); return response(res, 200, { restored: name, restoredPersistedAt: (snapshot as State).persistedAt, persistedAt: state.persistedAt }); }
   return response(res, 404, { error: "unknown action" });
 } catch (error) { return response(res, 400, { error: error instanceof Error ? error.message : "invalid request" }); } });
-server.listen({ host: "127.0.0.1", port }, () => process.stdout.write(`${JSON.stringify({ event: "ready", port: (server.address() as { port: number }).port })}\n`));
+if (cleanupOnly) cleanupS10Runtime(root);
+else server.listen({ host: "127.0.0.1", port }, () => process.stdout.write(`${JSON.stringify({ event: "ready", port: (server.address() as { port: number }).port })}\n`));
 function shutdown() { server.close(() => process.exit(0)); setTimeout(() => process.exit(1), 2_000).unref(); }
 process.on("SIGTERM", shutdown); process.on("SIGINT", shutdown);
-export function cleanupS10Runtime(runtimeRoot: string) { rmSync(assertRuntimeRoot(runtimeRoot), { recursive: true, force: true }); }
+export function cleanupS10Runtime(runtimeRoot: string) {
+  if (resolve(runtimeRoot) !== root) throw new Error("cleanup is limited to this daemon's runtime root.");
+  rmSync(assertRuntimeRoot(root, runtimeToken, true), { recursive: true, force: true });
+}

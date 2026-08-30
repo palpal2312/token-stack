@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,8 +8,10 @@ import test from "node:test";
 
 const sha256 = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-function startDaemon(root: string, children: Set<ChildProcess>, port = "0") {
-  const child = spawn(process.execPath, ["node_modules/tsx/dist/cli.mjs", "tools/s10-live-runtime/daemon.ts", "--runtime-root", root, "--port", port], { cwd: process.cwd(), stdio: ["ignore", "pipe", "pipe"] });
+function daemonArgs(root: string, reuse = false, cleanup = false) { return ["node_modules/tsx/dist/cli.mjs", "tools/s10-live-runtime/daemon.ts", "--runtime-root", root, ...(reuse ? ["--reuse-owned-root"] : []), ...(cleanup ? ["--cleanup"] : [])]; }
+function invokeDaemon(root: string, token: string, reuse = false, cleanup = false) { return new Promise<{ code: number | null; errors: string }>((resolve) => { let errors = ""; const child = spawn(process.execPath, daemonArgs(root, reuse, cleanup), { cwd: process.cwd(), env: { ...process.env, S10_RUNTIME_OWNERSHIP_TOKEN: token }, stdio: ["ignore", "ignore", "pipe"] }); child.stderr.on("data", (data) => { errors += data; }); child.once("close", (code) => resolve({ code, errors })); }); }
+function startDaemon(root: string, token: string, children: Set<ChildProcess>, port = "0", reuse = false) {
+  const child = spawn(process.execPath, [...daemonArgs(root, reuse), "--port", port], { cwd: process.cwd(), env: { ...process.env, S10_RUNTIME_OWNERSHIP_TOKEN: token }, stdio: ["ignore", "pipe", "pipe"] });
   children.add(child); let output = ""; let errors = "";
   child.stdout.on("data", (data) => { output += data; }); child.stderr.on("data", (data) => { errors += data; });
   const ready = new Promise<number>((resolve, reject) => {
@@ -23,9 +25,9 @@ function startDaemon(root: string, children: Set<ChildProcess>, port = "0") {
 }
 async function stop(child: ChildProcess) { if (child.exitCode !== null || child.signalCode !== null) return; const exited = new Promise<void>((resolve) => child.once("exit", () => resolve())); child.kill("SIGTERM"); await Promise.race([exited, pause(2_500)]); if (child.exitCode === null && child.signalCode === null) { child.kill("SIGKILL"); await exited; } }
 test("S10 loopback daemon executes controlled live-runtime drills", async () => {
-  const root = mkdtempSync(join(tmpdir(), "s10-live-runtime-")); const sentinel = join(tmpdir(), `s10-sentinel-${Date.now()}`); const children = new Set<ChildProcess>(); writeFileSync(sentinel, "preserve", "utf8");
+  const root = join(tmpdir(), `s10-live-runtime-${randomBytes(12).toString("hex")}`); const token = randomBytes(32).toString("base64url"); const sentinel = join(tmpdir(), `s10-sentinel-${Date.now()}`); const children = new Set<ChildProcess>(); writeFileSync(sentinel, "preserve", "utf8");
   try {
-    const first = startDaemon(root, children); const port = await first.ready;
+    const first = startDaemon(root, token, children); const port = await first.ready;
     const request = async (path: string, payload?: unknown) => { const began = performance.now(); const res = await fetch(`http://127.0.0.1:${port}${path}`, payload ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) } : undefined); return { status: res.status, body: await res.json() as Record<string, unknown>, ms: performance.now() - began }; };
     assert.equal((await request("/health")).status, 200);
     assert.equal((await request("/action/approval", { candidate: "candidate-a", decision: "reject" })).body.noOp, true);
@@ -35,8 +37,15 @@ test("S10 loopback daemon executes controlled live-runtime drills", async () => 
     const held = await request("/action/lease", { owner: "owner-a", ttlMs: 30 }); assert.equal(held.status, 200); assert.equal((await request("/action/lease", { owner: "owner-b", ttlMs: 30 })).status, 409); await pause(40); const reacquired = await request("/action/lease", { owner: "owner-b", ttlMs: 30 }); assert.equal(reacquired.status, 200); assert.ok(Number(reacquired.body.fencingToken) > Number(held.body.fencingToken));
     const snapshot = await request("/action/snapshot", { name: "before-rollback" }); await pause(5); const mutation = await request("/action/rollback", {}); const restore = await request("/action/restore", { name: "before-rollback" }); assert.equal(restore.status, 200); const restored = await request("/status"); const rpoMs = Number(mutation.body.persistedAt) - Number(snapshot.body.persistedAt); assert.ok(rpoMs >= 0); assert.ok(Number(restored.body.persistedAt) >= Number(snapshot.body.persistedAt));
     assert.equal((await request("/action/backend", { available: false })).status, 200); assert.equal((await request("/action/rollback", {})).status, 503); await request("/action/backend", { available: true });
-    const before = await request("/status"); const restartBeganAt = Date.now(); await stop(first.child); const second = startDaemon(root, children, String(port)); await second.ready; const after = await request("/status"); const rtoMs = Date.now() - restartBeganAt;
+    const before = await request("/status"); const restartBeganAt = Date.now(); await stop(first.child); const second = startDaemon(root, token, children, String(port), true); await second.ready; const after = await request("/status"); const rtoMs = Date.now() - restartBeganAt;
     assert.equal(after.body.delivered, before.body.delivered); assert.ok(Number(after.body.persistedAt) >= Number(before.body.persistedAt));
     const receipt = join(root, "s10-live-runtime-receipt.json"); writeFileSync(receipt, `${JSON.stringify({ marker: "JOB_DONE", runtime: "loopback-only", drills: ["restart-recovery", "snapshot-restore", "duplicate-outbox", "stale-lease", "backend-unavailable", "approval-rejection", "canary", "rollback"], sloMs: Math.round(canary.ms), rpoMs, rtoMs, restartBeganAt, snapshotPersistedAt: snapshot.body.persistedAt, restoredPersistedAt: restored.body.persistedAt, finalPersistedAt: after.body.persistedAt, stateSha256: sha256(join(root, "state", "state.json")), secrets: "none" }, null, 2)}\n`); assert.equal(existsSync(receipt), true);
-  } finally { await Promise.all([...children].map(stop)); rmSync(root, { recursive: true, force: true }); assert.equal(existsSync(sentinel), true); rmSync(sentinel, { force: true }); }
+  } finally { await Promise.all([...children].map(stop)); if (existsSync(root)) assert.equal((await invokeDaemon(root, token, true, true)).code, 0); assert.equal(existsSync(sentinel), true); rmSync(sentinel, { force: true }); }
+});
+
+test("S10 cleanup refuses a pre-existing forged runtime root", async () => {
+  const root = mkdtempSync(join(tmpdir(), "s10-live-runtime-")); const preserved = join(root, "preserve.txt"); const token = randomBytes(32).toString("base64url");
+  writeFileSync(join(root, ".s10-live-runtime-owner"), `${randomBytes(32).toString("base64url")}\n`, "utf8"); writeFileSync(preserved, "preserve", "utf8");
+  try { const result = await invokeDaemon(root, token, true, true); assert.notEqual(result.code, 0); assert.equal(existsSync(root), true); assert.equal(readFileSync(preserved, "utf8"), "preserve"); }
+  finally { rmSync(root, { recursive: true, force: true }); }
 });
