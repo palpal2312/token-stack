@@ -31,11 +31,13 @@ not be substituted.
 
 ```text
 72d07cd336d9829302179f7fbaaac276d57be79360531eb94a1ad24b4e0cc0d2 plans/reports/sprint10/s10-phase5-current-byte-close-packet.md
-96d15e627bff18ede26a547c4832a850b6397ed1327742af343ad9ce35a3a69d plans/reports/sprint10/s10-phase5-unresolved-risk-ledger.md
+8d526fb6308c469f04be575f205bcdbcea5a175be4fdcb6be40f28a080985133 plans/reports/sprint10/s10-phase5-unresolved-risk-ledger.md
 81f6ec783ee6a9f74ce7cad77a66e88ba23594db313c965de6264f42db3bbc63 plans/reports/sprint10/s10-phase5-reconciliation-report.md
 4dac2e2f78684d5fac929dc79401c2347e89513b47ea24609753111d4e7d2f67 plans/handoffs/s10-phase5-next-controller-handoff.md
 e2ea16ed957d22ba803717cf7e19d6e83e5087211a10a541eb59414b7f72f238 plans/reports/sprint10/s10-phase5-task-reconciliation-supersession-ledger.md
 fed8124221355db99c3b9e79b6529d2bf5edb7753c14c577b38b3fba05da9d7f plans/reports/sprint10/s10-close-nogo-independent-arbiter-verdict.md
+f0d185235a37142db4dc9046eabd52a1345985c5fd37171862bf2aae542e369a plans/reports/sprint10/s10-go-independent-arbiter-verdict.md
+f9af3810926dcc01f72bbb1721b2f683be372f43d2955c6ab1e2e6c79d6b7cbd plans/reports/sprint10/s10-CLOSED_GO-record.md
 ```
 
 ## GO settlement snapshot (2026-08-31)
@@ -70,4 +72,16 @@ The independent S10 arbiter rendered its verdict at `1eed104`:
 protected controls remain: `legacy_writer: disabled`, `phase_21: blocked`, and
 no release, cutover, Finalize, or legacy reactivation anywhere.
 
-JOB_DONE: S10 Phase 5 closeout receipt finalized at 1eed104; final independent arbiter recorded NO_GO (Sprint 10 closes as recorded); legacy_writer disabled and phase_21 blocked preserved.
+## S10 CLOSED_GO (2026-08-31)
+
+After the owner restored the note channel (C10 §4) and settled all four
+records, a fresh independent GO arbiter (see
+`plans/reports/sprint10/s10-go-independent-arbiter-verdict.md`) verified chain
+PASS, suite 33/33, settled reconciliation, channel restored, no orphan, and
+the loopback operational evidence, and returned **GO — Sprint 10 closes**,
+superseding the interim NO_GO close. The CLOSED_GO record is
+`plans/reports/sprint10/s10-CLOSED_GO-record.md`. Controller Finalize remains
+a separate gated action and was not run here. `legacy_writer: disabled` and
+`phase_21: blocked` remain preserved; no release/cutover/Phase 21.
+
+JOB_DONE: S10 Phase 5 closeout receipt finalized at fb6f674; independent GO arbiter recorded GO (Sprint 10 CLOSED_GO); legacy_writer disabled and phase_21 blocked preserved; Finalize remains a separate gated action.
