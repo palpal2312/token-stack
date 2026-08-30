@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "s10-redacted-canary-v1",
+  "cohort_id": "cohort-redacted-01",
+  "provenance": {
+    "source_class": "frozen-redacted-replay",
+    "policy_revision": "s10-opening-v1",
+    "clock": "normalized-utc-ms",
+    "content_scope": "pseudonymous-metrics-only"
+  },
+  "records": [
+    {
+      "record_id": "r-001",
+      "predicted_elapsed_ms": 12000,
+      "observed_elapsed_ms": 10000,
+      "predicted_sequential_ms": 8000,
+      "observed_sequential_ms": 7000,
+      "available_capacity_ms": 10000,
+      "busy_capacity_ms": 6000,
+      "predicted_retry_attempt_ids": ["a-002"],
+      "observed_retry_attempt_ids": ["a-002", "a-003"],
+      "predicted_acceptance_probability": 0.8,
+      "observed_accepted": true,
+      "chosen_allocation_outcome_ms": 12000,
+      "best_eligible_counterfactual_outcome_ms": 10000
+    },
+    {
+      "record_id": "r-002",
+      "predicted_elapsed_ms": 9000,
+      "observed_elapsed_ms": 10000,
+      "predicted_sequential_ms": 6000,
+      "observed_sequential_ms": 7000,
+      "available_capacity_ms": 10000,
+      "busy_capacity_ms": 5000,
+      "predicted_retry_attempt_ids": [],
+      "observed_retry_attempt_ids": [],
+      "predicted_acceptance_probability": 0.2,
+      "observed_accepted": false,
+      "chosen_allocation_outcome_ms": 11000,
+      "best_eligible_counterfactual_outcome_ms": 11000
+    }
+  ],
+  "unavailable_cohort": {
+    "cohort_id": "cohort-redacted-unavailable",
+    "reason": "frozen-input-unavailable"
+  }
+}
