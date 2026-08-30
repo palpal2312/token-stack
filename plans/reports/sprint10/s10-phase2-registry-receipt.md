@@ -30,10 +30,22 @@ npx --no-install tsx --test qa/tests/s10-registry.test.ts
 | `src/lib/llmops/s10-registry.ts` | `1B42C1118B98FE8738460974EE9A66F1E11F327C84803DDF0143952E61DB1DB6` |
 | `qa/tests/s10-registry.test.ts` | `D5676FC4818E049FEBE8FA8987F1FD47AD6C6A1281F49892ADAA7A7F3A5180D3` |
 
-Machine-readable current-byte pins:
+## Controller current-byte re-pin
 
-1b42c1118b98fe8738460974ee9a66f1e11f327c84803ddf0143952e61db1db6 src/lib/llmops/s10-registry.ts
-d5676fc4818e049febe8fa8987f1fd47ad6c6a1281f49892adaa7a7f3a5180d3 qa/tests/s10-registry.test.ts
+The two pins above are preserved as producer-time evidence. They were computed
+from the producer checkout and are not valid physical-byte pins after the
+Windows integration checkout: the current tracked files materialize with CRLF
+line endings. No behavior change is claimed by this receipt amendment.
+
+Original producer pins (historical, deliberately excluded from the verifier):
+
+- SHA-256 `1b42c1118b98fe8738460974ee9a66f1e11f327c84803ddf0143952e61db1db6` — `src/lib/llmops/s10-registry.ts`
+- SHA-256 `d5676fc4818e049febe8fa8987f1fd47ad6c6a1281f49892adaa7a7f3a5180d3` — `qa/tests/s10-registry.test.ts`
+
+Controller re-pinned physical checkout bytes:
+
+4bc71aa3b79bfdb064efed195dd970782b48dc2f1e832653858a339f85e39d17 src/lib/llmops/s10-registry.ts
+4ddaccdd830a848436bc4f601ef0ac34dc65080fa7b0700ec6a70c0abbf5cb7e qa/tests/s10-registry.test.ts
 
 Status: DONE
 Summary: S10 Phase 2 registry controls implemented and focused tests pass.

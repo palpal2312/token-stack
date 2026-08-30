@@ -23,15 +23,25 @@ persistence, writer, endpoint, cutover, legacy-writer, or Phase 21 action.
 - Privacy precedence is local frozen history only; community priors and private
   project lookups are not available to this module.
 
-## Current-byte pins
+## Producer-time pins (preserved)
 
 ```text
-8AAA8F3E13C1817106E99726ED6F0730443806DE8375990C1AB3305862E59242 src/lib/llmops/s10-replay-calibration.ts
-DEA6B54C78EE748FE03699286542E6A5E3907A8D102F7FB7DEC44AC95464BAD2 qa/tests/s10-phase3-replay-calibration.test.ts
+Producer SHA-256 `8AAA8F3E13C1817106E99726ED6F0730443806DE8375990C1AB3305862E59242` — `src/lib/llmops/s10-replay-calibration.ts`
+Producer SHA-256 `DEA6B54C78EE748FE03699286542E6A5E3907A8D102F7FB7DEC44AC95464BAD2` — `qa/tests/s10-phase3-replay-calibration.test.ts`
 ```
 
 Validation: `npx tsx --test qa/tests/s10-phase3-replay-calibration.test.ts` —
 3/3 passed.
+
+## Controller current-byte re-pin
+
+The producer-time pins remain above for provenance. The integrated Windows
+checkout hashes physical CRLF bytes, so the controller re-pins those current
+bytes here. This is a checkout/integration normalization difference, not a
+change to replay authority or behavior.
+
+14768b5c685b22eb95edbe27d72f67e1c09a05e07e636d4034dded9ccda1245e src/lib/llmops/s10-replay-calibration.ts
+b8f010d3a4f2487f50ea623e1221b15fcd895431a8604168b53b287581129724 qa/tests/s10-phase3-replay-calibration.test.ts
 
 JOB_DONE: S10 Phase 3 replay/calibration evidence completed; no execution or
 promotion authority issued.
