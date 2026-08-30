@@ -1,0 +1,19 @@
+{
+  "marker": "JOB_DONE",
+  "runtime": "loopback-only",
+  "drills": [
+    "restart-recovery",
+    "snapshot-restore",
+    "duplicate-outbox",
+    "stale-lease",
+    "backend-unavailable",
+    "approval-rejection",
+    "canary",
+    "rollback"
+  ],
+  "sloMs": 15,
+  "rpoMs": 0,
+  "rtoMs": 218,
+  "stateSha256": "55db0f3e80c6cfae02ddfb2a52d60608c865d28bae40b88e08bb812d8436986f",
+  "secrets": "none"
+}
