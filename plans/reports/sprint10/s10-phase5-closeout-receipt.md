@@ -34,9 +34,23 @@ not be substituted.
 96d15e627bff18ede26a547c4832a850b6397ed1327742af343ad9ce35a3a69d plans/reports/sprint10/s10-phase5-unresolved-risk-ledger.md
 81f6ec783ee6a9f74ce7cad77a66e88ba23594db313c965de6264f42db3bbc63 plans/reports/sprint10/s10-phase5-reconciliation-report.md
 4dac2e2f78684d5fac929dc79401c2347e89513b47ea24609753111d4e7d2f67 plans/handoffs/s10-phase5-next-controller-handoff.md
-5e05a70c9d1ae379d7ffbdd93ea1a324d8aa88fe12f56fb961e365c7ab0ea18b plans/reports/sprint10/s10-phase5-task-reconciliation-supersession-ledger.md
+e2ea16ed957d22ba803717cf7e19d6e83e5087211a10a541eb59414b7f72f238 plans/reports/sprint10/s10-phase5-task-reconciliation-supersession-ledger.md
 fed8124221355db99c3b9e79b6529d2bf5edb7753c14c577b38b3fba05da9d7f plans/reports/sprint10/s10-close-nogo-independent-arbiter-verdict.md
 ```
+
+## GO settlement snapshot (2026-08-31)
+
+The owner restored the orchestration note write channel under C10 §4: the
+`POST /api/orchestration/note` endpoint was re-added as a **controller-gated**
+route (writes only with `ORCHESTRATION_CONTROLLER=1`; GET/read surface stays
+loopback-only). The four historical S10 records
+(`task_bef53ce7551a`, `task_644b2a8c9aec`, `task_7ab54e33c3a5`,
+`task_1cc2fc4d66ff`) were settled as completed/superseded with terminal
+`DONE` lifecycle events appended to the shared orchestration journal
+(`~/.agentic-os/orchestration-state.jsonl`, `writer: owner`, 2026-08-31) —
+see the task-reconciliation/supersession ledger settlement record. No S10
+task record on the ledger remains `ready`; `legacy_writer: disabled` and
+`phase_21: blocked` remain preserved.
 
 ## Fresh read-only reconciliation snapshot (2026-08-31, arbiter dispatch)
 
