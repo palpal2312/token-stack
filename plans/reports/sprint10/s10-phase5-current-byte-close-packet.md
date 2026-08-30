@@ -2,24 +2,26 @@
 
 ## Status and authority
 
-**NOT READY FOR ARBITRATION.** This is a redacted evidence packet, not a
-GO/NO-GO verdict and not a release, promotion, cutover, legacy-writer, or
-Phase 21 authorization. `legacy_writer: disabled` and `phase_21: blocked`
-remain hard controls.
+**REMEDIATION PACKET; S10 REMAINS NO_GO.** This is a redacted evidence packet,
+not a GO/NO-GO verdict and not a release, promotion, cutover, legacy-writer,
+or Phase 21 authorization. The final independent arbiter verdict at
+`061d581` remains **NO_GO** until a newly dispatched independent review says
+otherwise. `legacy_writer: disabled` and `phase_21: blocked` remain hard
+controls.
 
-Packet basis: clean worktree `s10-phase5-close-packet`, `master` byte set
-`14b3546` (`feat(s10): add controlled canary recovery evidence`). The
-untracked `pnpm-lock.yaml` was present before this phase and is excluded from
-the packet and every pin below.
+Packet basis: clean worktree `s10-arbiter-b1-b2-remediation`, `master` byte
+set `061d581` (`docs(sprint10): record final arbiter no-go`). The untracked
+`pnpm-lock.yaml` was present before this phase and is excluded from the packet
+and every pin below.
 
 ## Included current-byte evidence
 
 ```text
 c437224b0c7443ac485a4c9b4a59b3afa5110771a6af3710427cc39dc8f97cd7 plans/reports/sprint10/s10-evaluation-opening-manifest.md
 d67484da524b62d7aec65b2a34dd5c8c88e37f6ab74bda3b4601b7a19b5979ce plans/reports/sprint10/s10-phase1-controlled-authorization-preflight-20260830.md
-19db950e7d332ae94ab97e029f33ba9fd781ef0b7a95086e2beafbba1a6cd869 plans/reports/sprint10/s10-phase2-registry-receipt.md
-d2904a4b8449e1a1b0b40071a2e4c6533753e8c30aae6d7c15ebefac5c980f48 plans/reports/sprint10/s10-phase3-replay-calibration-receipt.md
-b9b5a621f9e5bc9b7349335cf4fb9073dade3cdf8bdd0cea13342c57af8f9670 plans/reports/sprint10/s10-phase4-controlled-delivery-recovery-receipt.md
+e1c0e752f50a6ff4d0740dc3d28b22af30dade5d6151ef7a1f58cd855b440460 plans/reports/sprint10/s10-phase2-registry-receipt.md
+93000baa26cfeae8f2323517de43d32abae0ef991b8641cdc30a02ebe8d91771 plans/reports/sprint10/s10-phase3-replay-calibration-receipt.md
+1020e0ae77cb91f46ebd2103e05db1f1d7fb4971d8180a2e95bc2cc6951e617a plans/reports/sprint10/s10-phase4-controlled-delivery-recovery-receipt.md
 5cc4308c20786081bcd00e9854821fbdc958d7b26e59a7a1c213ef782ec80173 plans/reports/sprint10/s10-lane-a-evaluation-receipt.md
 7e6b3f8a13718adf0a631490b3c07bf2fb532174531d5cbe6d70531871769503 plans/reports/sprint10/s10-lane-b-controlled-delivery-receipt.md
 42753787412bd6c736082196834cb73d8c42a9dbcbbb41a8349174b31a9b8082 plans/reports/sprint10/s10-lane-c-operations-closeout-receipt.md
@@ -48,14 +50,13 @@ b226df9edb38e72af439daec11b2a6e0d9517e0dbbb5317d0d57930c5597f224 qa/tests/s10-la
 ## Required independent checks after this packet is promoted
 
 1. Recompute every pin above from the promoted master bytes and rerun the four
-   focused suites together. The Phase 2--4 producer receipts retain historical
-   candidate pins that currently fail the generic receipt verifier after
-   integration; a controller-owned re-pin receipt is therefore mandatory.
+   focused suites together. The controller current-byte re-pin manifest is the
+   authoritative replacement for the Phase 2--4 producer-time receipt pins.
 2. Reconcile controller lease, process ownership, and S10 task settlement at
-   the decision timestamp. The snapshot in the reconciliation report is
-   evidence, not a future-state guarantee.
-3. Have an independent S10 arbiter decide GO or NO_GO. This packet carries no
-   such authority.
+   the decision timestamp. Read the task-reconciliation/supersession ledger;
+   it records evidence links but cannot mutate Orca task status.
+3. Have a newly dispatched independent S10 arbiter decide GO or NO_GO. This
+   packet carries no such authority and does not supersede the existing NO_GO.
 4. Do not run Finalize, enable the legacy writer, transition Phase 21, or
    execute a release/cutover unless an independently promoted GO record
    explicitly authorizes the next step.

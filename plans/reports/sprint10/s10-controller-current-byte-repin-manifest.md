@@ -26,9 +26,9 @@ pins below, without deleting the historical values.
 
 ## Current-byte pins
 
-5fc82898071dbb71803202fd745555ca03d891e60065994aafd737b4beb042fc plans/reports/sprint10/s10-phase2-registry-receipt.md
-ea96547c52cd19f2675f1c305a48abcb5269e77d5b4e93d32c7f781eaf97ff63 plans/reports/sprint10/s10-phase3-replay-calibration-receipt.md
-eca45a30de750c4371e49cb40d30e899278169659d7668ad6ffedcd17260d5ca plans/reports/sprint10/s10-phase4-controlled-delivery-recovery-receipt.md
+e1c0e752f50a6ff4d0740dc3d28b22af30dade5d6151ef7a1f58cd855b440460 plans/reports/sprint10/s10-phase2-registry-receipt.md
+93000baa26cfeae8f2323517de43d32abae0ef991b8641cdc30a02ebe8d91771 plans/reports/sprint10/s10-phase3-replay-calibration-receipt.md
+1020e0ae77cb91f46ebd2103e05db1f1d7fb4971d8180a2e95bc2cc6951e617a plans/reports/sprint10/s10-phase4-controlled-delivery-recovery-receipt.md
 4bc71aa3b79bfdb064efed195dd970782b48dc2f1e832653858a339f85e39d17 src/lib/llmops/s10-registry.ts
 4ddaccdd830a848436bc4f601ef0ac34dc65080fa7b0700ec6a70c0abbf5cb7e qa/tests/s10-registry.test.ts
 14768b5c685b22eb95edbe27d72f67e1c09a05e07e636d4034dded9ccda1245e src/lib/llmops/s10-replay-calibration.ts
