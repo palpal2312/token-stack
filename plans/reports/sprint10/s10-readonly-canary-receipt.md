@@ -69,9 +69,18 @@ using this receipt.
 | `qa/fixtures/sprint10/redacted-canary-v1.json` | `9DF27F9F44C1B5003210A1809610F4B6CBA6A0F4D78A89483DB7BCBB1135E70E` |
 | `qa/tests/s10-readonly-canary.test.ts` | `C47CD556E909D7BB7C588A7BBF41E2DB84799F2AB38464742F950DCB2EF56D9A` |
 
+Machine-verifiable current-byte pins:
+
+```text
+9DF27F9F44C1B5003210A1809610F4B6CBA6A0F4D78A89483DB7BCBB1135E70E qa/fixtures/sprint10/redacted-canary-v1.json
+C47CD556E909D7BB7C588A7BBF41E2DB84799F2AB38464742F950DCB2EF56D9A qa/tests/s10-readonly-canary.test.ts
+```
+
 ## Limits and next gate
 
 This is a bounded frozen replay. It does not demonstrate production forecast
 accuracy, authorize promotion/cutover, or replace required operational,
 security, restore/replay, approval, canary-monitoring, and independent-arbiter
 evidence. Any unavailable input must remain a no-op `not-measurable` result.
+
+JOB_DONE: bounded local read-only canary evidence completed; no GO/NO-GO or execution authority issued.
