@@ -7,7 +7,7 @@
 // lossy by design and documented per field.
 
 import type { KanbanEvent, WorkItem } from "./types";
-import { goApiAvailable, goApiFetch } from "@/lib/goApiProxy";
+import { goApiAvailable, goApiFetch, goApiAuthHeaders } from "@/lib/goApiProxy";
 
 export interface GoKanbanCard {
   TaskID: string;
@@ -106,10 +106,12 @@ export async function fetchGoKanbanBoard(): Promise<GoBoardSnapshot | null> {
     return result.body as GoBoardSnapshot;
   }
 
-  // Direct daemon fallback route: GET /api/v1/kanban/board on daemon port 3738
+  // Direct daemon fallback route: GET /api/v1/kanban/board on daemon port 3738.
+  // The daemon enforces the same token + nonce as sen-api; goApiAuthHeaders
+  // returns empty when unconfigured and the daemon fails closed with 401/403.
   try {
     const daemonRes = await fetch("http://127.0.0.1:3738/api/v1/kanban/board", {
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...(await goApiAuthHeaders()) },
       signal: AbortSignal.timeout(5_000),
     });
     if (daemonRes.ok) {

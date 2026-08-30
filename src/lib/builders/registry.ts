@@ -13,7 +13,7 @@
 //   3. Secrets never leave here in the clear. Callers that answer HTTP use
 //      publicBuilder(); the raw value is for spawning only.
 
-import { readFile, writeFile, rename, mkdir, readdir } from "node:fs/promises";
+import { readFile, writeFile, rename, mkdir, readdir, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -88,15 +88,33 @@ function serialized<T>(fn: () => Promise<T>): Promise<T> {
   return next;
 }
 
+// mtime+size-keyed memo for the raw parse: builders.json only changes through
+// this module's atomic writes (tmp + rename ⇒ new mtime), so a same-key file
+// is byte-identical and re-reading it is wasted I/O on poll paths like the
+// herdr snapshot route. The cached value is the pre-normalize JSON; each call
+// still maps fresh Builder objects, so callers can mutate what they get back
+// exactly as before. A corrupt file is never cached — every read re-throws.
+// ponytail: (mtimeMs,size) can theoretically collide for two different writes
+// inside one mtime tick with equal length; a same-size edit inside the tick
+// would serve one stale read until the next write.
+let readCache: { mtimeMs: number; size: number; parsed: unknown } | null = null;
+
 async function readFileRaw(): Promise<RegistryFile | null> {
-  if (!existsSync(BUILDERS_FILE)) return null;
-  let text: string;
-  try { text = await readFile(BUILDERS_FILE, "utf8"); }
-  catch (e) { throw new RegistryCorrupt(BUILDERS_FILE, e); }
-  if (!text.trim()) return { version: 1, builders: [] };
+  let st: { mtimeMs: number; size: number };
+  try { st = await stat(BUILDERS_FILE); }
+  catch { return null; }                    // absent is not corrupt
   let parsed: unknown;
-  try { parsed = JSON.parse(text); }
-  catch (e) { throw new RegistryCorrupt(BUILDERS_FILE, e); }
+  if (readCache && readCache.mtimeMs === st.mtimeMs && readCache.size === st.size) {
+    parsed = readCache.parsed;
+  } else {
+    let text: string;
+    try { text = await readFile(BUILDERS_FILE, "utf8"); }
+    catch (e) { throw new RegistryCorrupt(BUILDERS_FILE, e); }
+    if (!text.trim()) return { version: 1, builders: [] };
+    try { parsed = JSON.parse(text); }
+    catch (e) { throw new RegistryCorrupt(BUILDERS_FILE, e); }
+    readCache = { mtimeMs: st.mtimeMs, size: st.size, parsed };
+  }
   if (!parsed || typeof parsed !== "object" || !Array.isArray((parsed as RegistryFile).builders)) {
     throw new RegistryCorrupt(BUILDERS_FILE, "no builders array");
   }

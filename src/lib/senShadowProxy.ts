@@ -7,6 +7,7 @@
 // configured.
 
 import { appendFile, mkdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { AGENTIC_HOME } from "./builders/registry";
 import { goApiAvailable, goApiFetch } from "./goApiProxy";
@@ -74,13 +75,11 @@ export const SHADOW_ROUTE_COMPARISON: Record<string, ShadowCompareOptions> = {
   // counts), so the envelope diff itself is the measurement.
   //
   // Threads read path. Legacy lists runtime-run threads from the file state
-  // store; the Go read model lists chat sessions from sen_session_turns. The
-  // collection keys differ by design (threads vs sessions) and the transcript
-  // keys differ (messages vs turns), so field-level comparison surfaces exactly
-  // that divergence while ignoring legacy-UI-only (agentName) and
-  // canonical-metadata (projectionVersion/updatedAt/source) fields both
-  // directions. Parity is NOT expected yet (different data sources) — same
-  // quantify-the-gap contract as "sen/metrics".
+  // store; the Go read model lists chat sessions from sen_session_turns.
+  // Both sides now emit compatibility aliases (threads↔sessions,
+  // messages↔turns) so field-level presence+type can pass. Values and
+  // sources still differ; legacy-UI-only (agentName) and canonical-metadata
+  // (projectionVersion/updatedAt/source) stay ignored both directions.
   "sen/threads": { fields: ["threads", "sessions"] },
   "sen/threads/{id}": { fields: ["threadId", "messages", "turns"] },
   // Chat is a command surface: its Go counterpart POST /v1/sen/chat/turns is a
@@ -90,6 +89,10 @@ export const SHADOW_ROUTE_COMPARISON: Record<string, ShadowCompareOptions> = {
   // shadowObserveResponse.
   "sen/chat": { mode: "observation-only" },
 };
+
+function sha256Bytes(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 function typeOf(value: unknown): string {
   return Array.isArray(value) ? "array" : typeof value;
@@ -167,7 +170,12 @@ export function comparePayloads(legacy: unknown, canonical: unknown, options?: S
  * pass is never read as more than it is: parity means "no mismatches under
  * this route's configured field comparison", not deep equality.
  */
-export async function shadowCompare(routeName: string, goPath: string, legacyPayload: unknown): Promise<void> {
+export async function shadowCompare(
+  routeName: string,
+  goPath: string,
+  legacyPayload: unknown,
+  extras?: { legacyBytesSha256?: string },
+): Promise<void> {
   try {
     if (!shadowEnabled()) return;
     if (!(await goApiAvailable())) return;
@@ -185,13 +193,21 @@ export async function shadowCompare(routeName: string, goPath: string, legacyPay
       unreachable: result.unreachable === true,
       comparison: routeOptions ? "field-level" : "envelope",
       ...(routeOptions?.fields ? { fields: routeOptions.fields } : {}),
+      legacyPayloadSha256: sha256Bytes(JSON.stringify(legacyPayload ?? null)),
+      ...(extras?.legacyBytesSha256 ? { legacyBytesSha256: extras.legacyBytesSha256 } : {}),
     };
-    if (result.ok) {
+    if (result.unreachable) {
+      entry.parity = null;
+      entry.availability = "unavailable";
+      entry.mismatches = [];
+    } else if (result.ok) {
       const mismatches = comparePayloads(legacyPayload, result.body, routeOptions);
       entry.mismatches = mismatches;
       entry.parity = mismatches.length === 0;
+      entry.availability = "ok";
     } else {
       entry.parity = false;
+      entry.availability = "error";
       entry.mismatches = [`go side returned ${result.status}`];
     }
     await appendEntry(entry);
@@ -210,8 +226,15 @@ export async function shadowCompareResponse(routeName: string, goPath: string, r
   try {
     if (!shadowEnabled()) return;
     if (!response.ok) return;
-    const payload = await response.clone().json().catch(() => null);
-    await shadowCompare(routeName, goPath, payload);
+    const raw = await response.clone().text();
+    const payload = (() => {
+      try {
+        return JSON.parse(raw) as unknown;
+      } catch {
+        return null;
+      }
+    })();
+    await shadowCompare(routeName, goPath, payload, { legacyBytesSha256: sha256Bytes(raw) });
   } catch { /* shadow mode is observability only — never break the route */ }
 }
 

@@ -23,7 +23,8 @@ export async function GET(req: Request) {
   try {
     const store = new FileStateStore(path.join(home(), "runtime", "runs"));
     const threads = await store.listThreads();
-    return NextResponse.json({ threads }, { headers: { "cache-control": "no-store" } });
+    // sessions is a compatibility alias of threads for Go shadow field-level comparison.
+    return NextResponse.json({ threads, sessions: threads }, { headers: { "cache-control": "no-store" } });
   } catch (e) {
     return NextResponse.json({ error: String(e instanceof Error ? e.message : e) }, { status: 500 });
   }

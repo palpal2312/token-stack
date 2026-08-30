@@ -13,8 +13,9 @@ export const dynamic = "force-dynamic";
 //
 // POST { op } drives the terminal: start, input, resize, restart.
 // Live I/O uses the duplex WebSocket at /api/herdr/terminal/ws (server.ts).
-// GET SSE + POST input/resize remain for tooling / emergency escape only —
-// the Code Space UI does not open EventSource anymore.
+// GET SSE remains for tooling / emergency escape only — the Code Space UI does
+// not open EventSource anymore. POST resize is also used by the UI during the
+// WS boot race; every other POST input/resize path is tooling/emergency only.
 
 interface OpBody { op?: unknown; data?: unknown; cols?: unknown; rows?: unknown }
 

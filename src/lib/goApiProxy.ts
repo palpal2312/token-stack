@@ -85,8 +85,25 @@ export interface GoApiResult {
   unreachable?: boolean;
 }
 
+/**
+ * Auth headers for direct calls to the Go daemon (port 3738), which shares
+ * the sen-api credential and enforces the same token + capability nonce.
+ * Returns no headers when the Go side is not configured: the daemon then
+ * fails closed with 401/403, which is the intended posture — never fall back
+ * to an unauthenticated request succeeding.
+ */
+export async function goApiAuthHeaders(): Promise<Record<string, string>> {
+  const config = await loadGoApiConfig();
+  if (!config) return {};
+  return {
+    "x-agentic-os-token": config.token,
+    "x-agentic-os-capability": config.capability,
+    "x-agentic-os-capability-nonce": config.nonce,
+  };
+}
+
 /** Forward one request to the Go listener with the shared token + nonce. */
-export async function goApiFetch(pathname: string, init: { method?: string; body?: unknown } = {}): Promise<GoApiResult> {
+export async function goApiFetch(pathname: string, init: { method?: string; body?: unknown; commandId?: string } = {}): Promise<GoApiResult> {
   const config = await loadGoApiConfig();
   if (!config) return { ok: false, status: 503, body: { code: "not_ready", message: "canonical Go API is not configured" }, unreachable: true };
   try {
@@ -97,6 +114,8 @@ export async function goApiFetch(pathname: string, init: { method?: string; body
         "x-agentic-os-token": config.token,
         "x-agentic-os-capability": config.capability,
         "x-agentic-os-capability-nonce": config.nonce,
+        // Mutating SEN commands require the command-id header (receipt key).
+        ...(init.commandId ? { "x-sen-command-id": init.commandId } : {}),
       },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
       signal: AbortSignal.timeout(10_000),

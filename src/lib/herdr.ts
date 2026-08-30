@@ -18,6 +18,7 @@ import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { config } from "./config";
 import { agentEnv } from "./runner";
+import { readDaemonHerdrSnapshot } from "./agentRuntime/go-builder-exec-client";
 
 const DEFAULT_TIMEOUT_MS = 5_000;
 
@@ -191,19 +192,78 @@ export async function herdrStatus(): Promise<HerdrStatus> {
   return { installed: true, bin, version, running: true, error: null };
 }
 
+function normalizeSnapshot(s: HerdrSnapshot): HerdrSnapshot {
+  return {
+    agents: s.agents ?? [], panes: s.panes ?? [], tabs: s.tabs ?? [], workspaces: s.workspaces ?? [],
+    version: s.version, protocol: s.protocol,
+    focused_pane_id: s.focused_pane_id, focused_workspace_id: s.focused_workspace_id,
+  };
+}
+
 export async function herdrSnapshot(): Promise<HerdrResult<HerdrSnapshot>> {
   const r = await execHerdr<{ snapshot?: HerdrSnapshot }>(["api", "snapshot"], { timeoutMs: 3_000 });
   if (!r.ok) return { ok: false, data: null, raw: r.raw, error: r.error };
   const s = r.data?.snapshot;
   if (!s) return { ok: false, data: null, raw: r.raw, error: "Herdr answered without a session snapshot." };
-  return {
-    ok: true, error: null, raw: r.raw,
-    data: {
-      agents: s.agents ?? [], panes: s.panes ?? [], tabs: s.tabs ?? [], workspaces: s.workspaces ?? [],
-      version: s.version, protocol: s.protocol,
-      focused_pane_id: s.focused_pane_id, focused_workspace_id: s.focused_workspace_id,
-    },
-  };
+  return { ok: true, error: null, raw: r.raw, data: normalizeSnapshot(s) };
+}
+
+// ------------------------------------------------- daemon snapshot cache read
+
+export type HerdrSnapshotSource = "daemon-cache" | "legacy-spawn";
+
+export interface HerdrSnapshotRead {
+  snap: HerdrResult<HerdrSnapshot>;
+  /** Daemon-reported status when the cache path answered; null on the legacy path. */
+  status: HerdrStatus | null;
+  generatedAt: string | null;
+  stale: boolean | null;
+  source: HerdrSnapshotSource;
+}
+
+// One warn per 60s so polling UIs don't spam when the daemon is down.
+let lastDaemonSnapshotWarnAt = 0;
+
+/**
+ * Flag-gated snapshot read (SEN_GO_HERDR_SNAPSHOT_CACHE=1). Flag off runs the
+ * untouched legacy spawn path. Flag on reads the sen-daemon snapshot cache; ANY
+ * failure (unreachable, timeout, non-2xx, invalid shape) falls back to the
+ * legacy spawn. A daemon 200 with snapshot:null is authoritative — herdr itself
+ * is down and the legacy path would agree.
+ */
+export async function herdrSnapshotRead(): Promise<HerdrSnapshotRead> {
+  if (process.env.SEN_GO_HERDR_SNAPSHOT_CACHE !== "1") {
+    return { snap: await herdrSnapshot(), status: null, generatedAt: null, stale: null, source: "legacy-spawn" };
+  }
+  try {
+    const r = await readDaemonHerdrSnapshot();
+    const status: HerdrStatus = {
+      installed: r.status.installed,
+      bin: r.status.bin ?? null,
+      version: r.status.version ?? null,
+      running: r.status.running,
+      error: r.status.error ?? null,
+    };
+    const cache = { generatedAt: r.cache.generated_at, stale: r.cache.stale, source: "daemon-cache" as const };
+    const s = r.snapshot as HerdrSnapshot | null;
+    if (!s) {
+      return {
+        snap: { ok: false, data: null, raw: "", error: status.error ?? "Herdr server is not running." },
+        status, ...cache,
+      };
+    }
+    return {
+      snap: { ok: true, error: null, raw: JSON.stringify(s), data: normalizeSnapshot(s) },
+      status, ...cache,
+    };
+  } catch (error) {
+    const now = Date.now();
+    if (now - lastDaemonSnapshotWarnAt > 60_000) {
+      lastDaemonSnapshotWarnAt = now;
+      console.warn(`[herdr] daemon snapshot cache unavailable, falling back to CLI spawn: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    return { snap: await herdrSnapshot(), status: null, generatedAt: null, stale: null, source: "legacy-spawn" };
+  }
 }
 
 // -------------------------------------------------------------------- actions
