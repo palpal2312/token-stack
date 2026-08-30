@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "fixture_id": "s10-phase4-simulated-canary-v1",
+  "mode": "simulated-redacted",
+  "candidate_id": "candidate-redacted-v1",
+  "baseline_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "thresholds": { "maxObservations": 2, "maxErrorRate": 0.05, "maxLatencyRatio": 1.2 },
+  "passing_observations": [
+    { "errorRate": 0.01, "latencyRatio": 1.05 },
+    { "errorRate": 0.02, "latencyRatio": 1.1 }
+  ],
+  "alert_observations": [{ "errorRate": 0.06, "latencyRatio": 1.0 }],
+  "recovery": [
+    { "scenario": "daemon-crash", "frozenInputHash": "redacted-fixture-sha256" },
+    { "scenario": "restore", "frozenInputHash": "redacted-fixture-sha256" },
+    { "scenario": "duplicate-outbox", "frozenInputHash": "redacted-fixture-sha256", "publicationAlreadyRecorded": true },
+    { "scenario": "stale-lease", "frozenInputHash": "redacted-fixture-sha256", "leaseFresh": false },
+    { "scenario": "backend-unavailable", "frozenInputHash": "redacted-fixture-sha256", "backendAvailable": false },
+    { "scenario": "invalid-snapshot", "frozenInputHash": "redacted-fixture-sha256", "snapshotValid": false }
+  ],
+  "slo": { "maxCanaryDurationMs": 50, "rpoMs": 60000, "rtoMs": 300000 }
+}
