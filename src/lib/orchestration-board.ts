@@ -3,9 +3,11 @@
  *
  * Pure constants and helpers only — no node imports — so client components
  * may bundle this without pulling in node:fs. The state-machine journal in
- * orchestration-state.ts keeps `lane` as the domain chain; this module maps a
- * domain lane to a physical Sprint 09 track (A/B/C) and to a kanban column
- * (To Do / In Progress / Done) derived from the journal state.
+ * orchestration-state.ts keeps `lane` as the domain chain; this module
+ * projects journal lanes into board cards — one card per lifecycle lane,
+ * sprint-aware since Sprint 10 — plus a kanban column (To Do / In Progress /
+ * Done) derived from the journal state. Legacy S09 tracks A/B/C are kept for
+ * the historical lane-a/b-c cards and their domain task lanes.
  */
 
 // Type-only imports keep this module browser-safe (erased at compile time).
@@ -22,12 +24,13 @@ type OrchestrationState =
   | "BLOCKED"
   | "FAILED";
 
-export type BoardTrack = "A" | "B" | "C";
+/** Track identity is the lane id itself since Sprint 10 (legacy: "A"/"B"/"C"). */
+export type BoardTrack = string;
 export type BoardColumn = "todo" | "in-progress" | "done";
 
 export const BOARD_COLUMNS: readonly BoardColumn[] = ["todo", "in-progress", "done"];
 
-/** Domain lane -> physical track (Sprint 09 lanes). Unknown domains land on C. */
+/** Domain lane -> legacy S09 track (Sprint 09 lanes). Unknown domains land on C. */
 export const LANE_TRACKS: Record<string, BoardTrack> = {
   "community-intake": "A",
   "community": "A",
@@ -101,14 +104,38 @@ export function addCounters(a: LaneCounters, b: LaneCounters): LaneCounters {
   return { done: a.done + b.done, active: a.active + b.active, pending: a.pending + b.pending };
 }
 
-/** Physical lifecycle lane id per track — the three lane cards. */
-export const TRACK_LANE_IDS: Record<BoardTrack, string> = {
+/** Physical lifecycle lane id per track — Sprint 09's three lane cards. */
+export const TRACK_LANE_IDS: Record<"A" | "B" | "C", string> = {
   A: "lane-a",
   B: "lane-b",
   C: "lane-c",
 };
 
 export const LANE_ID_SET = new Set(Object.values(TRACK_LANE_IDS));
+
+/**
+ * Lifecycle lane ids: legacy physical lanes lane-<slug> and sprint-scoped
+ * sNN-<slug> lanes (Sprint 10+). Mirrors the state machine's isLaneId but
+ * stays browser-safe (no node imports in this module).
+ */
+const LANE_ID_RE = /^(lane-[a-z0-9-]+|s\d{2}-[a-z0-9-]+)$/;
+
+export function isLifecycleLaneId(lane: string): boolean {
+  return LANE_ID_RE.test(lane);
+}
+
+/** Sprint a lane belongs to: sNN-* ids carry it; legacy lanes are Sprint 09. */
+export function laneSprint(lane: string): number {
+  const m = /^s(\d{2})-/.exec(lane);
+  return m ? parseInt(m[1], 10) : 9;
+}
+
+/** Legacy lane id -> S09 track letter, for attaching S09 domain task lanes. */
+const LEGACY_TRACK: Record<string, "A" | "B" | "C"> = {
+  "lane-a": "A",
+  "lane-b": "B",
+  "lane-c": "C",
+};
 
 /** Everything a lane card shows, derived once so the API and the page agree. */
 export interface BoardCard {
@@ -131,12 +158,26 @@ export interface BoardCard {
 export function deriveBoardCards(
   lanes: readonly OrchestrationLaneView[],
   notes: readonly MasterNote[],
+  opts: { currentSprint?: number | null } = {},
 ): BoardCard[] {
-  return (Object.keys(TRACK_LANE_IDS) as BoardTrack[]).map((track) => {
-    const laneId = TRACK_LANE_IDS[track];
-    const lifecycle = lanes.find((l) => l.lane === laneId);
+  const lifecycleLanes = lanes.filter((l) => isLifecycleLaneId(l.lane));
+  // The board tracks the live sprint: show the current sprint's lanes when it
+  // has any, otherwise fall back to every lifecycle lane in the journal.
+  const current = opts.currentSprint ?? null;
+  const scoped =
+    current === null
+      ? []
+      : lifecycleLanes.filter((l) => laneSprint(l.lane) === current);
+  const shown = scoped.length > 0 ? scoped : lifecycleLanes;
+  return shown.map((lifecycle) => {
+    const laneId = lifecycle.lane;
+    const legacyTrack = LEGACY_TRACK[laneId];
     const taskLanes = lanes.filter(
-      (l) => l.lane !== laneId && trackForLane(l.lane) === track,
+      (l) =>
+        l.lane !== laneId &&
+        !isLifecycleLaneId(l.lane) &&
+        legacyTrack !== undefined &&
+        trackForLane(l.lane) === legacyTrack,
     );
     const counters = addCounters(
       laneCounters(taskLanes.map((l) => l.currentState)),
@@ -146,7 +187,7 @@ export function deriveBoardCards(
     const latestLaneNote = (field: string) =>
       [...notes].reverse().find((n) => n.lane === laneId && n.field === field);
     return {
-      track,
+      track: laneId,
       laneId,
       status: deriveCardStatus(counters, lifecycle?.currentState),
       counters,

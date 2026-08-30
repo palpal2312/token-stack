@@ -325,5 +325,23 @@ test("sprint roadmap derives closed/doing/total from orchestrate run-manifests",
   assert.equal(r.closed, 8);
   assert.equal(r.doing, 1);
   assert.equal(r.current, 9);
+
+  // Sprint record folders outrank the stale manifest: the s09 close-gate
+  // record (CLOSED_GO) closes sprint 9, the s10 opening manifest opens 10.
+  fs.mkdirSync(path.join(dir, "sprint09"));
+  fs.writeFileSync(
+    path.join(dir, "sprint09", "s09-close-gate-record.md"),
+    "# Sprint 09 close-gate record\n\n**CLOSED_GO.**\n",
+  );
+  fs.mkdirSync(path.join(dir, "sprint10"));
+  fs.writeFileSync(
+    path.join(dir, "sprint10", "s10-evaluation-opening-manifest.md"),
+    "# Sprint 10 evaluation opening manifest\n",
+  );
+  const r2 = deriveSprintRoadmap(dir);
+  assert.ok(r2);
+  assert.equal(r2.closed, 9);
+  assert.equal(r2.doing, 1);
+  assert.equal(r2.current, 10);
   assert.equal(deriveSprintRoadmap(path.join(dir, "missing")), null);
 });

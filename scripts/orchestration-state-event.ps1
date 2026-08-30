@@ -142,8 +142,10 @@ if (Test-Path $StateFile) {
 if ($Lifecycle) {
   # Lane lifecycle machine (IDLE -> DISPATCHED (Orca called) -> RUNNING (working)
   # -> HOLD_x/DONE, hold resumes to RUNNING).
-  if ($Lane -notin @('lane-a', 'lane-b', 'lane-c')) {
-    Write-Host "-Lifecycle requires a lane id: lane-a | lane-b | lane-c"; exit 2
+  # Mirror of isLaneId in src/lib/orchestration-state.ts: lane-* (Sprint 09
+  # seats) and sNN-* (sprint-scoped lanes, Sprint 10 onward).
+  if ($Lane -notmatch '^(lane-[a-z0-9-]+|s\d{2}-[a-z0-9-]+)$') {
+    Write-Host "-Lifecycle requires a lifecycle lane id (lane-* or sNN-*)"; exit 2
   }
   $lifecycleAllowed = @{
     IDLE             = @('RUNNING', 'DISPATCHED')

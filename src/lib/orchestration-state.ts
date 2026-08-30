@@ -90,8 +90,16 @@ export const LANE_LIFECYCLE_TRANSITIONS: Record<
   DONE: ["RUNNING"],
 };
 
+/**
+ * Lifecycle lane ids are sprint-scoped since Sprint 10: the legacy physical
+ * lanes lane-a/lane-b/lane-c (LANE_IDS above, kept for the S09 record) plus
+ * any sNN-<slug> lane, e.g. s10-readonly-canary. Every other lane id is a
+ * task chain and validates against the QUEUED-first machine above.
+ */
+const LANE_ID_RE = /^(lane-[a-z0-9-]+|s\d{2}-[a-z0-9-]+)$/;
+
 export function isLaneId(lane: string): boolean {
-  return (LANE_IDS as readonly string[]).includes(lane);
+  return LANE_ID_RE.test(lane);
 }
 
 
@@ -300,6 +308,36 @@ export function deriveSprintRoadmap(reportsDir: string = path.join(process.cwd()
         if (manifest.status.startsWith("closed")) closed.add(n);
         else if (manifest.status === "active") doing.add(n);
       }
+    }
+  }
+  // Sprint record folders (plans/reports/sprintNN) outrank run-manifests,
+  // which can lag: the S09 close gate was recorded non-mutating, leaving the
+  // 08-11 manifest saying s09 "active" after CLOSED_GO. A close-gate record
+  // containing CLOSED_GO closes the sprint; an opening manifest opens it.
+  for (const entry of fs.readdirSync(reportsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const m = /^sprint(\d{2})$/.exec(entry.name);
+    if (!m) continue;
+    const n = parseInt(m[1], 10);
+    seen.add(n);
+    let opened = false;
+    let closedRecord = false;
+    for (const file of fs.readdirSync(path.join(reportsDir, entry.name))) {
+      if (/opening-manifest\.md$/.test(file)) opened = true;
+      if (!/close-gate-record\.md$/.test(file)) continue;
+      try {
+        const text = fs.readFileSync(path.join(reportsDir, entry.name, file), "utf8");
+        if (text.includes("CLOSED_GO")) closedRecord = true;
+      } catch {
+        /* unreadable record: ignore */
+      }
+    }
+    if (closedRecord) {
+      closed.add(n);
+      doing.delete(n);
+    } else if (opened) {
+      doing.add(n);
+      closed.delete(n);
     }
   }
   if (seen.size === 0) return null;

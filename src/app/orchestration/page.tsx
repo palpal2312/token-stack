@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { LANE_ID_SET, laneCounters } from "@/lib/orchestration-board";
-import type { BoardCard, BoardTrack } from "@/lib/orchestration-board";
+import { isLifecycleLaneId, laneCounters } from "@/lib/orchestration-board";
+import type { BoardCard } from "@/lib/orchestration-board";
 import type { MasterNote } from "@/lib/orchestration-notes";
 import type { OrchestrationLaneView } from "@/lib/orchestration-state";
 
@@ -18,12 +18,6 @@ interface ApiEnvelope {
   } | null;
   error: { code: string; status: number } | null;
 }
-
-const TRACK_LABELS: Record<BoardTrack, string> = {
-  A: "Lane A — community",
-  B: "Lane B — controlled delivery",
-  C: "Lane C — integration / governance",
-};
 
 /** Status colors from the Midnight Aubergine tokens (dark app theme). */
 const STATUS_STYLE: Record<string, string> = {
@@ -118,7 +112,7 @@ export default function OrchestrationPage() {
   useEffect(load, []);
 
   // MASTER card: roadmap + lane counters derived from the journal.
-  const taskLanes = lanes.filter((l) => !LANE_ID_SET.has(l.lane));
+  const taskLanes = lanes.filter((l) => !isLifecycleLaneId(l.lane));
   const counter = laneCounters(taskLanes.map((l) => l.currentState));
   // WORKING = running a task. ACTIVE = lane alive and answering when called —
   // any reported lifecycle state except IDLE (DISPATCHED/RUNNING/HOLD/DONE).
@@ -222,7 +216,7 @@ export default function OrchestrationPage() {
             className="rounded border border-[var(--line)] bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3"
           >
             <div className="text-sm font-semibold text-[var(--cream-soft)]">
-                {TRACK_LABELS[card.track]}
+                {card.laneId}
               </div>
             <div className={`text-2xl font-bold ${STATUS_STYLE[card.status] ?? "text-[var(--cream)]"}`}>
               {card.status}

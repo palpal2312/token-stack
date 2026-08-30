@@ -43,6 +43,12 @@ export async function GET(request: Request) {
   const lanes = store.deriveLanes();
   const notes = readNotes();
 
+  // Roadmap + cards derive together so the cards track the current sprint.
+  const sprint = deriveSprintRoadmap();
+  const cards = deriveBoardCards(lanes, notes, {
+    currentSprint: sprint?.current ?? null,
+  });
+
   // Last write across both journals: who appended most recently, and where.
   let lastWrite: { time: string; writer: string; kind: "event" | "note" } | null = null;
   for (const e of events) {
@@ -75,8 +81,8 @@ export async function GET(request: Request) {
             k: lastWrite.kind,
             t: lastWrite.time.slice(11, 19),
           },
-          sprint: deriveSprintRoadmap(),
-          cards: deriveBoardCards(lanes, notes).map((c) => ({
+          sprint,
+          cards: cards.map((c) => ({
             t: c.track,
             s: c.status,
             d: c.counters.done,
@@ -102,10 +108,10 @@ export async function GET(request: Request) {
           k: lastWrite.kind,
           t: lastWrite.time.slice(11, 19),
         },
-        sprint: deriveSprintRoadmap(),
+        sprint,
         situation: latestText("situation"),
         close: latestText("close"),
-        cards: deriveBoardCards(lanes, notes).map((c) => ({
+        cards: cards.map((c) => ({
           t: c.track,
           s: c.status,
           d: c.counters.done,
@@ -130,8 +136,8 @@ export async function GET(request: Request) {
       events,
       // Derived lane cards — the same projection the dashboard renders, so a
       // machine reader (master agent) gets status/counters/notes in one GET.
-      cards: deriveBoardCards(lanes, notes),
-      sprint: deriveSprintRoadmap(),
+      cards,
+      sprint,
       notes,
       lastWrite,
       generatedAt: new Date().toISOString(),
