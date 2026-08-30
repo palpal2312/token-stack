@@ -229,7 +229,7 @@ export default function OrchestrationPage() {
                 {card.status === "HOLD_INTERNAL" && `lane issue: ${card.prerequisite}`}
               </div>
             )}
-            {/* Fixed two-line slot so the three cards stay row-aligned. */}
+            {/* Fixed two-line slot so the lane cards stay row-aligned. */}
             <div
               className="text-xs italic text-[var(--cream-dim)] line-clamp-2 min-h-8"
               title={card.memo ? `${card.memo} · ${card.lastEventAt ?? ""}` : undefined}

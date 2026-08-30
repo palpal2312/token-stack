@@ -104,15 +104,6 @@ export function addCounters(a: LaneCounters, b: LaneCounters): LaneCounters {
   return { done: a.done + b.done, active: a.active + b.active, pending: a.pending + b.pending };
 }
 
-/** Physical lifecycle lane id per track — Sprint 09's three lane cards. */
-export const TRACK_LANE_IDS: Record<"A" | "B" | "C", string> = {
-  A: "lane-a",
-  B: "lane-b",
-  C: "lane-c",
-};
-
-export const LANE_ID_SET = new Set(Object.values(TRACK_LANE_IDS));
-
 /**
  * Lifecycle lane ids: legacy physical lanes lane-<slug> and sprint-scoped
  * sNN-<slug> lanes (Sprint 10+). Mirrors the state machine's isLaneId but
@@ -161,14 +152,18 @@ export function deriveBoardCards(
   opts: { currentSprint?: number | null } = {},
 ): BoardCard[] {
   const lifecycleLanes = lanes.filter((l) => isLifecycleLaneId(l.lane));
-  // The board tracks the live sprint: show the current sprint's lanes when it
-  // has any, otherwise fall back to every lifecycle lane in the journal.
+  // The board tracks the live sprint, but the journal wins: cards never show
+  // an older sprint's lanes while a newer sprint's lanes exist in the journal
+  // (a stale or lost repo marker must not resurface Sprint-09 cards). When the
+  // roadmap is ahead of the journal (next sprint opened, lanes not dispatched
+  // yet), show the most recent lanes the journal actually has.
   const current = opts.currentSprint ?? null;
-  const scoped =
-    current === null
-      ? []
-      : lifecycleLanes.filter((l) => laneSprint(l.lane) === current);
-  const shown = scoped.length > 0 ? scoped : lifecycleLanes;
+  const latest = lifecycleLanes.reduce((m, l) => Math.max(m, laneSprint(l.lane)), 0);
+  const target = Math.max(current ?? 0, latest);
+  let shown = lifecycleLanes.filter((l) => laneSprint(l.lane) === target);
+  if (shown.length === 0) {
+    shown = lifecycleLanes.filter((l) => laneSprint(l.lane) === latest);
+  }
   return shown.map((lifecycle) => {
     const laneId = lifecycle.lane;
     const legacyTrack = LEGACY_TRACK[laneId];

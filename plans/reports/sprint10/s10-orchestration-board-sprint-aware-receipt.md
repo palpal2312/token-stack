@@ -63,3 +63,29 @@ git reflog/commit times (+07), evidence pairs from master-HEAD bytes:
 - Read-only board surface unchanged in authority: GET-only, loopback-only.
 - S09 close gate remains CLOSED_GO (arbiter); S10 close gate remains NO_GO —
   this receipt changes no gate verdict.
+
+## Follow-up fix — adversarial verify findings (2 major)
+
+The verify workflow (4 auditors + completeness critic) passed live/source/journal
+but refuted two absolute claims:
+
+1. **Stale fallback (refuter, major).** `deriveBoardCards` fell back to *every*
+   lifecycle lane when the roadmap's current sprint had none in the journal —
+   reachable at the next sprint transition (sprint11 opened before any s11 lane
+   event) or on marker tampering, resurfacing Sprint-09 cards. **Fix:**
+   journal-first targeting — `target = max(currentSprint, latestSprintInJournal)`;
+   when the roadmap is ahead of the journal, fall back to the latest sprint the
+   journal actually has. Cards can never show an older sprint's lanes while a
+   newer sprint's lanes exist in the journal.
+2. **Dead report channel in hook (critic, major).** `lane-report.cjs` templates
+   pointed lanes at the removed `POST /api/orchestration/note` (404), and the
+   note-based Stop gates were unsatisfiable while the notes journal is absent.
+   **Fix:** templates now instruct the controller state event (the only live
+   write channel); lane Stop gate requires a HOLD_*/DONE lifecycle event after
+   RUNNING; master Stop gate disabled while the notes journal is absent.
+   (Restoring a note write channel remains owner-pending, C10 §4.)
+
+Also in the follow-up: dead exports `TRACK_LANE_IDS`/`LANE_ID_SET` removed,
+stale S09-only comments generalized, and a sprint-11 scoping test added
+(`s11-future-lane` renders when `currentSprint: 11` and its lanes exist).
+Focused tests: 25/25 pass.

@@ -83,7 +83,40 @@ test("deriveBoardCards prefers the current sprint's lanes", () => {
     ["s10-readonly-canary", "s10-evidence-gap-ledger"],
   );
   assert.equal(scoped[0].status, "WORKING");
-  // No current sprint (or none of its lanes) -> every lifecycle lane shows.
-  assert.equal(deriveBoardCards(lanes, []).length, 3);
-  assert.equal(deriveBoardCards(lanes, [], { currentSprint: 11 }).length, 3);
+  // Journal wins over stale markers: a regressed current sprint (9) still
+  // shows the newest lanes in the journal, never the legacy Sprint-09 card.
+  assert.deepEqual(
+    deriveBoardCards(lanes, [], { currentSprint: 9 }).map((c) => c.laneId),
+    ["s10-readonly-canary", "s10-evidence-gap-ledger"],
+  );
+  // No current sprint -> the latest sprint present in the journal.
+  assert.deepEqual(
+    deriveBoardCards(lanes, []).map((c) => c.laneId),
+    ["s10-readonly-canary", "s10-evidence-gap-ledger"],
+  );
+  // Roadmap ahead of the journal (sprint 11 opened, no s11 lanes yet):
+  // fall back to the most recent lanes the journal has, not an empty board.
+  assert.deepEqual(
+    deriveBoardCards(lanes, [], { currentSprint: 11 }).map((c) => c.laneId),
+    ["s10-readonly-canary", "s10-evidence-gap-ledger"],
+  );
+});
+
+test("deriveBoardCards scopes to a future sprint once its lanes exist", () => {
+  const view = (lane: string, state: string): OrchestrationLaneView => ({
+    lane,
+    task: lane.toUpperCase(),
+    currentState: state,
+    timeline: [
+      { lane, task: lane.toUpperCase(), transition: state as never, time: "2026-08-31T05:00:00Z", summary: "memo" },
+    ],
+  });
+  const lanes = [
+    view("lane-a", "DONE"),
+    view("s10-readonly-canary", "DONE"),
+    view("s11-future-lane", "RUNNING"),
+  ];
+  const scoped = deriveBoardCards(lanes, [], { currentSprint: 11 });
+  assert.deepEqual(scoped.map((c) => c.laneId), ["s11-future-lane"]);
+  assert.equal(scoped[0].status, "WORKING");
 });

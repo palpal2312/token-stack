@@ -1,6 +1,7 @@
 /**
- * Master notes journal (append-only JSONL), shared by the note write endpoint
- * and the read-only state endpoint so a single GET carries the whole picture.
+ * Master notes journal (append-only JSONL), read by the read-only state
+ * endpoint so a single GET carries the whole picture. The HTTP write endpoint
+ * was removed by I10 (GET-only surface); notes are legacy/frozen.
  */
 
 import { existsSync, mkdirSync, readFileSync, appendFileSync, writeFileSync } from "node:fs";
@@ -15,7 +16,7 @@ export interface MasterNote {
   /** Which card line the note fills; legacy notes mean "situation".
    * Master card: situation|close. Lane cards: run|next. */
   field?: string;
-  /** Which lane card a run/next note belongs to (lane-a|lane-b|lane-c). */
+  /** Which lane card a run/next note belongs to (a lifecycle lane id). */
   lane?: string;
   /** Who wrote this note (redacted label); legacy notes mean "master". */
   writer?: string;
