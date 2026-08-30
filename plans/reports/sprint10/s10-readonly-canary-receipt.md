@@ -60,20 +60,24 @@ Get-FileHash -Algorithm SHA256 qa/fixtures/sprint10/redacted-canary-v1.json
 Get-FileHash -Algorithm SHA256 qa/tests/s10-readonly-canary.test.ts
 ```
 
-Expected focused-test result: 3 passed, 0 failed. Populate the raw current-byte
-hashes below from the command output; a consumer must recompute them before
-using this receipt.
+Expected focused-test result: 3 passed, 0 failed. The Git checkout used to
+author the first receipt retained LF worktree bytes, while the clean Windows
+worktree used by the standard verifier materializes these tracked files as
+CRLF. Because the verifier intentionally hashes physical checkout bytes, the
+portable pins below are the observed CRLF bytes from a fresh clean worktree;
+every consumer must recompute them in its own clean checkout before using this
+receipt.
 
 | Artifact | SHA-256 |
 |---|---|
-| `qa/fixtures/sprint10/redacted-canary-v1.json` | `9DF27F9F44C1B5003210A1809610F4B6CBA6A0F4D78A89483DB7BCBB1135E70E` |
-| `qa/tests/s10-readonly-canary.test.ts` | `C47CD556E909D7BB7C588A7BBF41E2DB84799F2AB38464742F950DCB2EF56D9A` |
+| `qa/fixtures/sprint10/redacted-canary-v1.json` | `15739FCCA6D2E68580A24FC1EEEC1ED911FEA6C9CA831248840D050D74ACCFBD` |
+| `qa/tests/s10-readonly-canary.test.ts` | `ED1695F6C223A11A3204523A62CCC6E22A1372CE97A5151680D8A46C4E3BFCEC` |
 
 Machine-verifiable current-byte pins:
 
 ```text
-9DF27F9F44C1B5003210A1809610F4B6CBA6A0F4D78A89483DB7BCBB1135E70E qa/fixtures/sprint10/redacted-canary-v1.json
-C47CD556E909D7BB7C588A7BBF41E2DB84799F2AB38464742F950DCB2EF56D9A qa/tests/s10-readonly-canary.test.ts
+15739FCCA6D2E68580A24FC1EEEC1ED911FEA6C9CA831248840D050D74ACCFBD qa/fixtures/sprint10/redacted-canary-v1.json
+ED1695F6C223A11A3204523A62CCC6E22A1372CE97A5151680D8A46C4E3BFCEC qa/tests/s10-readonly-canary.test.ts
 ```
 
 ## Limits and next gate
