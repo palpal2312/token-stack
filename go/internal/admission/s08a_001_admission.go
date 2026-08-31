@@ -195,18 +195,20 @@ func AdmitFair(pending []Request, activeByTenant map[string]int, maxGlobal, maxP
 			return nil, ErrBudgetExceeded
 		}
 	}
-	sort.SliceStable(pending, func(i, j int) bool {
-		li, lj := activeByTenant[pending[i].TenantID], activeByTenant[pending[j].TenantID]
+	// Sort a copy: never mutate the caller's pending slice in place.
+	sorted := append([]Request(nil), pending...)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		li, lj := activeByTenant[sorted[i].TenantID], activeByTenant[sorted[j].TenantID]
 		if li != lj {
 			return li < lj
 		}
-		if !pending[i].CreatedAt.Equal(pending[j].CreatedAt) {
-			return pending[i].CreatedAt.Before(pending[j].CreatedAt)
+		if !sorted[i].CreatedAt.Equal(sorted[j].CreatedAt) {
+			return sorted[i].CreatedAt.Before(sorted[j].CreatedAt)
 		}
-		return pending[i].ID < pending[j].ID
+		return sorted[i].ID < sorted[j].ID
 	})
 	result := make([]Request, 0)
-	for _, r := range pending {
+	for _, r := range sorted {
 		if maxGlobal > 0 && len(result) >= maxGlobal {
 			break
 		}
