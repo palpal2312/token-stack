@@ -1,5 +1,8 @@
 import type { RedactionClass } from "./contracts";
 
+// Re-export for callers that only want to name the classification type.
+export type { RedactionClass } from "./contracts";
+
 export const REDACTED_SECRET = "[REDACTED]";
 export const REDACTED_LOCAL_VALUE = "[LOCAL-SENSITIVE]";
 export const TRUNCATED_VALUE = "[TRUNCATED]";

@@ -66,6 +66,9 @@ const EMPTY_SNAPSHOT: SettingsSnapshotInput = {
     sourceByField: {},
     policyDecisions: [],
     warnings: [],
+    restartFields: [],
+    requiresRestart: false,
+    capabilityDigest: "",
   },
 };
 
