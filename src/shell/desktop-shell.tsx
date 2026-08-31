@@ -166,6 +166,10 @@ export function usePanel(panelId: string) {
   const state: PanelLayoutState = useSyncExternalStore(
     (cb) => store.subscribe(cb),
     () => store.getSnapshot(key),
+    // getServerSnapshot mirrors the client snapshot so SSR with the flag ON does
+    // not hit the "Missing getServerSnapshot" hydration fallback (siblings in
+    // this graph added the same third argument).
+    () => store.getSnapshot(key),
   );
   const actions = useMemo(
     () => ({
