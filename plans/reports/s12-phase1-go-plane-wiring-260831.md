@@ -30,12 +30,30 @@
 | End-to-end vertical path | `SEN_DAEMON_URL=http://127.0.0.1:3979` → `readRuntimeSlots()` → `slots:1 lab:true dto:1 slot0: sen-plane-1 free` |
 | DTO safe-field contract | no secretish keys (token/secret/password/command/private) in slot payload |
 
-## Next (S12 phase 1b or phase 2)
+## Phase 1b — full proxy surface (complete)
 
-Wire the rest of the proxy surface the daemon already expects
-(`/api/v1/runtime/attempts`, `/api/v1/codespace/summary`,
-`/api/v1/workspace/*/execution-preference`) and replace the memory slot source
-with the real `internal/orca`/`internal/reconcile` projection. S10/S11 chains
-and controls untouched.
+Added the remaining routes the TS clients call (commit `c5bb135`):
+`GET /api/v1/runtime/attempts` (projection v1, empty attempts),
+`GET /api/v1/codespace/summary` (projection v1, empty summaries),
+`GET|PUT /api/v1/workspace/{id}/execution-preference` (default host preference;
+PUT reflects with `resolution_reason: accepted-no-durable-store (phase-1b seed)`).
 
-JOB_DONE: S12 Phase 1 vertical go-plane wiring proven end-to-end.
+Live round-trip (4/4 clients, `SEN_DAEMON_URL=http://127.0.0.1:3979`):
+
+| Client | Result |
+|---|---|
+| `readRuntimeSlots` | 1 slot |
+| `readRuntimeProjection` | 0 attempts (valid empty) |
+| `readCodeSpaceSummary` | 0 summaries (valid empty) |
+| `readExecutionPreference('w1')` | `w1 host daemon-default-no-store (phase-1b seed)` |
+
+Go tests: attempts/codespace/preference handlers parse-checked, safe-field scan
+applies, `go build ./...` green.
+
+## Next (S12 phase 2)
+
+Replace the memory slot source with the real `internal/orca` / `internal/reconcile`
+projection (needs the orca store + migrations), then close the coverage sweep.
+S10/S11 chains and controls untouched.
+
+JOB_DONE: S12 Phase 1 + 1b go-plane surface wired and proven end-to-end.
