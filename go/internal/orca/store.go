@@ -284,11 +284,17 @@ func (s *Store) AdvanceCursor(ctx context.Context, dispatchID, terminal string, 
 		now = time.Now().UTC()
 	}
 	stamp := now.UTC().Format(tsLayout)
-	_, err = s.db.ExecContext(ctx,
-		`UPDATE orca_dispatches SET output_cursor = ?, updated_at = ? WHERE dispatch_id = ?`,
-		cursor, stamp, dispatchID)
+	// Monotonicity is enforced atomically: only advance if the stored cursor is
+	// strictly older, so a concurrent caller that already wrote a newer value
+	// cannot be regressed by this UPDATE (the Go-side guard above is advisory).
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE orca_dispatches SET output_cursor = ?, updated_at = ? WHERE dispatch_id = ? AND output_cursor < ?`,
+		cursor, stamp, dispatchID, cursor)
 	if err != nil {
 		return fmt.Errorf("advance dispatch cursor: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("advance dispatch cursor: concurrent write won for dispatch %s", dispatchID)
 	}
 	return s.upsertCursor(ctx, terminal, dispatchID, cursor, stamp)
 }
