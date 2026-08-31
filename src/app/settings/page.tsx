@@ -30,8 +30,44 @@ export default function SettingsPage() {
       </div>
     );
   }
-  return <SchemaSettingsView snapshot={SNAPSHOT} host={LOCAL_HOST} />;
+  // The fabricated demo snapshot is a TEST FIXTURE only: it must never render
+  // on a production surface. The real read path (go/internal/http/sen/config.go,
+  // PROPOSED) is not shipped yet, so the default is an explicitly empty live
+  // read-path snapshot instead of invented values.
+  const allowFixture =
+    process.env.AGENTIC_OS_ALLOW_TEST_FIXTURE === "1" && process.env.NODE_ENV !== "production";
+  if (allowFixture) {
+    return <SchemaSettingsView snapshot={SNAPSHOT} host={LOCAL_HOST} />;
+  }
+  return <SchemaSettingsView snapshot={EMPTY_SNAPSHOT} host={{ capabilities: [], permissions: [] }} />;
 }
+
+/**
+ * Empty live read-path snapshot: no authorizing endpoint is shipped, so the
+ * settings surface reports zero sections rather than fabricating values.
+ */
+const EMPTY_SNAPSHOT: SettingsSnapshotInput = {
+  schema: {
+    schemaId: "workspace.runtime",
+    version: 3,
+    scope: "workspace",
+    sectionToken: "runtime",
+    migrations: [],
+    fields: [],
+  },
+  capabilities: { version: 0, digest: "", capabilities: [] },
+  current: {},
+  sections: [],
+  explanation: {
+    schemaId: "workspace.runtime",
+    version: 3,
+    requested: {},
+    effective: {},
+    sourceByField: {},
+    policyDecisions: [],
+    warnings: [],
+  },
+};
 
 /** The browser-local host admits every capability/permission (web-local adapter). */
 const LOCAL_HOST = {
