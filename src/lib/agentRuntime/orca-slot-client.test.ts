@@ -10,7 +10,7 @@ test("parseRuntimeSlots accepts a valid payload (safe fields only)", () => {
     slots: [
       {
         slot_id: "s1", state: "free", capacity: 1, in_flight: 0,
-        builder_label: "b", attempt_ref: null, last_observed_at: "2026-09-01T00:00:00Z",
+        builder_label: "b", attempt_ref: null, last_observed_at: "2026-09-01T00:00:00Z", reason: null,
       },
     ],
   });
