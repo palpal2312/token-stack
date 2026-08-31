@@ -36,3 +36,11 @@ chat write path and the localdb store layer:
 JOB_DONE: Phase 12 readiness advanced — budget approved, legacy-surface
 inventory pinned, local preflight green; live environment provisioning is the
 remaining owner gate before the cutover runbook executes.
+## Failover drill result (2026-08-31)
+
+`scripts/test-controller-failover.ps1` against the redacted drill fixture
+(`scripts/test-controller-failover.fixture.json`, no secrets): **DRILL: GO (15/15)**.
+Checks include owner/foreign heartbeat, authorized/foreign claim + generation bump,
+authorized/foreign release, planned-fresh-terminal transfer, persist-before-send order,
+and scheduled-task battery policy. The failover state machine is validated; watchdog
+install for a live run remains an owner step on the provisioned host.
