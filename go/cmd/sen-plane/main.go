@@ -69,7 +69,51 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-// NewHandler assembles the reduced control-plane routes for phase 1.
+// RuntimeAttemptDTO mirrors the GoRuntimeAttempt validator in
+// go-builder-exec-client. Phase 1b returns an empty list (no dispatch store
+// wired yet); each item shape exists so parsers stay honest when filled later.
+type RuntimeAttemptDTO struct {
+	AttemptID        string `json:"attempt_id"`
+	TaskID           string `json:"task_id"`
+	BuilderID        string `json:"builder_id"`
+	PaneID           string `json:"pane_id"`
+	Status           string `json:"status"`
+	LeaseGeneration  int    `json:"lease_generation"`
+	AttachedAt       string `json:"attached_at"`
+	LastHeartbeatAt  string `json:"last_heartbeat_at"`
+	TerminalAt       string `json:"terminal_at"`
+}
+
+type RuntimeProjectionDTO struct {
+	ProjectionVersion string              `json:"projection_version"`
+	Attempts          []RuntimeAttemptDTO `json:"attempts"`
+}
+
+type CodeSpaceSummaryDTO struct {
+	ProjectionVersion string        `json:"projection_version"`
+	Summaries         []struct{}    `json:"summaries"`
+}
+
+type ExecutionPreferenceDTO struct {
+	WorkspaceID     string `json:"workspace_id"`
+	RequestedMode   string `json:"requested_mode"`
+	EffectiveMode   string `json:"effective_mode"`
+	ResolutionReason string `json:"resolution_reason"`
+	UpdatedAt       string `json:"updated_at,omitempty"`
+}
+
+// preferenceFor returns a valid-by-parse default preference for a workspace.
+func preferenceFor(workspaceID string, now time.Time) ExecutionPreferenceDTO {
+	return ExecutionPreferenceDTO{
+		WorkspaceID:      workspaceID,
+		RequestedMode:    "host",
+		EffectiveMode:    "host",
+		ResolutionReason: "daemon-default-no-store (phase-1b seed)",
+		UpdatedAt:        now.UTC().Format(time.RFC3339),
+	}
+}
+
+// NewHandler assembles the reduced control-plane routes (phase 1 + 1b).
 func NewHandler(slots SlotSource) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
@@ -86,6 +130,28 @@ func NewHandler(slots SlotSource) http.Handler {
 			LabEnabled: true,
 			Slots:      ss,
 		})
+	})
+	mux.HandleFunc("GET /api/v1/runtime/attempts", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, RuntimeProjectionDTO{ProjectionVersion: "v1", Attempts: []RuntimeAttemptDTO{}})
+	})
+	mux.HandleFunc("GET /api/v1/codespace/summary", func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(w, http.StatusOK, CodeSpaceSummaryDTO{ProjectionVersion: "v1", Summaries: []struct{}{}})
+	})
+	mux.HandleFunc("GET /api/v1/workspace/{workspaceId}/execution-preference", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, preferenceFor(r.PathValue("workspaceId"), time.Now()))
+	})
+	mux.HandleFunc("PUT /api/v1/workspace/{workspaceId}/execution-preference", func(w http.ResponseWriter, r *http.Request) {
+		var body ExecutionPreferenceDTO
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_preference_body"})
+			return
+		}
+		// No durable store yet: reflect with an explicit reason, keep 200 so the
+		// write path round-trips. ponytail: persistence arrives with the orca store phase.
+		body.WorkspaceID = r.PathValue("workspaceId")
+		body.ResolutionReason = "accepted-no-durable-store (phase-1b seed)"
+		body.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
+		writeJSON(w, http.StatusOK, body)
 	})
 	return mux
 }

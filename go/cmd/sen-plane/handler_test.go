@@ -41,6 +41,32 @@ func TestRuntimeSlotsHandler(t *testing.T) {
 	}
 }
 
+func TestPhase1bEndpointsParse(t *testing.T) {
+	ts := httptest.NewServer(NewHandler(memorySlotSource{}))
+	defer ts.Close()
+	for _, tc := range []struct{ path, wantField string }{
+		{"/api/v1/runtime/attempts", "projection_version"},
+		{"/api/v1/codespace/summary", "projection_version"},
+		{"/api/v1/workspace/w1/execution-preference", "workspace_id"},
+	} {
+		res, err := http.Get(ts.URL + tc.path)
+		if err != nil {
+			t.Fatalf("%s: %v", tc.path, err)
+		}
+		body := map[string]any{}
+		if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+			t.Fatalf("%s: decode: %v", tc.path, err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("%s: status %d", tc.path, res.StatusCode)
+		}
+		if _, ok := body[tc.wantField]; !ok {
+			t.Errorf("%s: missing %q in %v", tc.path, tc.wantField, body)
+		}
+	}
+}
+
 func TestHealthz(t *testing.T) {
 	ts := httptest.NewServer(NewHandler(memorySlotSource{}))
 	defer ts.Close()
