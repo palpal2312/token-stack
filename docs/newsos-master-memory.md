@@ -91,3 +91,29 @@ Lessons that change future behavior:
 - **Close pattern**: CLOSED_GO record + independent fresh-session arbiter on
   committed bytes; Finalize stays gated by the controller-failover state
   machine (watchdog disabled; reinstall before any live run).
+
+## S12 checkpoint and lessons (2026-08-31)
+
+Checkpoint: S12 CLOSED_GO (wiring/test-sweep/planning scope, master `462fcd6`).
+`cmd/sen-plane` daemon now serves the proxy surface (`/api/v1/runtime/slots`,
+`runtime/attempts`, `codespace/summary`, `workspace/*/execution-preference`)
+end-to-end from Node. Desktop shell v2 stays OFF; enablement is the 1809-gate
+plan. Phase 12 (legacy cutover) has budget+inventory+drill done; waiting on the
+owner's live host.
+
+Lessons:
+- **Daemon wiring pattern**: Go HTTP daemon binds loopback only; DTOs mirror the
+  exact TS validators (`parseRuntimeSlots`, `isGoRuntimeAttempt`, etc.) — prove
+  the round-trip by running the daemon and invoking the real TS clients with
+  `SEN_DAEMON_URL`, not by unit tests alone. Empty lists are valid where the
+  validator uses `.every()`.
+- **Test-sweep**: fan out one agent per module writing minimal
+  mutation-catching node:test suites (assert emit-on-mutate, storage round-trip,
+  clamp/geometry). Write against real exports; run before merge.
+- **Speculative API cut**: confirm zero non-test consumers with
+  `git grep` filtered of `_test.go` before deleting; keep any symbol a package's
+  own tests exercise. Cut landed −148/+1 with reconcile/allocator/orca green.
+- **Per-sprint close**: independent fresh-session arbiter on committed bytes →
+  CLOSED_GO record → journal lifecycle events; Finalize stays gated by the
+  controller-failover state machine (disabled watchdog, reinstall on the live
+  host before Phase 12).
