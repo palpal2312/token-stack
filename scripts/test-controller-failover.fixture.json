@@ -1,0 +1,12 @@
+{
+  "runId": "controller-failover-drill-fixture",
+  "stateFileName": "controller-failover-drill-fixture.json",
+  "incidentLogName": "controller-failover-drill-fixture.log",
+  "timeoutSeconds": 60,
+  "intervalSeconds": 15,
+  "handoffPath": "plans/handoffs/controller-succession-sprint08-11.md",
+  "workspace": "C:/Users/ADMIN/Documents/Agent OS/source",
+  "orcaExe": "C:/Users/ADMIN/AppData/Local/Programs/orca/resources/bin/orca.exe",
+  "master": { "id": "drill-master", "terminal": "term_drill_master" },
+  "successors": [ { "id": "drill-successor", "terminal": "term_drill_successor", "priority": 1 } ]
+}
