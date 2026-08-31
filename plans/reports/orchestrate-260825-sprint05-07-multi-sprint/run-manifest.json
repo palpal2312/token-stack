@@ -1,0 +1,29 @@
+{
+  "run_id": "run_3f23cdda2361",
+  "controller_run": "orchestrate-260825-sprint05-07-multi-sprint",
+  "status": "closed_go",
+  "started_at": "2026-08-25T16:37:38Z",
+  "timebox_hours": 48,
+  "coordinator": "term_7e8e6405-780a-4661-8acb-08e68b9877be",
+  "execution_strategy": "wave-a-sprint-05-then-wave-b-sprint-06-07",
+  "physical_writer_target": 5,
+  "logical_lanes": 9,
+  "sprints": {
+    "05": {
+      "status": "closed_go",
+      "gate": "S05-G1",
+      "lanes": {
+        "1": { "task": "task_88654ff54d45", "dispatch": "ctx_87c7cc144a4e", "terminal": "term_b5069798-5033-4c8c-9c11-a94bdfde4b6d", "agent": "Claude via claude-kimicode", "next_runtime": "pi", "switch_policy": "after-current-task-or-blocker" },
+        "2": { "task": "task_b583d6b26592", "dispatch": "ctx_1fee54c550ae", "terminal": "term_96f85d3f-8f8a-4e6f-96ce-ae54543a69e6", "agent": "Antigravity via claude-sub2api-02" },
+        "3": { "task": "task_ba8cfdd3b54a", "dispatch": "ctx_5e5a3f688bd6", "terminal": "term_09a646e0-d66b-46f0-8060-d387db338b9d", "agent": "Kimi via claude-kimicode" }
+      }
+    },
+    "06": { "status": "closed_go", "lanes": {} },
+    "07": { "status": "closed_go", "lanes": {} }
+  },
+  "master": { "terminal": "term_7e8e6405-780a-4661-8acb-08e68b9877be", "scope": "coordination-only" },
+  "phase_20": "open",
+  "phase_21": "blocked",
+  "arbiter": "arbiter-go.md",
+  "verdict": "GO"
+}

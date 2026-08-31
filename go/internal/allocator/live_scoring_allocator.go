@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 	"sync"
 	"time"
 )
@@ -52,25 +53,25 @@ type AllocationRequest struct {
 type ReasonCode string
 
 const (
-	ReasonAssigned       ReasonCode = "assigned"
-	ReasonNoCapacity     ReasonCode = "no_capacity"
-	ReasonNoMatch        ReasonCode = "no_match"
-	ReasonScoreTooLow    ReasonCode = "score_too_low"
+	ReasonAssigned        ReasonCode = "assigned"
+	ReasonNoCapacity      ReasonCode = "no_capacity"
+	ReasonNoMatch         ReasonCode = "no_match"
+	ReasonScoreTooLow     ReasonCode = "score_too_low"
 	ReasonAlreadyAssigned ReasonCode = "already_assigned"
-	ReasonAdvisoryOnly   ReasonCode = "advisory_only"
+	ReasonAdvisoryOnly    ReasonCode = "advisory_only"
 )
 
 // AllocationDecision captures the full outcome of one allocation evaluation.
 type AllocationDecision struct {
-	AttemptID  string     `json:"attemptId"`
-	GoalID     string     `json:"goalId"`
-	AccountID  string     `json:"accountId"`
-	BuilderID  string     `json:"builderId,omitempty"`
-	Assigned   bool       `json:"assigned"`
-	Live       bool       `json:"live"`
-	Score      float64    `json:"score"`
-	Reason     ReasonCode `json:"reason"`
-	DecidedAt  time.Time  `json:"decidedAt"`
+	AttemptID string     `json:"attemptId"`
+	GoalID    string     `json:"goalId"`
+	AccountID string     `json:"accountId"`
+	BuilderID string     `json:"builderId,omitempty"`
+	Assigned  bool       `json:"assigned"`
+	Live      bool       `json:"live"`
+	Score     float64    `json:"score"`
+	Reason    ReasonCode `json:"reason"`
+	DecidedAt time.Time  `json:"decidedAt"`
 }
 
 // FeedbackOutcome records whether an attempt succeeded or failed, so the
@@ -152,6 +153,9 @@ type LiveScoringAllocator struct {
 	eventSink AllocatorEventSink
 	decisions []AllocationDecision
 	feedback  []FeedbackOutcome
+	// Dedupes feedback by attempt identity so duplicate ingest cannot double-apply
+	// the EMA, double-decrement active count, or skew the feedback log.
+	seenAttempts map[string]struct{}
 	minScore  float64 // minimum score threshold to accept
 }
 
@@ -167,12 +171,13 @@ func NewLiveScoringAllocator(
 		scorer = DefaultScoringFunc
 	}
 	return &LiveScoringAllocator{
-		store:     store,
-		builders:  make(map[string]*Builder),
-		mode:      mode,
-		scorer:    scorer,
-		eventSink: sink,
-		minScore:  minScore,
+		store:        store,
+		builders:     make(map[string]*Builder),
+		mode:         mode,
+		scorer:       scorer,
+		eventSink:    sink,
+		minScore:     minScore,
+		seenAttempts: make(map[string]struct{}),
 	}
 }
 
@@ -230,9 +235,15 @@ func (a *LiveScoringAllocator) Allocate(req AllocationRequest) (AllocationDecisi
 	// Score all builders and pick the best.
 	var bestBuilder *Builder
 	bestScore := -1.0
-	for _, b := range a.builders {
+	ids := make([]string, 0, len(a.builders))
+	for id := range a.builders {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		b := a.builders[id]
 		score := a.scorer(*b, req)
-		if score > bestScore {
+		if score > bestScore || (score == bestScore && bestBuilder != nil && b.ActiveCount < bestBuilder.ActiveCount) {
 			bestScore = score
 			bestBuilder = b
 		}
@@ -310,6 +321,12 @@ func (a *LiveScoringAllocator) RecordFeedback(outcome FeedbackOutcome) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
+	if outcome.AttemptID != "" {
+		if _, seen := a.seenAttempts[outcome.AttemptID]; seen {
+			return nil // duplicate ingest; do not re-apply the EMA or decrement twice
+		}
+		a.seenAttempts[outcome.AttemptID] = struct{}{}
+	}
 	a.feedback = append(a.feedback, outcome)
 
 	b, ok := a.builders[outcome.BuilderID]

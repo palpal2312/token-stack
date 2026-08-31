@@ -1,0 +1,83 @@
+{
+  "sprint": "orchestrate-260825-sprint04-orca-reconcile",
+  "subject": "go/internal/builderexec/reconciler.go",
+  "timestamp": "2026-08-25T14:24:56Z",
+  "cells": [
+    {
+      "id": "RC-01",
+      "status": "PASS",
+      "details": "destroyed once, untracked"
+    },
+    {
+      "id": "RC-02",
+      "status": "PASS",
+      "details": "DestroySandbox once, cleaned"
+    },
+    {
+      "id": "RC-03",
+      "status": "PASS",
+      "details": "KillProcess once, action=kill"
+    },
+    {
+      "id": "RC-04",
+      "status": "PASS",
+      "details": "0 orphans, 0 actions, all alive"
+    },
+    {
+      "id": "RC-05",
+      "status": "PASS",
+      "details": "state=unknown, no cleanup, retained"
+    },
+    {
+      "id": "RC-06",
+      "status": "PASS",
+      "details": "action.success=false, resource retained for retry"
+    },
+    {
+      "id": "RC-07",
+      "status": "PASS",
+      "details": "second pass: 0 checked, 0 orphans, 0 actions, 0 errors"
+    },
+    {
+      "id": "RC-08",
+      "status": "PASS",
+      "details": "action=cleanup, no external calls, untracked"
+    },
+    {
+      "id": "RC-09",
+      "status": "PASS",
+      "details": "0 orphans, 0 actions, error recorded"
+    },
+    {
+      "id": "RC-10",
+      "status": "PASS",
+      "details": "untracked resource exempt"
+    },
+    {
+      "id": "RC-11",
+      "status": "PASS",
+      "details": "race-free concurrent passes; duplicate cleanups observed=0"
+    }
+  ],
+  "passed": 11,
+  "total": 11,
+  "duplicate_cleanup_observed": 0,
+  "measurements": [
+    {
+      "name": "reconcile-pass-all-alive",
+      "resources": 1000,
+      "passes": 50,
+      "total_ms": 39.461,
+      "ns_per_pass": 789222,
+      "ns_per_resource_per_pass": 789.222
+    },
+    {
+      "name": "reconcile-pass-all-alive",
+      "resources": 10000,
+      "passes": 10,
+      "total_ms": 102.946,
+      "ns_per_pass": 10294680,
+      "ns_per_resource_per_pass": 1029.468
+    }
+  ]
+}

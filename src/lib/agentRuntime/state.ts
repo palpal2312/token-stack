@@ -17,7 +17,7 @@
 // history from the step trace would be a second source of truth that could
 // disagree with the first.
 
-import { readFile, writeFile, rename, mkdir, unlink, readdir } from "node:fs/promises";
+import { readFile, writeFile, rename, mkdir, unlink, readdir, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import type { ChatMessage } from "../routers/adapters/base";
@@ -218,6 +218,16 @@ export class LedgerStateStore implements StateStore {
   }
 }
 
+/**
+ * Runs-dir scan memo, module-level because the routes construct a fresh
+ * FileStateStore per request. Every save lands via tmp-file + rename in this
+ * directory, and creating/renaming the tmp entry bumps the directory mtime —
+ * so a same-mtime directory means the same listing. Cached states are shared:
+ * allStates treats them as read-only and latestInThread hands out a clone,
+ * preserving the old fresh-parse mutation semantics.
+ */
+const SCAN_CACHE = new Map<string, { mtimeMs: number; states: RunState[] }>();
+
 export class FileStateStore implements StateStore {
   constructor(public readonly dir: string = defaultRunsDir) {}
 
@@ -277,8 +287,13 @@ export class FileStateStore implements StateStore {
    */
   private async allStates(): Promise<RunState[]> {
     let names: string[];
-    try { names = await readdir(this.dir); }
-    catch { return []; }
+    let dirMtimeMs: number;
+    try {
+      names = await readdir(this.dir);
+      dirMtimeMs = (await stat(this.dir)).mtimeMs;
+    } catch { return []; }
+    const hit = SCAN_CACHE.get(this.dir);
+    if (hit && hit.mtimeMs === dirMtimeMs) return hit.states;
     const states: RunState[] = [];
     for (const name of names) {
       if (!name.endsWith(".json")) continue;
@@ -289,6 +304,7 @@ export class FileStateStore implements StateStore {
         if (s?.threadId) states.push(s);
       } catch { /* not a readable run state — not a listing's problem */ }
     }
+    SCAN_CACHE.set(this.dir, { mtimeMs: dirMtimeMs, states });
     return states;
   }
 
@@ -326,7 +342,8 @@ export class FileStateStore implements StateStore {
       if (s.threadId !== threadId) continue;
       if (!latest || s.updatedAt > latest.updatedAt) latest = s;
     }
-    return latest;
+    // Clone: the cached states are shared, callers get a private copy.
+    return latest ? structuredClone(latest) : null;
   }
 }
 

@@ -1,0 +1,188 @@
+﻿{
+    "verdict":  "GO",
+    "failed_rules":  [
+
+                     ],
+    "results":  [
+                    {
+                        "rule":  "SP-FILE",
+                        "status":  "PASS",
+                        "detail":  "C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\sen-product.db"
+                    },
+                    {
+                        "rule":  "SP-WAL",
+                        "status":  "PASS",
+                        "detail":  "journal_mode=wal (contract: WAL)"
+                    },
+                    {
+                        "rule":  "SP-SYNC-FULL",
+                        "status":  "PASS",
+                        "detail":  "synchronous=2 (contract: FULL=2)"
+                    },
+                    {
+                        "rule":  "SP-BUSY",
+                        "status":  "PASS",
+                        "detail":  "busy_timeout=5000 (contract: bounded, e.g. 5000)"
+                    },
+                    {
+                        "rule":  "SP-TABLES",
+                        "status":  "PASS",
+                        "detail":  "all 5 required tables present"
+                    },
+                    {
+                        "rule":  "SP-INDEXES",
+                        "status":  "PASS",
+                        "detail":  "all 3 required indexes present"
+                    },
+                    {
+                        "rule":  "SP-MIGRATIONS",
+                        "status":  "PASS",
+                        "detail":  "schema_migrations rows=2"
+                    },
+                    {
+                        "rule":  "SP-AUDIT-OUTBOX",
+                        "status":  "PASS",
+                        "detail":  "AO-14 audit/outbox pair: command_receipts + export_candidates"
+                    },
+                    {
+                        "rule":  "SP-EXPORT-STATUS-CHECK",
+                        "status":  "PASS",
+                        "detail":  "export_candidates.status CHECK constraint present"
+                    },
+                    {
+                        "rule":  "SP-TS-RFC3339-CHECK",
+                        "status":  "WARN",
+                        "detail":  "timestamp CHECK constraints present; AO-14 SQL omits them, validation report requests them - WARN until contracts reconciled"
+                    },
+                    {
+                        "rule":  "CQ-FILE",
+                        "status":  "PASS",
+                        "detail":  "C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\community-queue.db"
+                    },
+                    {
+                        "rule":  "CQ-WAL",
+                        "status":  "PASS",
+                        "detail":  "journal_mode=wal (contract: WAL)"
+                    },
+                    {
+                        "rule":  "CQ-SYNC-FULL",
+                        "status":  "PASS",
+                        "detail":  "synchronous=2 (contract: FULL=2)"
+                    },
+                    {
+                        "rule":  "CQ-BUSY",
+                        "status":  "PASS",
+                        "detail":  "busy_timeout=5000 (contract: bounded, e.g. 5000)"
+                    },
+                    {
+                        "rule":  "CQ-TABLES",
+                        "status":  "PASS",
+                        "detail":  "all 6 required tables present"
+                    },
+                    {
+                        "rule":  "CQ-INDEXES",
+                        "status":  "PASS",
+                        "detail":  "all 3 required indexes present"
+                    },
+                    {
+                        "rule":  "CQ-MIGRATIONS",
+                        "status":  "PASS",
+                        "detail":  "schema_migrations rows=6"
+                    },
+                    {
+                        "rule":  "CQ-STATUS-CHECK-SANITIZED",
+                        "status":  "PASS",
+                        "detail":  "sanitized_contributions.status CHECK present (frozen AO-15)"
+                    },
+                    {
+                        "rule":  "CQ-STATUS-CHECK-DELIVERY",
+                        "status":  "PASS",
+                        "detail":  "delivery_attempts.status CHECK present (frozen AO-15)"
+                    },
+                    {
+                        "rule":  "CQ-UNIQUE-PAYLOAD-HASH",
+                        "status":  "PASS",
+                        "detail":  "payload_hash UNIQUE (frozen AO-15)"
+                    },
+                    {
+                        "rule":  "CQ-UNIQUE-RECEIPT-HASH",
+                        "status":  "PASS",
+                        "detail":  "receipt_hash UNIQUE (frozen AO-15)"
+                    },
+                    {
+                        "rule":  "CQ-FK-DECL",
+                        "status":  "PASS",
+                        "detail":  "delivery_attempts/publication_receipts reference sanitized_contributions"
+                    },
+                    {
+                        "rule":  "CQ-PRIVACY-SCAN",
+                        "status":  "PASS",
+                        "detail":  "no denylisted column names"
+                    },
+                    {
+                        "rule":  "XG-DB-INVENTORY",
+                        "status":  "PASS",
+                        "detail":  "exactly two DB identities: community-queue.db, sen-product.db"
+                    },
+                    {
+                        "rule":  "XG-NO-PG",
+                        "status":  "PASS",
+                        "detail":  "no PostgreSQL DSN/process assumption in localdb sources"
+                    },
+                    {
+                        "rule":  "XG-FK-SOURCE",
+                        "status":  "PASS",
+                        "detail":  "foreign_keys=ON connection evidence at C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\community\\sqlite_store.go; C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\core\\database.go"
+                    },
+                    {
+                        "rule":  "XG-SANITIZER-SOURCE",
+                        "status":  "PASS",
+                        "detail":  "C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\community\\sanitizer.go: allowlist + 7 secret-pattern tokens (bearer, jwt, private, password, token, secret, pem)"
+                    },
+                    {
+                        "rule":  "SP-CACHE-TEMP",
+                        "status":  "PASS",
+                        "detail":  "cache_size=-64000 at C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\core\\database.go; temp_store=MEMORY at C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\go\\internal\\localdb\\core\\database.go (static source evidence; runtime values are per-connection and covered by SC-PRODUCER-TESTS)"
+                    },
+                    {
+                        "rule":  "XG-PRODUCT-STANDALONE",
+                        "status":  "PASS",
+                        "detail":  "product DB checks pass regardless of community DB availability"
+                    },
+                    {
+                        "rule":  "XG-REPLAY-ANCHORS",
+                        "status":  "PASS",
+                        "detail":  "stable anchors: export_candidates.content_hash + sanitized_contributions.payload_hash"
+                    },
+                    {
+                        "rule":  "SC-CRASH-REPLAY",
+                        "status":  "PASS",
+                        "detail":  "crash before export-mark; replay blocked by payload_hash UNIQUE; exactly 1 row; candidate exported"
+                    },
+                    {
+                        "rule":  "SC-RECEIPT-UNIQUE",
+                        "status":  "PASS",
+                        "detail":  "duplicate receipt_hash rejected by UNIQUE; 1 row kept"
+                    },
+                    {
+                        "rule":  "SC-FK-ENFORCED",
+                        "status":  "PASS",
+                        "detail":  "orphan delivery_attempt rejected under FK-ON connection; declared FKs enforceable"
+                    },
+                    {
+                        "rule":  "SC-TERMINAL-GUARD",
+                        "status":  "PASS",
+                        "detail":  "pre-terminal quarantine allowed; rejected-\u003equarantined and rejected-\u003epending blocked by DB invariant"
+                    },
+                    {
+                        "rule":  "SC-WATERMARK-RESTART",
+                        "status":  "PASS",
+                        "detail":  "watermark (stream_id=7) survives close/reopen on last_seq"
+                    },
+                    {
+                        "rule":  "SC-PRODUCER-TESTS",
+                        "status":  "PASS",
+                        "detail":  "go test rc=0 | ok  \tagentic-os/internal/localdb/core\t2.727s | ok  \tagentic-os/internal/localdb/handoff\t2.704s | ok  \tagentic-os/internal/localdb/product\t2.726s"
+                    }
+                ]
+}

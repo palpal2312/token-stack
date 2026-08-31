@@ -1,0 +1,20 @@
+{
+  "run_id":"run_0c3db1f2dee5",
+  "controller_run":"orchestrate-260825-sprint04-orca-reconcile",
+  "status":"closed_go",
+  "started_at":"2026-08-25T13:54:49Z",
+  "timebox_hours":48,
+  "coordinator":"term_7e8e6405-780a-4661-8acb-08e68b9877be",
+  "lanes":{
+    "1":{"task":"task_d4492afc01ee","dispatch":"ctx_f411803d4cce","agent":"Cursor fallback","terminal":"term_0806c469-e7a1-4307-8cf2-13bcc99f3e59","primary_failure":"Claude API error; primary fenced"},
+    "2":{"task":"task_2ad230532b30","dispatch":"ctx_4a3d47ba7b4e","agent":"Cursor fallback","terminal":"term_5aa5eeeb-911b-4411-8702-eddbbd645cde","primary_failure":"Claude API error; primary fenced"},
+    "3":{"task":"task_83aebde0f562","dispatch":"ctx_6a167ac701e6","agent":"Kimi fallback","terminal":"term_05af87e8-f148-4e5a-89e5-e93ccaaac21a","primary_failure":"initial kimi-kimicode command invalid; claude-kimicode fallback active"}
+  },
+  "master":{"terminal":"term_7e8e6405-780a-4661-8acb-08e68b9877be","scope":"coordination-only"},
+  "phase_20":"open",
+  "phase_21":"blocked",
+  "closed_at":"2026-08-25T15:26:00Z",
+  "arbiter":"arbiter-go.md",
+  "verdict":"GO",
+  "next_action":"Release controller lease; keep Phase 21 blocked"
+}

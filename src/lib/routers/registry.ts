@@ -79,7 +79,7 @@ const KINDS: RouterKindSpec[] = [
   {
     id: "sub2api",
     label: "Sub2API",
-    defaultBaseUrl: "http://localhost:5173/v1",
+    defaultBaseUrl: "http://localhost:9284/v1",
     keyRequired: true,
     keyHint: "A key the Sub2API admin dashboard issues to a user (starts with sk-).",
     local: true,

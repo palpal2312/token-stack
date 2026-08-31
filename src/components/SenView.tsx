@@ -26,6 +26,7 @@ import {
   ListTodo, Radio, RefreshCw, Repeat, Send, Square, SquareTerminal, TriangleAlert, PanelLeft, PanelRight, LayoutDashboard, Wrench
 } from "lucide-react";
 import AgentKanban from "./AgentKanban";
+import { VirtualizedList } from "./virtual/VirtualizedList";
 import CodeSpaceView from "./CodeSpaceView";
 import BuildersView from "./BuildersView";
 import OverviewDashboard from "./Overview";
@@ -40,6 +41,20 @@ import ReleaseGateCard from "./ReleaseGateCard";
 import SchedulerQueueCard from "./SchedulerQueueCard";
 import PlanningCard from "./PlanningCard";
 import ExecutionModePicker from "./ExecutionModePicker";
+import {
+  getActiveAttempt,
+  getEventsAfter,
+  hasEventGap,
+  mergeEventsBySeq,
+  eventText,
+  formatTerminalOutcome,
+  newSessionId,
+  sendTurn as sendCanonicalTurn,
+  stopAttempt,
+  terminalStateFromEvent,
+  type ChatStreamEvent,
+} from "@/lib/sen/chat-client";
+import { useSenSurface } from "@/shell/sen-surface-context";
 
 // Sen's mark is the lotus (cánh sen) emblem — distinct from the NEWS OS diamond.
 function SenMark({ size = 16, className, style }: { size?: number; className?: string; style?: React.CSSProperties }) {
@@ -238,7 +253,7 @@ function ReportsAndPlanContent({
 
 // ------------------------------------------------------------------ chat tab
 
-interface ChatTurn { role: "user" | "assistant"; text: string; ts?: string; builder?: string; model?: string; effort?: string | null; usage?: { input?: number; output?: number; thinking?: number } | null }
+interface ChatTurn { role: "user" | "assistant"; text: string; ts?: string; builder?: string; model?: string; effort?: string | null; usage?: { input?: number; output?: number; thinking?: number } | null; key?: string }
 
 /** 21348 → "21.3k" — token counts stay readable in the per-turn badge. */
 function fmtTokens(n: number): string {
@@ -270,6 +285,12 @@ function ChatTab({
   initialShowLeft?: boolean;
   initialShowRight?: boolean;
 }) {
+  // Phase 19a U2 compose seam: when the SEN surface coordinator is active it owns
+  // the composer (`composerOwner !== null`); only then is draft clearing
+  // conditional on an acknowledged compose target (a failed send keeps the exact
+  // source draft). Inert default (`composerOwner === null`) preserves legacy
+  // behavior byte-for-byte when the flag is OFF.
+  const coordinated = useSenSurface().composerOwner !== null;
   const [leftWidth, setLeftWidth] = useState(240);
   const [rightWidth, setRightWidth] = useState(850);
   // Keep the info panel proportional: 850px on wide screens, but never more
@@ -424,6 +445,10 @@ function ChatTab({
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(initialSessionId ?? null);
   const [turns, setTurns] = useState<ChatTurn[] | null>(null);
+  // Canonical mode: the proxy reported the Go chat authority. In canonical
+  // mode the component state is the ONE query-cache authority — localStorage
+  // keeps only view preferences (LS_SESSION/LS_BUILDER), never history.
+  const [canonical, setCanonical] = useState(false);
   const [notes, setNotes] = useState<string[]>([]);
   const [activity, setActivity] = useState("");
   // Accumulated thinking text for `thought` events — the activity line shows
@@ -457,6 +482,8 @@ function ChatTab({
   const [kanbanSaving, setKanbanSaving] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const queuedRef = useRef<string | null>(null);
+  // Live canonical attempt id for stop/retry while the tail is polling.
+  const liveAttemptRef = useRef<string | null>(null);
 
   // Drain the queued message when the turn finishes.
   useEffect(() => {
@@ -473,8 +500,23 @@ function ChatTab({
   // the same rule the Agents create flow applies.
   const verified = builders.filter((b) => b.verifiedAt);
 
+  // Height estimate for the conversation windowing offset table. User bubbles are
+  // flat text; assistant rows carry markdown (block layout + code fences) so they
+  // are taller. Estimate is deliberately generous but not measured — tall
+  // markdown/code blocks can clip their windowing cell at scale.
+  // ponytail: estimate-only; swap for a measure-on-mount table keyed by turn key
+  // if long assistant renders ever clip in a big transcript.
+  const estimateTurnHeight = useCallback((t: ChatTurn) => {
+    const chars = Math.max(1, Math.ceil(t.text.length / 90));
+    const paras = Math.max(1, t.text.split(/\n{2,}/).length);
+    const lines = Math.max(chars, paras);
+    const headroom = t.role === "assistant" && (t.builder || t.model) ? 20 : 0;
+    return 44 + lines * 22 + headroom;
+  }, []);
+
   const loadSessions = useCallback(async () => {
     const j = await fetch("/api/sen/chat", { cache: "no-store" }).then((r) => r.json()).catch(() => ({}));
+    setCanonical(j.canonical === true);
     setSessions(Array.isArray(j.sessions) ? j.sessions : []);
   }, []);
 
@@ -683,9 +725,139 @@ function ChatTab({
     sessionId && sessionBuilder && builders.length > 0 && !builders.some((b) => b.id === sessionBuilder),
   );
 
+  // Sticky-bottom for new turns/notes is handled by VirtualizedList's
+  // stickToBottom (near-bottom-aware, so scrolling up to read preserves the
+  // pull-based anchor instead of being yanked down on every append).
+
+  // ------------------------------------------------- canonical chat (C4)
+
+  // applyCanonicalEvent merges one stream event into the pending assistant
+  // row: progress/summary text accumulates; thinking/tool lines roll the
+  // activity indicator; terminal outcomes surface as offline-safe notes.
+  const applyCanonicalEvent = useCallback((e: ChatStreamEvent) => {
+    const terminal = terminalStateFromEvent(e);
+    if (terminal) {
+      setNotes((n) => [...n, formatTerminalOutcome(terminal)]);
+      setActivity("");
+      return;
+    }
+    const text = eventText(e);
+    if (!text) return;
+    if (e.eventKind === "thinking") {
+      setActivity(`đang nghĩ: ${text.replace(/\s+/g, " ").trim().slice(-80)}`);
+      return;
+    }
+    if (e.eventKind === "tool") {
+      setActivity(text.replace(/\s+/g, " ").trim().slice(-80));
+      return;
+    }
+    setTurns((t) => {
+      const next = [...(t ?? [])];
+      const last = next[next.length - 1];
+      if (last?.role === "assistant") {
+        next[next.length - 1] = { ...last, text: last.text ? `${last.text}\n${text}` : text };
+      }
+      return next;
+    });
+  }, []);
+
+  // pollCanonicalTail follows one attempt's persisted event tail (merge by
+  // seq, no duplicates) until the attempt leaves the active set, then does
+  // the authoritative thread refetch (final-row-before-clear).
+  const pollCanonicalTail = useCallback(async (sid: string, attemptId: string, ctl: AbortController) => {
+    liveAttemptRef.current = attemptId;
+    const seen = new Map<number, ChatStreamEvent>();
+    let lastApplied = 0;
+    try {
+      for (;;) {
+        if (ctl.signal.aborted) return;
+        const events = await getEventsAfter(attemptId, lastApplied).catch(() => null);
+        if (events) {
+          if (hasEventGap(lastApplied, events)) {
+            // Reconnect gap: rebuild from the authoritative thread, then resume.
+            await loadTurns(sid);
+            seen.clear();
+            lastApplied = 0;
+            continue;
+          }
+          for (const e of mergeEventsBySeq(seen, events)) {
+            if (e.seq > lastApplied) {
+              lastApplied = e.seq;
+              applyCanonicalEvent(e);
+            }
+          }
+        }
+        const active = await getActiveAttempt(sid).catch(() => undefined);
+        if (!active) break; // terminal (or unreadable): refetch canonical thread
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      // Terminal row before clear: authoritative thread refetch last.
+      await loadTurns(sid);
+    } finally {
+      if (liveAttemptRef.current === attemptId) liveAttemptRef.current = null;
+    }
+  }, [applyCanonicalEvent, loadTurns]);
+
+  // Pending recovery: reopening a session with an active attempt resumes the
+  // event tail instead of starting fresh.
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [turns, notes]);
+    if (!canonical || !sessionId || streaming) return;
+    let cancelled = false;
+    const ctl = new AbortController();
+    (async () => {
+      const active = await getActiveAttempt(sessionId).catch(() => null);
+      if (cancelled || !active) return;
+      if (abortRef.current) return; // a send is already polling this tail
+      setStreaming(true);
+      setTurns((t) => [...(t ?? []), { role: "assistant", text: "", key: active.chatAttemptId }]);
+      await pollCanonicalTail(sessionId, active.chatAttemptId, ctl);
+      setStreaming(false);
+    })();
+    return () => {
+      cancelled = true;
+      ctl.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canonical, sessionId]);
+
+  const sendCanonical = async (prompt: string) => {
+    const ctl = new AbortController();
+    abortRef.current = ctl;
+    // Optimistic rows with stable client keys; the ack's server-issued ids
+    // replace them.
+    const clientKey = `pending-${crypto.randomUUID()}`;
+    const commandId = crypto.randomUUID();
+    const sid = sessionId ?? newSessionId();
+    if (!sessionId) {
+      setSessionId(sid);
+      try { localStorage.setItem(LS_SESSION, sid); } catch { /* private mode */ }
+    }
+    setTurns((t) => [...(t ?? []), { role: "user", text: prompt, key: clientKey }, { role: "assistant", text: "", key: `a-${clientKey}` }]);
+    try {
+      const receipt = await sendCanonicalTurn({ sessionId: sid, content: prompt, builderPolicy: builderId, commandId });
+      // Acknowledged compose target: the ack returned a canonical chatAttemptId —
+      // only now is the draft confirmed delivered, so clear it (conditional,
+      // coordinated mode). A failure (catch below) keeps the exact source draft.
+      if (coordinated) setDraft("");
+      setTurns((t) => (t ?? []).map((turn) =>
+        turn.key === clientKey ? { ...turn, key: receipt.turnId }
+          : turn.key === `a-${clientKey}` ? { ...turn, key: receipt.chatAttemptId }
+            : turn));
+      await pollCanonicalTail(sid, receipt.chatAttemptId, ctl);
+      void loadSessions();
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        setNotes((n) => [...n, "Stopped."]);
+      } else {
+        setNotes((n) => [...n, `Error: ${String(err instanceof Error ? err.message : err)}`]);
+      }
+    } finally {
+      abortRef.current = null;
+      setStreaming(false);
+      setTurns((t) => (t ?? []).filter((x, i, arr) => !(i === arr.length - 1 && x.role === "assistant" && !x.text.trim())));
+      areaRef.current?.focus();
+    }
+  };
 
   const send = async (text?: string) => {
     let prompt = (text ?? draft).trim();
@@ -701,12 +873,26 @@ function ChatTab({
       return;
     }
     if (!builderId) return;
-    setDraft("");
+    // Phase 19a U2 compose seam: the draft is cleared up front only in legacy
+    // mode. When the surface coordinator owns the composer, the draft survives
+    // the send and is cleared only on an acknowledged compose target
+    // (sendCanonical clears it after the ack); a failed send keeps the exact
+    // source draft.
+    if (!coordinated) setDraft("");
     setImages([]);
     setActivity("");
     thoughtRef.current = "";
     setStreaming(true);
     setNotes([]);
+    // Canonical mode: persist-before-ack + persisted event tail, no NDJSON
+    // stream and no legacy writer.
+    if (canonical) {
+      await sendCanonical(prompt);
+      return;
+    }
+    // ponytail: coordinated mode rides the canonical chat; the legacy streamed
+    // path only runs when canonical is unavailable (draft already cleared above
+    // for non-coordinated). No re-clear needed here.
     setTurns((t) => [...(t ?? []), { role: "user", text: prompt }, { role: "assistant", text: "" }]);
     const ctl = new AbortController();
     abortRef.current = ctl;
@@ -974,19 +1160,29 @@ function ChatTab({
                   <Plus size={11} /> New
                 </button>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 sidebar-scroll">
-                {sessions.length === 0 && (
+              <VirtualizedList<SessionMeta>
+                items={sessions}
+                threshold={40}
+                getKey={(s) => s.id}
+                estimateRowHeight={() => 68}
+                ariaLabel="Past sessions"
+                className="flex-1 min-h-0 overflow-y-auto space-y-1.5 sidebar-scroll"
+                style={{ flex: 1 }}
+                plainHeight="fill"
+                containerTestId="sessions-viewport"
+                rowTestId="session-row"
+                emptyContent={
                   <div className="text-[11.5px] text-[var(--cream-mute)]">
                     No past sessions yet — a conversation lands here after its first turn.
                   </div>
-                )}
-                {sessions.map((s) => {
+                }
+                renderItem={({ item: s }) => {
                   const active = s.id === sessionId;
                   const workerName = s.builder
                     ? (builders.find((b) => b.id === s.builder)?.name ?? s.builder)
                     : null;
                   return (
-                    <div key={s.id} className="relative group">
+                    <div className="relative group">
                       <button
                         type="button"
                         onClick={() => pick(s.id)}
@@ -1016,8 +1212,8 @@ function ChatTab({
                       </button>
                     </div>
                   );
-                })}
-              </div>
+                }}
+              />
             </section>
           </div>
 
@@ -1320,10 +1516,12 @@ function ChatTab({
         )}
 
         {/* messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {turns === null ? (
+        {turns === null ? (
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4">
             <Empty>Loading…</Empty>
-          ) : empty ? (
+          </div>
+        ) : empty ? (
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
             <div className="h-full flex flex-col items-center justify-center text-center gap-4 py-10">
               <SenMark size={40} style={{ opacity: 0.92 }} />
               <div>
@@ -1345,112 +1543,134 @@ function ChatTab({
                   </button>
                 ))}
               </div>
+              <div aria-live="polite">
+                {notes.map((n, i) => (
+                  <div key={`n${i}`} className="text-center text-[11.5px]" style={{ color: "var(--fg-dim)" }}>{n}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <VirtualizedList<ChatTurn>
+            key={sessionId ?? "new-session"}
+            items={turns!}
+            threshold={60}
+            getKey={(t, i) => t.key ?? i}
+            estimateRowHeight={estimateTurnHeight}
+            ariaLabel="Sen conversation"
+            className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+            style={{ flex: 1 }}
+            plainHeight="fill"
+            containerTestId="conversation-viewport"
+            rowTestId="turn-row"
+            stickToBottom
+            scrollRef={scrollRef}
+            renderItem={({ item: t, index }) => {
+              const last = index === turns!.length - 1;
+              // Badge only when the answering worker CHANGES — a single-worker
+              // conversation stays quiet.
+              const prevAssistant = [...turns!].slice(0, index).reverse().find((x) => x.role === "assistant");
+              const showBadge = t.role === "assistant" && Boolean(t.builder) && t.builder !== prevAssistant?.builder;
+              return t.role === "user" ? (
+                <div className="flex justify-end">
+                  <div
+                    className="max-w-[75%] px-3.5 py-2.5 rounded-2xl rounded-br-md text-[13px] whitespace-pre-wrap"
+                    style={{ background: "rgba(125,211,252,0.16)", border: "1px solid rgba(125,211,252,0.35)" }}
+                  >
+                    {t.text}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex gap-2.5 group/msg">
+                  <SenMark size={18} className="mt-1 shrink-0" style={{ opacity: 0.9 }} />
+                  <div className="max-w-[85%] text-[13px] leading-relaxed whitespace-pre-wrap">
+                    {showBadge && (
+                      <span className="block mb-0.5 text-[10.5px] uppercase tracking-wide" style={{ color: "var(--fg-dim)" }}>
+                        {builders.find((b) => b.id === t.builder)?.name ?? t.builder}{t.model ? ` · ${t.model}` : ""}{t.effort ? ` · ${t.effort}` : ""}{t.usage?.input ? ` · ${fmtTokens(t.usage.input)} in · ${fmtTokens(t.usage.output ?? 0)} out` : ""}
+                      </span>
+                    )}
+                    {t.text ? (
+                      // Assistant answers render as markdown — the model writes
+                      // **bold**, lists, tables, code fences; show them, not the markup.
+                      <span className="fm-md block"><ReactMarkdown remarkPlugins={[remarkGfm]}>{t.text}</ReactMarkdown></span>
+                    ) : (streaming && last ? (
+                      <span className="inline-flex items-center gap-1.5" style={{ color: "var(--fg-dim)" }}>
+                        <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#7dd3fc" }} />
+                        {activity ? "" : "đang nghĩ…"}
+                      </span>
+                    ) : t.text)}
+                    {/* One rolling status line — latest thought or tool call,
+                        gone the moment the answer lands. */}
+                    {streaming && last && activity && (
+                      <span className="block mt-1 text-[12px] italic truncate" style={{ color: "var(--fg-dim)" }}>
+                        {activity}
+                      </span>
+                    )}
+                    {t.text && (
+                      <span className="flex items-center gap-2 mt-1">
+                        <button
+                          onClick={async (ev) => {
+                            const btn = ev.currentTarget;
+                            try { await navigator.clipboard.writeText(t.text); btn.textContent = "✓"; setTimeout(() => { btn.textContent = "copy"; }, 1200); } catch { /* blocked */ }
+                          }}
+                          className="text-[10.5px] px-1.5 py-0.5 rounded border opacity-0 group-hover/msg:opacity-100 transition"
+                          style={{ borderColor: "var(--panel-border)", color: "var(--fg-dim)" }}
+                          title="Copy this answer"
+                        >
+                          copy
+                        </button>
+                        {!streaming && last && lastTiming && (
+                          <span className="text-[10.5px]" style={{ color: "var(--fg-dim)" }}>
+                            {lastTiming.ttfb !== null ? `${(lastTiming.ttfb / 1000).toFixed(1)}s đầu tiên · ` : ""}{(lastTiming.ms / 1000).toFixed(1)}s
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            }}
+          />
+        )}
+        {!empty && turns !== null && (
+          <div className="px-4 space-y-1">
+            <div aria-live="polite">
               {notes.map((n, i) => (
                 <div key={`n${i}`} className="text-center text-[11.5px]" style={{ color: "var(--fg-dim)" }}>{n}</div>
               ))}
             </div>
-          ) : (
-            <>
-              {turns!.map((t, i) => {
-                // Badge only when the answering worker CHANGES — a single-worker
-                // conversation stays quiet.
-                const prevAssistant = [...(turns ?? [])].slice(0, i).reverse().find((x) => x.role === "assistant");
-                const showBadge = t.role === "assistant" && Boolean(t.builder) && t.builder !== prevAssistant?.builder;
-                return t.role === "user" ? (
-                  <div key={i} className="flex justify-end">
-                    <div
-                      className="max-w-[75%] px-3.5 py-2.5 rounded-2xl rounded-br-md text-[13px] whitespace-pre-wrap"
-                      style={{ background: "rgba(125,211,252,0.16)", border: "1px solid rgba(125,211,252,0.35)" }}
-                    >
-                      {t.text}
-                    </div>
-                  </div>
-                ) : (
-                  <div key={i} className="flex gap-2.5 group/msg">
-                    <SenMark size={18} className="mt-1 shrink-0" style={{ opacity: 0.9 }} />
-                    <div className="max-w-[85%] text-[13px] leading-relaxed whitespace-pre-wrap">
-                      {showBadge && (
-                        <span className="block mb-0.5 text-[10.5px] uppercase tracking-wide" style={{ color: "var(--fg-dim)" }}>
-                          {builders.find((b) => b.id === t.builder)?.name ?? t.builder}{t.model ? ` · ${t.model}` : ""}{t.effort ? ` · ${t.effort}` : ""}{t.usage?.input ? ` · ${fmtTokens(t.usage.input)} in · ${fmtTokens(t.usage.output ?? 0)} out` : ""}
-                        </span>
-                      )}
-                      {t.text ? (
-                        // Assistant answers render as markdown — the model writes
-                        // **bold**, lists, tables, code fences; show them, not the markup.
-                        <span className="fm-md block"><ReactMarkdown remarkPlugins={[remarkGfm]}>{t.text}</ReactMarkdown></span>
-                      ) : (streaming && i === turns!.length - 1 ? (
-                        <span className="inline-flex items-center gap-1.5" style={{ color: "var(--fg-dim)" }}>
-                          <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#7dd3fc" }} />
-                          {activity ? "" : "đang nghĩ…"}
-                        </span>
-                      ) : t.text)}
-                      {/* One rolling status line — latest thought or tool call,
-                          gone the moment the answer lands. */}
-                      {streaming && i === turns!.length - 1 && activity && (
-                        <span className="block mt-1 text-[12px] italic truncate" style={{ color: "var(--fg-dim)" }}>
-                          {activity}
-                        </span>
-                      )}
-                      {t.text && (
-                        <span className="flex items-center gap-2 mt-1">
-                          <button
-                            onClick={async (ev) => {
-                              const btn = ev.currentTarget;
-                              try { await navigator.clipboard.writeText(t.text); btn.textContent = "✓"; setTimeout(() => { btn.textContent = "copy"; }, 1200); } catch { /* blocked */ }
-                            }}
-                            className="text-[10.5px] px-1.5 py-0.5 rounded border opacity-0 group-hover/msg:opacity-100 transition"
-                            style={{ borderColor: "var(--panel-border)", color: "var(--fg-dim)" }}
-                            title="Copy this answer"
-                          >
-                            copy
-                          </button>
-                          {!streaming && i === turns!.length - 1 && lastTiming && (
-                            <span className="text-[10.5px]" style={{ color: "var(--fg-dim)" }}>
-                              {lastTiming.ttfb !== null ? `${(lastTiming.ttfb / 1000).toFixed(1)}s đầu tiên · ` : ""}{(lastTiming.ms / 1000).toFixed(1)}s
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {notes.map((n, i) => (
-                <div key={`n${i}`} className="text-center text-[11.5px]" style={{ color: "var(--fg-dim)" }}>{n}</div>
-              ))}
-              {resetOffer && (
-                <div className="flex items-center justify-center gap-2 text-[11.5px]" style={{ color: "var(--fg-dim)" }}>
-                  <span>Quota hồi sớm nhất lúc {new Date(resetOffer.at).toLocaleTimeString("vi-VN")} ({resetOffer.worker}). Hẹn lịch tự probe lại?</span>
-                  <button
-                    onClick={async () => {
-                      const r = await fetch("/api/sen/schedule-wake", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ at: resetOffer.at }),
-                      }).catch(() => null);
-                      const j = r ? await r.json().catch(() => ({})) : {};
-                      setNotes((n) => [...n, r?.ok
-                        ? `Đã hẹn wake lúc ${new Date(resetOffer.at).toLocaleTimeString("vi-VN")} — tới giờ server tự probe và báo kết quả ở đây.`
-                        : `Không hẹn được: ${String(j.error ?? "lỗi mạng")}`]);
-                      setResetOffer(null);
-                    }}
-                    className="px-2 py-0.5 rounded border text-[11px]"
-                    style={{ borderColor: "#7dd3fc", color: "#7dd3fc" }}
-                  >
-                    Hẹn lịch
-                  </button>
-                  <button
-                    onClick={() => setResetOffer(null)}
-                    className="px-2 py-0.5 rounded border text-[11px]"
-                    style={{ borderColor: "var(--panel-border)", color: "var(--fg-dim)" }}
-                  >
-                    Để sau
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+            {resetOffer && (
+              <div className="flex items-center justify-center gap-2 text-[11.5px]" style={{ color: "var(--fg-dim)" }}>
+                <span>Quota hồi sớm nhất lúc {new Date(resetOffer.at).toLocaleTimeString("vi-VN")} ({resetOffer.worker}). Hẹn lịch tự probe lại?</span>
+                <button
+                  onClick={async () => {
+                    const r = await fetch("/api/sen/schedule-wake", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ at: resetOffer.at }),
+                    }).catch(() => null);
+                    const j = r ? await r.json().catch(() => ({})) : {};
+                    setNotes((n) => [...n, r?.ok
+                      ? `Đã hẹn wake lúc ${new Date(resetOffer.at).toLocaleTimeString("vi-VN")} — tới giờ server tự probe và báo kết quả ở đây.`
+                      : `Không hẹn được: ${String(j.error ?? "lỗi mạng")}`]);
+                    setResetOffer(null);
+                  }}
+                  className="px-2 py-0.5 rounded border text-[11px]"
+                  style={{ borderColor: "#7dd3fc", color: "#7dd3fc" }}
+                >
+                  Hẹn lịch
+                </button>
+                <button
+                  onClick={() => setResetOffer(null)}
+                  className="px-2 py-0.5 rounded border text-[11px]"
+                  style={{ borderColor: "var(--panel-border)", color: "var(--fg-dim)" }}
+                >
+                  Để sau
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* input */}
         <div className="px-4 pb-4">
@@ -1499,7 +1719,15 @@ function ChatTab({
             />
             {streaming ? (
               <button
-                onClick={() => abortRef.current?.abort()}
+                onClick={() => {
+                  const attemptId = liveAttemptRef.current;
+                  if (canonical && attemptId) {
+                    void stopAttempt(attemptId).catch(() => {
+                      /* offline-safe: local abort still stops the UI poll */
+                    });
+                  }
+                  abortRef.current?.abort();
+                }}
                 className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
                 style={{ background: "rgba(248,113,113,0.2)", color: "#f87171", border: "1px solid rgba(248,113,113,0.45)" }}
                 title="Stop this turn — the worker is killed, nothing keeps billing"
@@ -1535,7 +1763,18 @@ function ChatTab({
 
 // -------------------------------------------------------------------- view
 
-export default function SenView() {
+export type SenSurfaceChoice = "page" | "side-panel" | "floating";
+
+/**
+ * Accepts the Phase 19a U2 surface choice from the SEN surface coordinator.
+ * When `surface` is absent (legacy shell / flag OFF, the default) behavior is
+ * byte-equivalent. When it is a contextual surface (`side-panel` / `floating`),
+ * Sen presents a compact composer with the session rail collapsed by default —
+ * the surface frame owns the surrounding breadth. The coordinator injects this
+ * prop by cloning the single SEN composer child.
+ */
+export default function SenView({ surface }: { surface?: SenSurfaceChoice }) {
+  const contextual = surface === "side-panel" || surface === "floating";
   const boot = parseAukerLocation();
   const [tab, setTab] = useState<FmTab>(boot.tab);
   const [deepLinkedSession, setDeepLinkedSession] = useState<string | null>(boot.session);
@@ -1728,7 +1967,7 @@ export default function SenView() {
     <ChatTab
       initialSessionId={deepLinkedSession}
       sidePanel={rightPanel}
-      initialShowLeft
+      initialShowLeft={!contextual}
       initialShowRight={initialPanelOpen}
     />
   );

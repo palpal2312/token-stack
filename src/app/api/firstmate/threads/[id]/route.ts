@@ -33,11 +33,13 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     const store = new FileStateStore(path.join(home(), "runtime", "runs"));
     const state = await store.latestInThread(id);
     if (!state) return NextResponse.json({ error: `No thread "${id}" in this store.` }, { status: 404 });
+    const messages = state.messages.filter((m) => m.role !== "system");
     return NextResponse.json(
       {
         threadId: id,
         agentName: state.agentName,
-        messages: state.messages.filter((m) => m.role !== "system"),
+        messages,
+        turns: messages,
       },
       { headers: { "cache-control": "no-store" } },
     );

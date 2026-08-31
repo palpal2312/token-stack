@@ -1,0 +1,90 @@
+{
+  "manifest_version": "1.0.0",
+  "lane": "sprint-02-lane-2",
+  "target_component": "community-queue",
+  "database_name": "community-queue.db",
+  "owned_files": [
+    {
+      "path": "go/internal/localdb/community/adversarial_test.go",
+      "sha256": "6e022b39da168196f2f65809e1e1f3376bc26c4721d21125e2ebd6a02f1b1f2d"
+    },
+    {
+      "path": "go/internal/localdb/community/community_test.go",
+      "sha256": "e885e5730f3930dae20f43c334fb2f0e129f6438a37e91528ab3d5c9e9a6b2aa"
+    },
+    {
+      "path": "go/internal/localdb/community/export_envelope.go",
+      "sha256": "baf0392afa3882ee10f45ce274a46982f4946d54fd2b5ede8151c833bdad517f"
+    },
+    {
+      "path": "go/internal/localdb/community/migrations.go",
+      "sha256": "d1cab61a22c6f5833d4d8ab481c0dbb7da5eb47f311ff5a3a5c1dac58eab468b"
+    },
+    {
+      "path": "go/internal/localdb/community/sanitizer.go",
+      "sha256": "61f7016214043442f935931e6683b83b5809c8d30d506270f019e1c19cfbde6d"
+    },
+    {
+      "path": "go/internal/localdb/community/schema.go",
+      "sha256": "66075b65c65947957ea4b3f68d95d0dded62a8268537ad79b4fe2a6008795bf1"
+    },
+    {
+      "path": "go/internal/localdb/community/sqlite_store.go",
+      "sha256": "57123c9bb5b73c3bc10f980460532a623b3bb8378b66d7058976210bf0033b15"
+    },
+    {
+      "path": "go/internal/localdb/community/store.go",
+      "sha256": "721d34ed70bbabeb24b54f80d797b87378cd5e7c886467afd41c394e1ab6ee57"
+    }
+  ],
+  "dependency_delta": {
+    "module": "agentic-os",
+    "added_direct_dependencies": [
+      "modernc.org/sqlite v1.33.1"
+    ],
+    "added_indirect_dependencies": [
+      "github.com/dustin/go-humanize v1.0.1",
+      "github.com/google/uuid v1.6.0",
+      "github.com/hashicorp/golang-lru/v2 v2.0.7",
+      "github.com/mattn/go-isatty v0.0.20",
+      "github.com/ncruces/go-strftime v0.1.9",
+      "github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec",
+      "golang.org/x/sys v0.22.0",
+      "modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6",
+      "modernc.org/libc v1.55.3",
+      "modernc.org/mathutil v1.6.0",
+      "modernc.org/memory v1.8.0",
+      "modernc.org/strutil v1.2.0",
+      "modernc.org/token v1.1.0"
+    ]
+  },
+  "required_tables": [
+    "schema_migrations",
+    "community_queue_meta",
+    "sanitized_contributions",
+    "delivery_attempts",
+    "publication_receipts",
+    "removal_reports",
+    "sync_watermarks"
+  ],
+  "test_commands": [
+    "go test -v ./internal/localdb/community/..."
+  ],
+  "integration_assumptions": {
+    "db_engine": "modernc.org/sqlite (pure Go)",
+    "pragmas": {
+      "journal_mode": "WAL",
+      "synchronous": "FULL",
+      "foreign_keys": "ON",
+      "busy_timeout": 5000
+    },
+    "concurrency_model": "single-writer pool (MaxOpenConns=1, MaxIdleConns=1) with application Mutex protection",
+    "export_boundary": "Typed ExportEnvelope passed by value, no cross-db references or shared transaction spans with product.db",
+    "gate_script_compatibility_notes": [
+      "Gate script (sprint02-gate.ps1) searches for community-queue.db and checks all 6 core tables.",
+      "Index naming discrepancy: Lane 3 pre-registered gate expects idx_contrib_hash, idx_contrib_status, idx_delivery_status, whereas AO-15 schema defines idx_sanitized_contrib_state, idx_sanitized_contrib_seq, idx_sanitized_contrib_plugin, idx_delivery_attempts_contrib, idx_publication_receipts_contrib, idx_removal_reports_status, idx_removal_reports_contrib.",
+      "Column naming discrepancy: Gate script expects status column with CHECK constraint on sanitized_contributions; AO-15 defines column state.",
+      "Unique hash discrepancy: Gate script expects payload_hash column on sanitized_contributions; AO-15 defines primary key id and sequence seq with receipt_hash stored in publication_receipts."
+    ]
+  }
+}

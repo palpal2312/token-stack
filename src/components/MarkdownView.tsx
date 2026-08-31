@@ -3,15 +3,29 @@
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeHighlight from "rehype-highlight";
 import { motion } from "framer-motion";
 import "highlight.js/styles/atom-one-dark.css";
 
 interface Props { src: string; }
 
+type RehypeHighlightPlugin = (typeof import("rehype-highlight"))["default"];
+
 export default function MarkdownView({ src }: Props) {
   const [content, setContent] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  // highlight.js (via rehype-highlight) is a heavy lazy chunk (Phase 19a U4): it is
+  // NOT statically bundled. It resolves after first content so syntax highlighting is
+  // a progressive enhancement — markdown renders immediately, then highlights once the
+  // chunk lands.
+  const [rehypeHighlight, setRehypeHighlight] = useState<RehypeHighlightPlugin | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    import("rehype-highlight").then((m) => {
+      if (alive) setRehypeHighlight(() => m.default);
+    }).catch(() => { /* syntax highlighting is an enhancement; ignore */ });
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     fetch(src)
@@ -40,7 +54,7 @@ export default function MarkdownView({ src }: Props) {
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        rehypePlugins={rehypeHighlight ? [rehypeHighlight] : []}
         components={{
           h1: (p) => <h1 className="text-[40px] md:text-[48px] font-medium tracking-tight leading-[1.05] mt-2 mb-3 bg-clip-text text-transparent bg-gradient-to-r from-[#22d3ee] via-[#a855f7] to-[#ec4899]" {...p} />,
           h2: (p) => <h2 className="text-[26px] md:text-[30px] font-medium tracking-tight mt-12 mb-3 text-[var(--fg)] border-t border-[var(--panel-border)] pt-10 first:border-0 first:pt-0 first:mt-6" {...p} />,

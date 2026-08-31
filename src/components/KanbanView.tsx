@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { VirtualizedList } from "./virtual/VirtualizedList";
 import { COLUMNS, STATUS_COLOUR, type KanbanStatus, type KanbanTask, type KanbanTaskDetail, type KanbanAssignee, type KanbanStats } from "@/lib/kanban";
 
 // Inline markdown renderer for Kanban task outputs (content already in memory —
@@ -262,6 +263,84 @@ export default function KanbanView() {
     return out;
   }, [tasksFiltered, showArchived]);
 
+  // Height estimate for the windowing offset table (per-column). Regular cards are
+  // a 2-3 line title + meta + id (~90px); pinned Content-Machine cards carry a
+  // 158px preview, so they're much taller. Heuristic, not measured.
+  // ponytail: estimate-only; switch to a measure-on-mount table if a tall card
+  // ever clips its windowing cell at scale.
+  const estimateCardHeight = useCallback((t: KanbanTask) => {
+    if (boardSlug === "content" && t.title.startsWith("📌")) return 218;
+    return 88 + Math.min(Math.ceil(t.title.length / 40) * 16, 48);
+  }, [boardSlug]);
+
+  const renderTaskCard = useCallback((t: KanbanTask) => {
+    // Content Machine: a "📌" card renders its finished artifact preview INSIDE the card
+    if (boardSlug === "content" && t.title.startsWith("📌")) {
+      const isBlog = /blog/i.test(t.title);
+      const rel = isBlog ? contentArt.blog : contentArt.video;
+      const src = rel ? cpUrl(rel) : "";
+      const accent = isBlog ? "#d4a574" : "#00ccff";
+      return (
+        <button
+          onClick={() => setSelectedId(t.id)}
+          className="w-full text-left rounded-lg border overflow-hidden transition hover:brightness-110"
+          style={{ borderColor: accent, background: "rgba(0,0,0,0.35)" }}
+        >
+          <div className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-semibold" style={{ background: `${accent}1e`, color: accent }}>
+            <span>📌</span><span className="truncate">{t.title.replace(/^📌\s*/, "")}</span>
+          </div>
+          <div className="bg-black" style={{ height: 158 }}>
+            {!src ? (
+              <div className="grid place-items-center h-full text-[10px] text-[var(--fg-dimmer)]">rendering…</div>
+            ) : isBlog ? (
+              <iframe src={src} title={t.title} className="w-full h-full border-0 pointer-events-none" sandbox="allow-scripts allow-same-origin" />
+            ) : (
+              <video src={src} muted loop autoPlay playsInline className="w-full h-full object-cover" />
+            )}
+          </div>
+          <div className="px-2.5 py-1 text-[9.5px] text-[var(--fg-dimmer)]">click to open · pinned result</div>
+        </button>
+      );
+    }
+    // A ready/triage card with no assignee will be skipped by the dispatcher forever — flag it.
+    const isStuck = !t.assignee && (t.status === "ready" || t.status === "triage");
+    return (
+      <button
+        onClick={() => setSelectedId(t.id)}
+        className="w-full text-left rounded-lg border bg-[rgba(255,255,255,0.025)] hover:bg-[rgba(255,255,255,0.04)] p-2.5 transition"
+        style={{
+          borderColor: isStuck ? "rgba(251,191,36,0.5)" : "var(--panel-border)",
+          background: isStuck ? "rgba(251,191,36,0.05)" : undefined,
+        }}
+      >
+        <div className="flex items-start justify-between gap-1.5">
+          <div className="text-[12.5px] text-[var(--fg)] leading-snug line-clamp-3">{t.title}</div>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between gap-1.5 text-[10px] text-[var(--fg-dimmer)]">
+          <div className="flex items-center gap-1 truncate">
+            {t.assignee ? (
+              <>
+                <User2 size={9} />
+                <span className="text-[var(--fg-dim)] truncate">{t.assignee}</span>
+              </>
+            ) : isStuck ? (
+              <span className="flex items-center gap-1 text-amber-300" title="Dispatcher skips ready/triage tasks with no assignee — set one to unstick.">
+                <AlertTriangle size={9} /> unassigned · stuck
+              </span>
+            ) : (
+              <span className="italic">unassigned</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <Clock size={9} />
+            <span>{fmtAgo(t.created_at)}</span>
+          </div>
+        </div>
+        <div className="mt-0.5 font-[var(--font-geist-mono)] text-[9.5px] text-[var(--fg-dimmer)] truncate">{t.id}</div>
+      </button>
+    );
+  }, [boardSlug, contentArt, cpUrl]);
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -419,80 +498,21 @@ export default function KanbanView() {
                 </div>
                 <span className="text-[10px] metric text-[var(--fg-dimmer)]">{tasks.length}</span>
               </div>
-              <div className="space-y-2 flex-1 min-h-0">
-                  {tasks.length === 0 && (
-                    <div className="text-[11px] text-[var(--fg-dimmer)] italic px-1 py-2">empty</div>
-                  )}
-                  {tasks.map((t) => {
-                    // Content Machine: a "📌" card renders its finished artifact preview INSIDE the card
-                    if (boardSlug === "content" && t.title.startsWith("📌")) {
-                      const isBlog = /blog/i.test(t.title);
-                      const rel = isBlog ? contentArt.blog : contentArt.video;
-                      const src = rel ? cpUrl(rel) : "";
-                      const accent = isBlog ? "#d4a574" : "#00ccff";
-                      return (
-                        <button
-                          key={t.id}
-                          onClick={() => setSelectedId(t.id)}
-                          className="w-full text-left rounded-lg border overflow-hidden transition hover:brightness-110"
-                          style={{ borderColor: accent, background: "rgba(0,0,0,0.35)" }}
-                        >
-                          <div className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-semibold" style={{ background: `${accent}1e`, color: accent }}>
-                            <span>📌</span><span className="truncate">{t.title.replace(/^📌\s*/, "")}</span>
-                          </div>
-                          <div className="bg-black" style={{ height: 158 }}>
-                            {!src ? (
-                              <div className="grid place-items-center h-full text-[10px] text-[var(--fg-dimmer)]">rendering…</div>
-                            ) : isBlog ? (
-                              <iframe src={src} title={t.title} className="w-full h-full border-0 pointer-events-none" sandbox="allow-scripts allow-same-origin" />
-                            ) : (
-                              <video src={src} muted loop autoPlay playsInline className="w-full h-full object-cover" />
-                            )}
-                          </div>
-                          <div className="px-2.5 py-1 text-[9.5px] text-[var(--fg-dimmer)]">click to open · pinned result</div>
-                        </button>
-                      );
-                    }
-                    // A ready/triage card with no assignee will be skipped by the dispatcher forever — flag it.
-                    const isStuck = !t.assignee && (t.status === "ready" || t.status === "triage");
-                    return (
-                      <button
-                        key={t.id}
-                        onClick={() => setSelectedId(t.id)}
-                        className="w-full text-left rounded-lg border bg-[rgba(255,255,255,0.025)] hover:bg-[rgba(255,255,255,0.04)] p-2.5 transition"
-                        style={{
-                          borderColor: isStuck ? "rgba(251,191,36,0.5)" : "var(--panel-border)",
-                          background: isStuck ? "rgba(251,191,36,0.05)" : undefined,
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-1.5">
-                          <div className="text-[12.5px] text-[var(--fg)] leading-snug line-clamp-3">{t.title}</div>
-                        </div>
-                        <div className="mt-1.5 flex items-center justify-between gap-1.5 text-[10px] text-[var(--fg-dimmer)]">
-                          <div className="flex items-center gap-1 truncate">
-                            {t.assignee ? (
-                              <>
-                                <User2 size={9} />
-                                <span className="text-[var(--fg-dim)] truncate">{t.assignee}</span>
-                              </>
-                            ) : isStuck ? (
-                              <span className="flex items-center gap-1 text-amber-300" title="Dispatcher skips ready/triage tasks with no assignee — set one to unstick.">
-                                <AlertTriangle size={9} /> unassigned · stuck
-                              </span>
-                            ) : (
-                              <span className="italic">unassigned</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Clock size={9} />
-                            <span>{fmtAgo(t.created_at)}</span>
-                          </div>
-                        </div>
-                        <div className="mt-0.5 font-[var(--font-geist-mono)] text-[9.5px] text-[var(--fg-dimmer)] truncate">{t.id}</div>
-                      </button>
-                    );
-                  })}
-              </div>
+              <VirtualizedList<KanbanTask>
+                items={tasks}
+                threshold={40}
+                getKey={(t) => t.id}
+                estimateRowHeight={estimateCardHeight}
+                ariaLabel={`Kanban ${col.label} tasks`}
+                className="space-y-2 flex-1 min-h-0"
+                style={{ flex: 1 }}
+                containerTestId={`kanban-column-${col.key}`}
+                rowTestId="kanban-card"
+                emptyContent={
+                  <div className="text-[11px] text-[var(--fg-dimmer)] italic px-1 py-2">empty</div>
+                }
+                renderItem={({ item: t }) => renderTaskCard(t)}
+              />
             </section>
           );
         })}

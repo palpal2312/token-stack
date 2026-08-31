@@ -16,7 +16,7 @@ import { promises as fs } from "node:fs";
 import { execFile } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
-import { herdrStatus, herdrSnapshot, type HerdrAgent, type HerdrWorkspace, type HerdrStatus } from "./herdr";
+import { herdrStatus, herdrSnapshot, herdrSnapshotRead, type HerdrAgent, type HerdrWorkspace, type HerdrStatus } from "./herdr";
 import { readWorkspacePlans, type WorkspacePlan, type PlanReport } from "./plansReader";
 
 export type { WorkspacePlan, PlanReport };
@@ -54,6 +54,12 @@ export interface SenOverview {
   planReports: PlanReport[];
   plansRoots: string[];
   fleet: SenFleet;
+  // Compatibility aliases for Go overview field-level shadow comparison
+  // (goals|tasks|blockers|nextDecisions). Legacy firstmate tasks are not
+  // canonical Goal/Task rows; empty arrays keep presence+type parity.
+  goals: unknown[];
+  blockers: string[];
+  nextDecisions: string[];
 }
 
 // legacy compatibility key: upstream Herdr workspace label remains `firstmate`.
@@ -64,12 +70,25 @@ export function fmHome(): string {
   return process.env.FM_HOME || path.join(os.homedir(), "firstmate");
 }
 
+// The version only changes on `git pull`/commit, so cache it per home for
+// 60s — page loads (/api/sen, /api/sen/knowledge-files) must not each pay a
+// git spawn. Same TTL as the herdrWorkers status cache.
+const VERSION_CACHE_MS = 60_000;
+let versionCache: { home: string; at: number; value: string | null } | null = null;
+
 function gitHomeVersion(home: string): Promise<string | null> {
+  if (versionCache && versionCache.home === home && Date.now() - versionCache.at < VERSION_CACHE_MS) {
+    return Promise.resolve(versionCache.value);
+  }
   return new Promise((resolve) => {
     execFile(
       "git", ["-C", home, "log", "-1", "--format=%h · %cs"],
       { timeout: 5_000, windowsHide: true },
-      (err, stdout) => resolve(err ? null : stdout.trim() || null),
+      (err, stdout) => {
+        const value = err ? null : stdout.trim() || null;
+        versionCache = { home, at: Date.now(), value };
+        resolve(value);
+      },
     );
   });
 }
@@ -151,6 +170,20 @@ export async function readReports(home: string): Promise<ScoutReport[]> {
 
 /** The live fleet: Herdr snapshot filtered to the legacy `firstmate` workspace. */
 export async function readFleet(): Promise<SenFleet> {
+  // Flag-on path (SEN_GO_HERDR_SNAPSHOT_CACHE=1): one daemon-cache read instead
+  // of the status+snapshot double spawn. Flag off is the legacy path, untouched.
+  if (process.env.SEN_GO_HERDR_SNAPSHOT_CACHE === "1") {
+    const read = await herdrSnapshotRead();
+    const status = read.status ?? (await herdrStatus());
+    if (!status.running) return { status, workspace: null, agents: [] };
+    const snap = read.snap;
+    if (!snap.ok || !snap.data) return { status, workspace: null, agents: [] };
+    const workspace = snap.data.workspaces.find((w) => w.label === FLEET_WORKSPACE_LABEL) ?? null;
+    const agents = workspace
+      ? snap.data.panes.filter((p) => p.workspace_id === workspace.workspace_id)
+      : [];
+    return { status, workspace, agents };
+  }
   const status = await herdrStatus();
   if (!status.running) return { status, workspace: null, agents: [] };
   const snap = await herdrSnapshot();
@@ -182,5 +215,8 @@ export async function senOverview(): Promise<SenOverview> {
     planReports: workspacePlans.planReports,
     plansRoots: workspacePlans.roots,
     fleet,
+    goals: [],
+    blockers: [],
+    nextDecisions: [],
   };
 }

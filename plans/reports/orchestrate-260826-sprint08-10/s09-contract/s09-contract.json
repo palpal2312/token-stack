@@ -1,0 +1,14 @@
+{
+  "contract": "s09",
+  "version": 1,
+  "status": "draft",
+  "authority": "orca_receipts_manifests_arbiters",
+  "forbidden_fields": ["prompt", "conversation", "user_story", "source", "diff", "repository", "path", "raw_log", "secret", "token", "credential", "personal_data", "exact_private_identifier"],
+  "records": ["ContributionCandidate", "CommunityKnowledgeSnapshot", "NormalizedIncidentFact", "WorkflowGraph"],
+  "limits": {"max_graph_nodes": 128, "max_graph_depth": 32, "max_loop_iterations": 100},
+  "signing": {"algorithm": "Ed25519", "key_source": "external_allowlisted_registry", "private_key_in_repo": false},
+  "ownership": {"community": "go/internal/localdb/community/**", "controlled_delivery": "src/lib/llmops/workflow.ts", "shared_registration": "palpal2312/admin"},
+  "approval": {"contract_v1": "user_approved", "independent_arbiter": "authorized"},
+  "controls": {"legacy_writer": "disabled", "phase_21": "blocked", "execution_authority": "parent_task"},
+  "gate": {"required": ["consent", "quarantine", "forbidden_field_negative", "dedupe_replay", "signature_expiry_rollback", "graph_bounds", "crash_resume_merge_safety", "current_byte_manifest", "independent_arbiter_go"]}
+}

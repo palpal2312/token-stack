@@ -1,0 +1,32 @@
+{
+  "run_id": "run_1823af570d83",
+  "controller_run": "run_1823af570d83",
+  "status": "active",
+  "started_at": "2026-08-26T19:43:13Z",
+  "timebox_hours": 72,
+  "coordinator": "term_74752b8a-124d-430a-a33b-7e5d0f16223c",
+  "execution_strategy": "close-sprint-08-then-sprint-09-10-then-final-sprint-11",
+  "physical_writer_target": 1,
+  "logical_lanes": 5,
+  "sprints": {
+    "08": {
+      "status": "closed_with_arbiter_go",
+      "arbiter_receipt": "plans/reports/orchestrate-260826-sprint08-10/integration/s08-close-arbiter-verdict.md",
+      "closed_at": "2026-08-27T17:12:21+07:00"
+    },
+    "09": {
+      "status": "active",
+      "contract_draft": "plans/reports/orchestrate-260826-sprint08-10/s09-contract/s09-contract.md",
+      "contract_machine": "plans/reports/orchestrate-260826-sprint08-10/s09-contract/s09-contract.json",
+      "contract_arbiter_receipt": "plans/reports/orchestrate-260826-sprint08-10/s09-contract/s09-contract-current-v1-arbiter.md",
+      "contract_arbiter_sha256": "e6befcfcB0f29d41876ece173acf27399c7e38e670650f445cc91ab3d2be84f6",
+      "integration_owner": "palpal2312/admin"
+    },
+    "10": { "status": "gated" },
+    "11": { "status": "planned_after_08_10" }
+  },
+  "master": { "terminal": "term_74752b8a-124d-430a-a33b-7e5d0f16223c", "scope": "coordination-only" },
+  "phase_21": "blocked",
+  "legacy_writer": "disabled",
+  "authority": "orca_receipts_manifests_arbiters"
+}

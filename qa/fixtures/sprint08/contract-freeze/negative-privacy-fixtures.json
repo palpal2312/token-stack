@@ -1,0 +1,46 @@
+{
+  "fixtureSet": "news-os.sprint08.contract-freeze.negative-privacy",
+  "version": "1.0.0",
+  "policyRevision": "privacy-1.0.0",
+  "expectedDisposition": "reject",
+  "validationRules": {
+    "recursive": true,
+    "rejectUnknownFields": true,
+    "normalizeFieldNamesForDetection": true,
+    "neverEchoRejectedValue": true,
+    "targets": ["ContributionCandidate", "CommunityKnowledgeSnapshot"]
+  },
+  "requiredSafeControlFields": [
+    "schemaVersion",
+    "recordId",
+    "idempotencyKey",
+    "createdAt",
+    "provenance",
+    "redactionClass",
+    "policyRevision"
+  ],
+  "cases": [
+    {"id":"PF-001","class":"prompt-content","field":"prompt","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-002","class":"conversation-content","field":"conversation.messages[0].content","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-003","class":"user-story-content","field":"user_story","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-004","class":"source-code","field":"sourceCode","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-005","class":"diff-patch","field":"patch.diff","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-006","class":"repository-identity","field":"repository.remoteUrl","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-007","class":"project-identity","field":"project_slug","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-008","class":"filesystem-path","field":"metadata.file-path","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-009","class":"raw-terminal-output","field":"terminal.rawOutput","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-010","class":"raw-log-output","field":"logs[0].message","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-011","class":"secret","field":"clientSecret","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-012","class":"credential","field":"credentials.password","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-013","class":"token","field":"access_token","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-014","class":"capability-material","field":"dispatchCapability","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-015","class":"personal-data","field":"person.email","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-016","class":"exact-private-identifier","field":"metadata.terminalId","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-017","class":"unknown-field","field":"unexpected","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"},
+    {"id":"PF-018","class":"missing-version","omit":"schemaVersion","expectedError":"CONTRACT_VERSION_UNSUPPORTED"},
+    {"id":"PF-019","class":"missing-idempotency","omit":"idempotencyKey","expectedError":"IDEMPOTENCY_CONFLICT"},
+    {"id":"PF-020","class":"missing-provenance","omit":"provenance","expectedError":"PROVENANCE_INVALID"},
+    {"id":"PF-021","class":"private-provenance-identifier","field":"provenance.sourceRecordIds[0].repositoryId","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"PROVENANCE_INVALID"},
+    {"id":"PF-022","class":"nested-case-alias","field":"metrics.Items[0].AUTH-TOKEN","sample":"[REDACTED_FIXTURE_VALUE]","expectedError":"FORBIDDEN_FIELD"}
+  ]
+}

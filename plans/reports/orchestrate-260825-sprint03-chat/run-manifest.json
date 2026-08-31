@@ -1,0 +1,17 @@
+{
+  "run_id": "run_9e31ed9e73d5",
+  "controller_run": "orchestrate-260825-sprint03-chat",
+  "status": "closed_go",
+  "started_at": "2026-08-25T09:32:55Z",
+  "timebox_hours": 48,
+  "coordinator": "term_7e8e6405-780a-4661-8acb-08e68b9877be",
+  "lanes": {
+    "1": {"task":"task_8d5a1e09fc94","dispatch":"ctx_cad0af4c5a18","agent":"Cursor fallback","terminal":"term_122c7504-3667-4965-8df6-0eec889b2115","primary_failure":"Claude 429 No active subscription; fenced before fallback"},
+    "2": {"task":"task_13cb3ef74851","dispatch":"ctx_ce34449df62b","agent":"Cursor final fallback","terminal":"term_6137f671-d3d5-46ea-a468-cdaf36a3bc26","status":"completed","receipt":"s03-l2-final-receipt.md","primary_failure":"Antigravity connection refused, Pi hooks failed, prior Cursor shell waits fenced before final fallback"},
+    "3": {"task":"task_3107211e719e","dispatch":"ctx_a15fb0a6a122","agent":"Kimi follow-up","terminal":"term_e9dd1e5c-8d8e-41e4-8923-8488013f6435","status":"completed","evidence":"14/14 boundary; 3/3 event; runbook"}
+  },
+  "master": {"terminal":"term_7e8e6405-780a-4661-8acb-08e68b9877be","scope":"coordination-only"},
+  "phase_20":"open",
+  "phase_21":"blocked",
+  "next_action":"Release controller lease; retain Phase 20 gates; do not promote Phase 21"
+}

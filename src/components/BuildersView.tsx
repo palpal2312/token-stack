@@ -154,7 +154,7 @@ function extractRouterName(notes: string, env?: Record<string, string>): string 
   }
   if (env) {
     const url = Object.values(env).find((v) => typeof v === "string" && v.includes("http"));
-    if (url?.includes("5173") || url?.includes("8080") || url?.includes("sub2api")) return "Sub2API";
+    if (url?.includes("9284") || url?.includes("5173") || url?.includes("8080") || url?.includes("sub2api")) return "Sub2API";
     if (url?.includes("sakana")) return "Fugu";
     if (url?.includes("trollllm")) return "Troll API";
   }

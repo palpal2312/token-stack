@@ -15,6 +15,7 @@ import {
   executeGovernedBuilder,
   type GovernedBuilderExecutionOptions,
 } from "../builder-execution";
+import { goApiAuthHeaders } from "@/lib/goApiProxy";
 
 test("Builder execution parity: Go authority availability check", async () => {
   // This test verifies the feature flag routing, not live execution.
@@ -31,10 +32,13 @@ test("Builder execution parity: Go authority availability check", async () => {
     return;
   }
 
-  // If Go authority is enabled, verify daemon is reachable
+  // If Go authority is enabled, verify daemon is reachable. The daemon guards
+  // /health with the same token + nonce as sen-api, so probe with the shared
+  // credential (empty when unconfigured — the probe then correctly fails).
   const daemonUrl = process.env.SEN_DAEMON_URL ?? "http://127.0.0.1:3738";
   try {
     const res = await fetch(`${daemonUrl}/health`, {
+      headers: { ...(await goApiAuthHeaders()) },
       signal: AbortSignal.timeout(2000),
     });
     assert.equal(res.ok, true);

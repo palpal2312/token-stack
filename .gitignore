@@ -60,3 +60,4 @@ qa-build.log
 
 # editor/IDE
 repomix-output.xml
+.repo_memory/

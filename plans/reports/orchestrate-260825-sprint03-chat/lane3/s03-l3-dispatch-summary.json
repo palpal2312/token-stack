@@ -1,0 +1,45 @@
+{
+  "taskId": "task_3107211e719e",
+  "dispatchId": "ctx_a15fb0a6a122",
+  "lane": 3,
+  "sprint": "orchestrate-260825-sprint03-chat",
+  "closedAt": "2026-08-25",
+  "supersedes": "s03-l3-dispatch-summary.json from task_836bf292fbc2 (S03-L3-001)",
+  "completed": ["S03-L3-001", "S03-L3-002", "S03-L3-003", "S03-L3-004"],
+  "results": {
+    "S03-L3-001": {"cellsRunnable": 7, "cellsPassed": 7, "pendingLane1": ["FI-04", "FI-05", "FI-10"], "sprint02DebtClosed": true},
+    "S03-L3-002": {"checks": 14, "passed": 14, "failed": 0, "filesScanned": 147, "BA-01": "resolved: Lane 2 scrubbed persisted dispatch capability; rerun clean"},
+    "S03-L3-003": {"scenarios": 3, "passed": 3, "exercisesRealLane2Functions": true, "tailMergeP50Ms": 0.49, "coldMerge50kP50Ms": 10.55},
+    "S03-L3-004": {"runbookSection": "Durable-chat recovery and evidence hygiene (Sprint 03)", "rules": 4}
+  },
+  "artifacts": {
+    "fixtures": [
+      "qa/fixtures/sprint03/chat-contract.json",
+      "qa/fixtures/sprint03/recovery-matrix.json",
+      "qa/fixtures/sprint03/failure-inject.py",
+      "qa/fixtures/sprint03/sqlite-inspect.py",
+      "qa/fixtures/sprint03/boundary-audit.py",
+      "qa/fixtures/sprint03/event-evidence-runner.ts"
+    ],
+    "reports": [
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-001-recovery-matrix.md",
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-002-boundary-audit.md",
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-003-event-evidence.md",
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-004-runbook-handoff.md",
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-001-failure-inject-evidence.json",
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-001-inspect-community-queue.json",
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-001-inspect-sen-product.json",
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-002-boundary-audit-evidence.json",
+      "plans/reports/orchestrate-260825-sprint03-chat/lane3/s03-l3-003-event-evidence.json"
+    ],
+    "runbook": "docs/orchestration-runbook.md"
+  },
+  "pendingLane1": [
+    "re-point matrix cells FI-01..03/06/08/09 at the canonical Lane 1 chat store when the schema lands",
+    "FI-10 runtime probe (canonical-store-unavailable fail-closed) needs a configured listener",
+    "FI-04/FI-05 fixture-verified against real Lane 2 functions; re-confirm on canonical event stream"
+  ],
+  "commits": 0,
+  "lane1Lane2FilesModified": 0,
+  "verificationCommandsAllExitZero": true
+}
