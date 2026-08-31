@@ -16,30 +16,7 @@ import (
 	"unicode/utf8"
 )
 
-const (
-	// ObservationContractVersion pins this typed observation surface.
-	ObservationContractVersion = 1
-
-	maxIDLen         = 128
-	maxDiagnosticLen = 200
-)
-
-// Decision is the pure classification of an Observation before store I/O.
-type Decision string
-
-const (
-	DecisionObserveOnly  Decision = "observe_only"
-	DecisionClaim        Decision = "claim"
-	DecisionReattach     Decision = "reattach"
-	DecisionQuarantine   Decision = "quarantine"
-	DecisionReconnect    Decision = "reconnecting"
-)
-
-// ClassifyInput is optional durable context for pure classification.
-type ClassifyInput struct {
-	KnownDispatch bool
-	Persisted     bool // true when a row already exists for DispatchID
-}
+const maxIDLen = 128
 
 // ValidateObservation enforces the typed observation contract.
 // Observe-only may omit IDs; mutating paths require full identity.
@@ -48,9 +25,6 @@ func ValidateObservation(obs Observation) error {
 		return errors.New("output_cursor must be >= 0")
 	}
 	if obs.ObserveOnly {
-		if obs.DiagnosticOverflow() {
-			return errors.New("diagnostic too long")
-		}
 		return nil
 	}
 	if err := requireID("run_id", obs.RunID); err != nil {
@@ -77,32 +51,6 @@ func ValidateObservation(obs Observation) error {
 		return errors.New("invalid process_incarnation")
 	}
 	return nil
-}
-
-// Classify returns the pre-I/O decision for an Observation.
-func Classify(obs Observation, in ClassifyInput) (Decision, Phase, error) {
-	if err := ValidateObservation(obs); err != nil {
-		return "", "", err
-	}
-	if obs.ObserveOnly {
-		return DecisionObserveOnly, PhaseObserveOnly, nil
-	}
-	if obs.CapabilityRevoked {
-		return DecisionQuarantine, PhaseQuarantined, nil
-	}
-	if in.Persisted {
-		return DecisionReattach, PhaseReattaching, nil
-	}
-	if in.KnownDispatch && !in.Persisted {
-		// Runtime knows a dispatch id but durable row is missing — reconnect.
-		return DecisionReconnect, PhaseReconnecting, nil
-	}
-	return DecisionClaim, PhaseSteady, nil
-}
-
-// DiagnosticOverflow is reserved for future observation diagnostic fields.
-func (obs Observation) DiagnosticOverflow() bool {
-	return false
 }
 
 func requireID(name, v string) error {

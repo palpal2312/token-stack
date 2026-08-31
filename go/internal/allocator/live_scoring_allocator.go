@@ -57,7 +57,6 @@ const (
 	ReasonNoCapacity      ReasonCode = "no_capacity"
 	ReasonNoMatch         ReasonCode = "no_match"
 	ReasonScoreTooLow     ReasonCode = "score_too_low"
-	ReasonAlreadyAssigned ReasonCode = "already_assigned"
 	ReasonAdvisoryOnly    ReasonCode = "advisory_only"
 )
 
