@@ -416,6 +416,7 @@ export function createViewSessionStore(options: ViewSessionStoreOptions = {}): V
     } catch {
       /* view prefs are disposable */
     }
+    emit();
   };
 
   const find = (tabId: string): ViewSession | undefined => current.tabs.find((t) => t.id === tabId);
