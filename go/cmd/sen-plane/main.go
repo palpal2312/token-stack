@@ -1,77 +1,34 @@
 // sen-plane: the Go control-plane daemon serving the surface the Next.js
-// proxies already call. Sprint 12 phase 1 wires ONE vertical path:
-// src/app/api/herdr/slots -> go-builder-exec-client -> GET /api/v1/runtime/slots.
+// proxies already call. Sprint 13 phase 1 replaces the memory slot seed with
+// the durable orca store: /api/v1/runtime/slots and /api/v1/runtime/attempts
+// are projected live from orca_dispatches / orca_terminal_cursors rows.
 //
-// Loopback-only bind; the safe-field DTO mirrors src/lib/agentRuntime/orca-slot-client.
+// Loopback-only bind; safe-field DTOs mirror src/lib/agentRuntime/orca-slot-client
+// and go-builder-exec-client. The store opens fail-closed at startup — a store
+// that cannot open/migrate is a daemon that does not start.
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
+
+	"agentic-os/internal/orca"
 )
 
-const slotDTOVersion = 1
-
-// SlotDTO is the wire shape parseRuntimeSlots expects (safe fields only —
-// no secrets, tokens, commands, or private paths ever leave the daemon).
-// Mirror of go/internal/orcaslots (planned).
-type SlotDTO struct {
-	SlotID         string  `json:"slot_id"`
-	State          string  `json:"state"`
-	Capacity       int     `json:"capacity"`
-	InFlight       int     `json:"in_flight"`
-	BuilderLabel   *string `json:"builder_label"`
-	AttemptRef     *string `json:"attempt_ref"`
-	LastObservedAt string  `json:"last_observed_at"`
-	Reason         *string `json:"reason"`
-}
-
-type RuntimeSlotsDTO struct {
-	DTOVersion int       `json:"dto_version"`
-	LabEnabled bool      `json:"lab_enabled"`
-	Slots      []SlotDTO `json:"slots"`
-}
-
-// SlotSource is the seam for enumerating runtime slots. Phase 1 supplies a
-// wiring seed so the vertical path round-trips end-to-end.
-// ponytail: memory source; production projection from internal/orca dispatch
-// + internal/reconcile slots arrives in a later phase.
-type SlotSource interface {
-	Slots() ([]SlotDTO, error)
-}
-
-type memorySlotSource struct{}
-
-func (memorySlotSource) Slots() ([]SlotDTO, error) {
-	id := "sen-plane-1"
-	label := "sen-plane (phase-1 seed)"
-	observed := time.Now().UTC().Format(time.RFC3339)
-	return []SlotDTO{{
-		SlotID:         id,
-		State:          "free",
-		Capacity:       1,
-		InFlight:       0,
-		BuilderLabel:   &label,
-		AttemptRef:     nil,
-		LastObservedAt: observed,
-		Reason:         nil,
-	}}, nil
-}
-
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("cache-control", "no-store")
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
-}
+// SlotDTO and RuntimeSlotsDTO are the wire shapes parseRuntimeSlots expects.
+// Reused from internal/orca (the Lane 1 DTO owner) — not duplicated here.
+type SlotDTO = orca.Slot
+type RuntimeSlotsDTO = orca.RuntimeSlots
 
 // RuntimeAttemptDTO mirrors the GoRuntimeAttempt validator in
-// go-builder-exec-client. Phase 1b returns an empty list (no dispatch store
-// wired yet); each item shape exists so parsers stay honest when filled later.
+// go-builder-exec-client. Safe fields only — no secrets, tokens, or commands.
 type RuntimeAttemptDTO struct {
 	AttemptID        string `json:"attempt_id"`
 	TaskID           string `json:"task_id"`
@@ -90,16 +47,119 @@ type RuntimeProjectionDTO struct {
 }
 
 type CodeSpaceSummaryDTO struct {
-	ProjectionVersion string        `json:"projection_version"`
-	Summaries         []struct{}    `json:"summaries"`
+	ProjectionVersion string     `json:"projection_version"`
+	Summaries         []struct{} `json:"summaries"`
 }
 
 type ExecutionPreferenceDTO struct {
-	WorkspaceID     string `json:"workspace_id"`
-	RequestedMode   string `json:"requested_mode"`
-	EffectiveMode   string `json:"effective_mode"`
+	WorkspaceID      string `json:"workspace_id"`
+	RequestedMode    string `json:"requested_mode"`
+	EffectiveMode    string `json:"effective_mode"`
 	ResolutionReason string `json:"resolution_reason"`
-	UpdatedAt       string `json:"updated_at,omitempty"`
+	UpdatedAt        string `json:"updated_at,omitempty"`
+}
+
+// ProjectionSource is the live read seam for orca-backed projections.
+type ProjectionSource interface {
+	Slots() ([]orca.Slot, error)
+	Attempts() ([]RuntimeAttemptDTO, error)
+}
+
+// storeSource projects slots/attempts straight from the durable orca store.
+type storeSource struct {
+	store *orca.Store
+}
+
+// Slots projects one slot per active dispatch row (dispatched/running).
+func (s *storeSource) Slots() ([]orca.Slot, error) {
+	rows, err := s.store.DB().QueryContext(context.Background(), `
+		SELECT dispatch_id, terminal_handle, status, updated_at
+		FROM orca_dispatches
+		WHERE status IN ('dispatched', 'running')
+		ORDER BY updated_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []orca.Slot{} // non-nil so an empty store marshals to []
+	for rows.Next() {
+		var dispatchID, terminal, status, stamp string
+		if err := rows.Scan(&dispatchID, &terminal, &status, &stamp); err != nil {
+			return nil, err
+		}
+		attemptRef := dispatchID
+		out = append(out, orca.Slot{
+			SlotID:         dispatchID,
+			State:          slotStateFor(status),
+			Capacity:       1,
+			InFlight:       1,
+			BuilderLabel:   nil,
+			AttemptRef:     &attemptRef,
+			LastObservedAt: stamp,
+			Reason:         nil,
+		})
+	}
+	return out, rows.Err()
+}
+
+// Attempts projects one RuntimeAttemptDTO per dispatch row.
+func (s *storeSource) Attempts() ([]RuntimeAttemptDTO, error) {
+	rows, err := s.store.DB().QueryContext(context.Background(), `
+		SELECT dispatch_id, task_id, terminal_handle, status, reattach_count,
+			created_at, updated_at, COALESCE(completed_at, updated_at)
+		FROM orca_dispatches
+		ORDER BY updated_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []RuntimeAttemptDTO{} // non-nil so an empty store marshals to []
+	for rows.Next() {
+		var attemptID, taskID, terminal, status, attachedAt, heartbeatAt, terminalAt string
+		var reattach int
+		if err := rows.Scan(&attemptID, &taskID, &terminal, &status, &reattach,
+			&attachedAt, &heartbeatAt, &terminalAt); err != nil {
+			return nil, err
+		}
+		out = append(out, RuntimeAttemptDTO{
+			AttemptID:        attemptID,
+			TaskID:           taskID,
+			BuilderID:        terminal, // ponytail: orca_dispatches has no builder_id column; terminal handle stands in until one lands
+			PaneID:           terminal,
+			Status:           attemptStatusFor(status),
+			LeaseGeneration:  reattach + 1, // always >= 1, matching the GoRuntimeAttempt validator
+			AttachedAt:       attachedAt,
+			LastHeartbeatAt:  heartbeatAt,
+			TerminalAt:       terminalAt,
+		})
+	}
+	return out, rows.Err()
+}
+
+func slotStateFor(status string) orca.SlotState {
+	switch orca.DispatchStatus(status) {
+	case orca.StatusRunning:
+		return orca.SlotRunning
+	case orca.StatusDispatched:
+		return orca.SlotLaunching
+	}
+	return orca.SlotReserved
+}
+
+func attemptStatusFor(status string) string {
+	switch orca.DispatchStatus(status) {
+	case orca.StatusDispatched:
+		return "pending"
+	case orca.StatusRunning:
+		return "attached"
+	case orca.StatusSucceeded:
+		return "completed"
+	case orca.StatusFailed:
+		return "failed"
+	case orca.StatusQuarantined, orca.StatusFenced:
+		return "cancelled"
+	}
+	return "pending"
 }
 
 // preferenceFor returns a valid-by-parse default preference for a workspace.
@@ -113,26 +173,41 @@ func preferenceFor(workspaceID string, now time.Time) ExecutionPreferenceDTO {
 	}
 }
 
-// NewHandler assembles the reduced control-plane routes (phase 1 + 1b).
-func NewHandler(slots SlotSource) http.Handler {
+func writeJSON(w http.ResponseWriter, code int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("cache-control", "no-store")
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(v)
+}
+
+// NewHandler assembles the control-plane routes. Every read fails closed:
+// a projection error is a 503, never a partial/empty success.
+func NewHandler(src ProjectionSource) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	mux.HandleFunc("GET /api/v1/runtime/slots", func(w http.ResponseWriter, _ *http.Request) {
-		ss, err := slots.Slots()
+		ss, err := src.Slots()
 		if err != nil {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "slot_source_unavailable"})
 			return
 		}
-		writeJSON(w, http.StatusOK, RuntimeSlotsDTO{
-			DTOVersion: slotDTOVersion,
-			LabEnabled: true,
-			Slots:      ss,
-		})
+		if ss == nil {
+			ss = []orca.Slot{}
+		}
+		writeJSON(w, http.StatusOK, RuntimeSlotsDTO{DTOVersion: orca.DTOVersion, LabEnabled: true, Slots: ss})
 	})
 	mux.HandleFunc("GET /api/v1/runtime/attempts", func(w http.ResponseWriter, _ *http.Request) {
-		writeJSON(w, http.StatusOK, RuntimeProjectionDTO{ProjectionVersion: "v1", Attempts: []RuntimeAttemptDTO{}})
+		attempts, err := src.Attempts()
+		if err != nil {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "attempt_projection_unavailable"})
+			return
+		}
+		if attempts == nil {
+			attempts = []RuntimeAttemptDTO{}
+		}
+		writeJSON(w, http.StatusOK, RuntimeProjectionDTO{ProjectionVersion: "v1", Attempts: attempts})
 	})
 	mux.HandleFunc("GET /api/v1/codespace/summary", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, CodeSpaceSummaryDTO{ProjectionVersion: "v1", Summaries: []struct{}{}})
@@ -147,13 +222,33 @@ func NewHandler(slots SlotSource) http.Handler {
 			return
 		}
 		// No durable store yet: reflect with an explicit reason, keep 200 so the
-		// write path round-trips. ponytail: persistence arrives with the orca store phase.
+		// write path round-trips. ponytail: persistence arrives with a durable
+		// preferences store — not a goal this sprint.
 		body.WorkspaceID = r.PathValue("workspaceId")
 		body.ResolutionReason = "accepted-no-durable-store (phase-1b seed)"
 		body.UpdatedAt = time.Now().UTC().Format(time.RFC3339)
 		writeJSON(w, http.StatusOK, body)
 	})
 	return mux
+}
+
+// storeRoot resolves where the orca store opens. SEN_PLANE_STORE_DIR wins, then
+// AGENTIC_OS_HOME, then %LOCALAPPDATA%\NEWSOS\sen-plane\store.
+func storeRoot() (string, error) {
+	if dir := os.Getenv("SEN_PLANE_STORE_DIR"); dir != "" {
+		return dir, nil
+	}
+	if home := os.Getenv("AGENTIC_OS_HOME"); home != "" {
+		return filepath.Join(home, "sen-plane", "store"), nil
+	}
+	if local := os.Getenv("LOCALAPPDATA"); local != "" {
+		return filepath.Join(local, "NEWSOS", "sen-plane", "store"), nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return "", errors.New("no store root: set SEN_PLANE_STORE_DIR or AGENTIC_OS_HOME")
+	}
+	return filepath.Join(home, ".local", "share", "NEWSOS", "sen-plane", "store"), nil
 }
 
 func main() {
@@ -166,12 +261,25 @@ func main() {
 		slog.Error("sen-plane must bind a loopback address", "addr", addr)
 		os.Exit(2)
 	}
+
+	root, err := storeRoot()
+	if err != nil {
+		slog.Error("sen-plane cannot resolve a store root; failing closed", "error", err)
+		os.Exit(2)
+	}
+	store, err := orca.Open(context.Background(), root)
+	if err != nil {
+		slog.Error("sen-plane failed closed: cannot open orca store (no memory fallback)", "root", root, "error", err)
+		os.Exit(2)
+	}
+	defer store.Close()
+
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           NewHandler(memorySlotSource{}),
+		Handler:           NewHandler(&storeSource{store: store}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
-	slog.Info("sen-plane listening", "addr", addr)
+	slog.Info("sen-plane listening", "addr", addr, "store_root", root)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		slog.Error("sen-plane failed", "error", err)
 		os.Exit(1)
