@@ -2,11 +2,11 @@
 
 ## Status
 
-**PARTIAL.** Flag plumbing and shell store slice verified; live page smoke
-blocked by the dev toolchain in this environment. The desktop shell v2 remains
-**OFF by default** (`DESKTOP_SHELL_V2` unset) and the production default stays
-byte-equivalent to the legacy shell. No release/cutover; `legacy_writer:
-disabled`, `phase_21: blocked` preserved.
+**DONE.** Flag plumbing, shell store slice, AND live page smoke verified via a
+production build (`next build` + `next start`; see "Smoke (production build)"
+below). The desktop shell v2 remains **OFF by default** (`DESKTOP_SHELL_V2`
+unset) and the production default stays byte-equivalent to the legacy shell. No
+release/cutover; `legacy_writer: disabled`, `phase_21: blocked` preserved.
 
 ## Done (merged to master `b2c0daf`)
 
@@ -26,19 +26,33 @@ disabled`, `phase_21: blocked` preserved.
 | SSR binding (getServerSnapshot present) | fixed |
 | S10 regression | 33/33 pass (post-merge, unaffected) |
 
-## Blocked — live page smoke (infra)
+## Smoke (production build) — PASSED
 
 `npx next dev` on this Windows host panics in Turbopack while compiling
-`src/app/globals.css`: the CSS transform worker subprocess exits
-`0xc0000142` (STATUS_DLL_INIT_FAILED) before connect — an environment /
-toolchain worker-spawn failure, not a product-code finding. Second attempt
-hung with no HTTP response. Evidence of this limitation is retained.
+`src/app/globals.css` (CSS worker subprocess exits `0xc0000142`). The working
+toolchain is the **production build with sandbox off**: `next build`
+(AGENTIC_OS_NEXT_DIST_DIR=.next-qa-build) compiled successfully in ~31s and
+type-checks. Two build-health fixes landed for this: `settings/page.tsx`
+empty snapshot now satisfies `EffectiveConfigExplanationDTO` (`restartFields`,
+`requiresRestart`, `capabilityDigest`), and `llmops/redaction.ts` re-exports
+`RedactionClass` (commit `d39224c`).
+
+Live probes via `next start`:
+
+| Probe | Result |
+|---|---|
+| flag OFF: `/` | 307 → `/sen?tab=mission` (legacy landing, 200) |
+| flag OFF: `/settings` | contains `Settings are unavailable while the desktop shell flag is off` |
+| flag ON (`DESKTOP_SHELL_V2=1`): `/settings` | 200, placeholder count 0, `Schema …workspace.runtime` header rendered — `SchemaSettingsView` (desktop-shell branch) mounts |
+
+Difference is the flag itself: OFF ⇒ the placeholder surface (production
+default byte-equivalent to legacy), ON ⇒ the shell-flagged surface exercises
+the slice with the honest empty read-path snapshot.
 
 ## Next action
 
-Run the page smoke on a working toolchain (webpack build, another machine, or a
-fixed Turbopack worker) to capture: default-off `/` renders the legacy shell
-(200), and `DESKTOP_SHELL_V2=1` mounts `DesktopShell` — before any claim of the
-ON-branch slice. Unit-level slice evidence is complete without it.
+S11 close gate (Phase 4): dispatch an independent S11 arbiter to review the
+smoke evidence, chain, and receipt; GO authorizes `CLOSED_GO` for S11. No
+release/cutover anywhere; Phase 12 remains separately gated.
 
-JOB_DONE: S11 Phase 3 partial — flag + SSR plumbing verified; live smoke deferred to a working toolchain.
+JOB_DONE: S11 Phase 3 complete — flag/SSR verified, live smoke passed via production build; close-gate arbitration next.
