@@ -31,7 +31,7 @@ granted by this inventory.
 
 - [ ] Live, reachable staging/production-equivalent environment distinct from
       any controlled evidence checkout.
-- [ ] New plan + budget approved by the owner for the cutover run.
+- [x] New plan + budget approved by the owner (2026-08-31; ops-prep §2, readiness record `plans/reports/s12-phase12-readiness-260831.md`).
 - [ ] Active controller lease (now unblocked: `scripts/controller-failover.ps1`
       restored, `88c1dc3`; scheduled-task watchdog reinstalled and enabled).
 - [ ] Inventory of the legacy canonical write surface (writer/gate paths that
