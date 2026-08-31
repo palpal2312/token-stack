@@ -11,7 +11,7 @@ test("mutators notify subscribers (emit regression)", () => {
   let calls = 0;
   store.subscribe(() => void calls++);
 
-  const tab = store.open({ moduleId: "sen", url: "/" });
+  const tab = store.open({ moduleId: "sen", url: "/", titleToken: "t" });
   store.activate(tab.id);
   store.pin(tab.id);
   store.unpin(tab.id);
@@ -23,7 +23,7 @@ test("mutators notify subscribers (emit regression)", () => {
 test("memory storage round-trips persisted view-state", () => {
   const storage = createMemoryViewSessionStorage();
   const store = createViewSessionStore({ workspaceId: "w-test-persist", storage });
-  const tab = store.open({ moduleId: "sen", url: "/a" });
+  const tab = store.open({ moduleId: "sen", url: "/a", titleToken: "t" });
   const persisted = store.persisted();
   assert.equal(persisted.activeTabId, tab.id);
   assert.ok(persisted.tabs.some((t) => t.id === tab.id));

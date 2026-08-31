@@ -11,7 +11,9 @@
 export const DESKTOP_SHELL_V2 = "desktop_shell_v2" as const;
 
 /** Truthy when the env flag is exactly `1` or `true` (case-insensitive). */
-export function desktopShellV2Enabled(env = process.env): boolean {
+export function desktopShellV2Enabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
   const v = env.DESKTOP_SHELL_V2;
   if (!v) return false;
   return v === "1" || v.toLowerCase() === "true";

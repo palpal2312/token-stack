@@ -4,12 +4,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 
-type Record = { record_id: string; predicted_elapsed_ms: number; observed_elapsed_ms: number };
+type RunRecord = { record_id: string; predicted_elapsed_ms: number; observed_elapsed_ms: number };
 type Fixture = {
   fixture_id: string;
   cohort_id: string;
   provenance: Record<string, string>;
-  records: Record[];
+  records: RunRecord[];
   recovery_checkpoint: { phase: string; completed_metric_names: string[]; remaining_metric_names: string[] };
   unavailable_cohort: { cohort_id: string; reason: string };
 };
