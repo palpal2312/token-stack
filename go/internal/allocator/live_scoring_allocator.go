@@ -153,6 +153,9 @@ type LiveScoringAllocator struct {
 	eventSink AllocatorEventSink
 	decisions []AllocationDecision
 	feedback  []FeedbackOutcome
+	// Dedupes feedback by attempt identity so duplicate ingest cannot double-apply
+	// the EMA, double-decrement active count, or skew the feedback log.
+	seenAttempts map[string]struct{}
 	minScore  float64 // minimum score threshold to accept
 }
 
@@ -168,12 +171,13 @@ func NewLiveScoringAllocator(
 		scorer = DefaultScoringFunc
 	}
 	return &LiveScoringAllocator{
-		store:     store,
-		builders:  make(map[string]*Builder),
-		mode:      mode,
-		scorer:    scorer,
-		eventSink: sink,
-		minScore:  minScore,
+		store:        store,
+		builders:     make(map[string]*Builder),
+		mode:         mode,
+		scorer:       scorer,
+		eventSink:    sink,
+		minScore:     minScore,
+		seenAttempts: make(map[string]struct{}),
 	}
 }
 
@@ -317,6 +321,12 @@ func (a *LiveScoringAllocator) RecordFeedback(outcome FeedbackOutcome) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
+	if outcome.AttemptID != "" {
+		if _, seen := a.seenAttempts[outcome.AttemptID]; seen {
+			return nil // duplicate ingest; do not re-apply the EMA or decrement twice
+		}
+		a.seenAttempts[outcome.AttemptID] = struct{}{}
+	}
 	a.feedback = append(a.feedback, outcome)
 
 	b, ok := a.builders[outcome.BuilderID]
