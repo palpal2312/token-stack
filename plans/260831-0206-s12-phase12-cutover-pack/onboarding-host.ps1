@@ -20,7 +20,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$expectedCommit = 'f9526de'              # pinned master byte set (runbook preflight / readiness)
+$expectedCommit = 'b50f519'              # pinned master byte set (runbook preflight / readiness)
 $requiredNodeMajor = 24                  # project runtime (matches the owner's verified node build)
 
 function Test-Probe {
