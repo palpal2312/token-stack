@@ -66,3 +66,28 @@ This is the durable, evidence-backed memory for Lead Orchestrators. It stores re
 - Keep volatile handles, timestamps and per-run counters in run state/handoffs, not this file.
 - Never record credentials, raw prompts, private project content, personal data or terminal transcripts.
 - At sprint close, update `Current checkpoint`, link the new retrospective, and add only the few lessons that change future controller behavior.
+
+## S11 checkpoint and lessons (2026-08-31)
+
+Checkpoint: S10 CLOSED_GO (S10 chain, `legacy_writer: disabled`, `phase_21:
+blocked`) then S11 CLOSED_GO on independent GO (`plans/reports/s11-CLOSED_GO-record.md`,
+master `4876a49`). Rewrite-baseline (go control plane, desktop-shell v2 flag,
+web refactor) merged to master after 17-topic split + phase-1 fixes + two-lens
+pre-merge audit. Desktop shell v2 stays OFF by default; enablement is a separate
+deploy gate.
+
+Lessons that change future behavior:
+- **Live smoke toolchain**: `npx next dev` panics in Turbopack here compiling
+  CSS (worker exit 0xc0000142). Use `next build` (sandbox off) + `next start`
+  for page smoke; verify flag branches via a discriminating page (`/settings`
+  placeholder vs `Schema …` render).
+- **Flag-gated surfaces**: keep default OFF; only env `…=1`/`true` flips; demo
+  data must be gated behind `AGENTIC_OS_ALLOW_TEST_FIXTURE=1` + `NODE_ENV!==production`
+  and a real empty read-path default instead of fabricated values.
+- **Merge hygiene**: exclude `plans/reports/orchestrate-*/` runtime state
+  (`jobs.yaml`, `state.json`, `controller-failover.json`, `orchestrate-history.jsonl`,
+  `*prompt.txt`), `_tmp-*` and `*.before-recovery.bin` from product branches —
+  transient + machine-local paths, never release content.
+- **Close pattern**: CLOSED_GO record + independent fresh-session arbiter on
+  committed bytes; Finalize stays gated by the controller-failover state
+  machine (watchdog disabled; reinstall before any live run).
