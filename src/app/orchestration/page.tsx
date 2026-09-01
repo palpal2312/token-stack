@@ -91,7 +91,18 @@ const fmtFull = (time?: string): string => {
 };
 
 /** One tab rendered as a full lane-style card: title, status, memo, counters. */
-function TabCard({ sub, notes }: { sub: LiveSubLane; notes: MasterNote[] }) {
+function TabCard({
+  sub,
+  notes,
+  pinned,
+  onTogglePin,
+}: {
+  sub: LiveSubLane;
+  notes: MasterNote[];
+  /** Manual pin (user) or auto main (server) — sticky first on the row. */
+  pinned: "manual" | "auto" | null;
+  onTogglePin: () => void;
+}) {
   // WORKING = dispatch running on this tab; ACTIVE = tab open; IDLE = closed.
   const status =
     sub.task && (sub.task.status === "running" || sub.task.status === "ready")
@@ -108,22 +119,36 @@ function TabCard({ sub, notes }: { sub: LiveSubLane; notes: MasterNote[] }) {
   return (
     <div
       className={`w-72 shrink-0 rounded border bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3 ${
-        sub.main || sub.coordinator ? "border-[var(--gold)]" : "border-[var(--line)]"
-      } ${sub.main ? "sticky left-0 z-10" : ""}`}
+        pinned || sub.coordinator ? "border-[var(--gold)]" : "border-[var(--line)]"
+      } ${pinned ? "sticky left-0 z-10" : ""}`}
     >
-      <div className="text-sm font-semibold text-[var(--cream-soft)] truncate" title={sub.title}>
-        {sub.kind === "browser" ? "🌐 " : "⌨ "}
-        {sub.title}
-        {sub.main && (
-          <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
-            📌 main
-          </span>
-        )}
-        {sub.coordinator && (
-          <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
-            coordinator
-          </span>
-        )}
+      <div className="flex items-start gap-2">
+        <div className="text-sm font-semibold text-[var(--cream-soft)] truncate flex-1" title={sub.title}>
+          {sub.kind === "browser" ? "🌐 " : "⌨ "}
+          {sub.title}
+          {pinned && (
+            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
+              📌 {pinned === "manual" ? "pinned" : "main"}
+            </span>
+          )}
+          {sub.coordinator && (
+            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
+              coordinator
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onTogglePin}
+          title={pinned === "manual" ? "Unpin this tab" : "Pin this tab first"}
+          className={`shrink-0 text-sm leading-none transition ${
+            pinned === "manual"
+              ? "text-[var(--gold)]"
+              : "text-[var(--cream-mute)] opacity-40 hover:opacity-100"
+          }`}
+        >
+          📌
+        </button>
       </div>
       <div className={`text-2xl font-bold ${LANE_STATUS_STYLE[status] ?? "text-[var(--cream)]"}`}>
         {status}
@@ -196,6 +221,45 @@ export default function OrchestrationPage() {
   const [live, setLive] = useState<OrcaLiveBoard | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
   const [scope, setScope] = useState<string | null>(null);
+  // Manual tab pins per lane (lane worktreeId, "__primary__" for master).
+  // A manual pin overrides the server's auto main; unpin reverts to auto.
+  const [pins, setPins] = useState<Record<string, string>>({});
+  useEffect(() => {
+    try {
+      setPins(JSON.parse(localStorage.getItem("orchestration.tabPins") ?? "{}"));
+    } catch {
+      /* corrupt pin store: start empty */
+    }
+  }, []);
+  const togglePin = (laneKey: string, subId: string) => {
+    setPins((prev) => {
+      const next = { ...prev };
+      if (next[laneKey] === subId) delete next[laneKey];
+      else next[laneKey] = subId;
+      try {
+        localStorage.setItem("orchestration.tabPins", JSON.stringify(next));
+      } catch {
+        /* storage full/blocked: pins live only for this session */
+      }
+      return next;
+    });
+  };
+  const rowSubs = (laneKey: string, subs: LiveSubLane[]) => {
+    const manualId = pins[laneKey];
+    const pinOf = (s: LiveSubLane): "manual" | "auto" | null =>
+      manualId ? (s.id === manualId ? "manual" : null) : s.main ? "auto" : null;
+    return [...subs]
+      .sort((a, b) => Number(!!pinOf(b)) - Number(!!pinOf(a)))
+      .map((sub) => (
+        <TabCard
+          key={sub.id}
+          sub={sub}
+          notes={notes}
+          pinned={pinOf(sub)}
+          onTogglePin={() => togglePin(laneKey, sub.id)}
+        />
+      ));
+  };
 
   // Live Orca structure: children = lanes, their tabs = sub-lanes. Polls on
   // its own cadence since dispatches move faster than the journal.
@@ -381,9 +445,7 @@ export default function OrchestrationPage() {
               <div className="flex flex-col gap-2">
                 <div className="text-xs font-semibold text-[var(--gold-soft)]">TABS:</div>
                 <div className="flex gap-4 overflow-x-auto pb-2">
-                  {live.primary.subLanes.map((sub) => (
-                    <TabCard key={sub.id} sub={sub} notes={notes} />
-                  ))}
+                  {rowSubs("__primary__", live.primary.subLanes)}
                 </div>
               </div>
             )}
@@ -422,9 +484,7 @@ export default function OrchestrationPage() {
                 <p className="text-xs italic text-[var(--cream-mute)]">no open tabs</p>
               ) : (
                 <div className="flex gap-4 overflow-x-auto pb-2 pl-6 border-l-2 border-[var(--line)]">
-                  {lane.subLanes.map((sub) => (
-                    <TabCard key={sub.id} sub={sub} notes={notes} />
-                  ))}
+                  {rowSubs(lane.worktreeId, lane.subLanes)}
                 </div>
               )}
             </div>
