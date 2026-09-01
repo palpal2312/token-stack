@@ -72,10 +72,13 @@ type SenChatTurnRequest struct {
 
 // SenChatTurnResponse is the persist-before-ack receipt projection.
 type SenChatTurnResponse struct {
-	CommandID string `json:"command_id"`
-	TurnSeq   int    `json:"turn_seq"`
-	SessionID string `json:"session_id"`
-	CreatedAt string `json:"created_at"`
+	CommandID     string `json:"command_id"`
+	TurnSeq       int    `json:"turn_seq"`
+	TurnID        string `json:"turn_id"`
+	ChatAttemptID string `json:"chat_attempt_id"`
+	SessionID     string `json:"session_id"`
+	Status        string `json:"status"`
+	CreatedAt     string `json:"created_at"`
 }
 
 // validSenders mirrors the sen_session_turns.role CHECK constraint.
@@ -251,7 +254,9 @@ func NewHandler(src ProjectionSource, chat *sql.DB) http.Handler {
 		}
 		writeJSON(w, http.StatusOK, SenChatTurnResponse{
 			CommandID: receipt.CommandID, TurnSeq: receipt.TurnSeq,
-			SessionID: receipt.SessionID, CreatedAt: now.Format(time.RFC3339),
+			TurnID: receipt.TurnID, ChatAttemptID: receipt.ChatAttemptID,
+			SessionID: receipt.SessionID, Status: receipt.Status,
+			CreatedAt: now.Format(time.RFC3339),
 		})
 	})
 	// GET reads back persisted chat so the backfilled product store is visible.
