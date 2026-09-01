@@ -154,6 +154,37 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/newos-master/
 powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/newos-master/scripts/newos-master.ps1 -Mode Finalize
 ```
 
+## Settled worker cleanup
+
+A settled dispatch leaves a zombie tab holding terminal resources until it is
+released. Free it as soon as the outcome is verified — the dashboard dims
+settled tabs so unreleased zombies are visible at a glance.
+
+- Receipt verify PASS or confirmed failure → release the worker terminal after
+  its output is archived:
+
+  ```powershell
+  orca orchestration worker-release --dispatch <ctx_id>
+  ```
+
+- Keep the terminal only for debugging (`worker-retain`); fence an uncertain
+  worker without claiming it stopped (`worker-abandon`).
+- Terminal still hanging after release (external/retained) → close it:
+
+  ```powershell
+  orca terminal close --terminal <handle> --tab
+  ```
+
+- A lane (child worktree) is DONE → stop everything it still holds:
+
+  ```powershell
+  orca terminal stop --worktree <child-worktree-selector>
+  ```
+
+- Each 15-minute watchdog cycle: sweep `orca orchestration worker-list` for
+  settled-but-unreleased workers and release them; `worker_terminal_resources`
+  accounting should trend to zero retained terminals per closed lane.
+
 ## Stop conditions
 
 Stop and report rather than improvising when no active config exists, all standby providers are unavailable, claim authorization fails, live state contradicts the handoff, a destructive/external action needs new approval, or a product decision is missing. A failed provider preserves state; it does not authorize bypassing the lease.
