@@ -76,7 +76,10 @@ async function daemonChatPost(base: string, req: Request): Promise<NextResponse>
   } catch {
     return NextResponse.json({ error: "invalid request body" }, { status: 400 });
   }
-  const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
+  // Accept the kanban/dispatch caller's `session` alias; canonical uses sessionId.
+  const sessionId =
+    (typeof body.sessionId === "string" ? body.sessionId.trim() : "") ||
+    (typeof (body as { session?: unknown }).session === "string" ? (body as { session: string }).session.trim() : "");
   const text = (typeof body.content === "string" ? body.content : typeof body.prompt === "string" ? body.prompt : "").trim();
   if (!sessionId) {
     return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
