@@ -136,6 +136,11 @@ function TabCard({
               coordinator
             </span>
           )}
+          {sub.focused && (
+            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--emerald)] border border-[var(--emerald)] rounded px-1">
+              ▶ focus
+            </span>
+          )}
         </div>
         <button
           type="button"

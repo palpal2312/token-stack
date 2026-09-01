@@ -38,6 +38,8 @@ export interface LiveSubLane {
   coordinator?: boolean;
   /** The lane's main running tab — pinned first and sticky on the row. */
   main?: boolean;
+  /** This tab is the focused tab of its worktree's Orca window group. */
+  focused?: boolean;
   task?: LiveTask;
 }
 
@@ -109,8 +111,9 @@ interface OrcaTerminal {
 interface OrcaVisualLayout {
   worktreeId: string;
   root?: {
+    activeTabId?: string;
     tabs?: { tabId: string; title?: string }[];
-    groups?: { tabs?: { tabId: string; title?: string }[] }[];
+    groups?: { activeTabId?: string; tabs?: { tabId: string; title?: string }[] }[];
   };
 }
 
@@ -289,8 +292,15 @@ export async function deriveOrcaLiveBoard(
   // Orca window tab titles (what the tab bar shows), keyed by tabId. Terminal
   // `title` is only the process name; the tab title is the real label.
   const tabTitles = new Map<string, string>();
+  // The focused tab of each worktree's window group (activeTabId). For
+  // lookalike tabs (e.g. two "NEWS OS Master takeover" sessions) this plus
+  // output freshness tells which one is actually driving.
+  const focusedTabByWorktree = new Map<string, string>();
   for (const layout of terminalData.visualLayouts ?? []) {
     for (const group of [layout.root, ...(layout.root?.groups ?? [])]) {
+      if (group?.activeTabId && !focusedTabByWorktree.has(layout.worktreeId)) {
+        focusedTabByWorktree.set(layout.worktreeId, group.activeTabId);
+      }
       for (const tab of group?.tabs ?? []) {
         if (tab.title) tabTitles.set(tab.tabId, tab.title);
       }
@@ -365,6 +375,10 @@ export async function deriveOrcaLiveBoard(
         id: t.handle,
         title: (t.tabId && tabTitles.get(t.tabId)) ?? t.title,
         active: t.connected,
+        focused:
+          t.tabId !== undefined && t.tabId === focusedTabByWorktree.get(t.worktreeId)
+            ? true
+            : undefined,
         // Terminal preview can be long multi-line output; last line is the
         // freshest and fits the two-line memo slot.
         memo: t.preview?.trim().split("\n").filter(Boolean).at(-1),
