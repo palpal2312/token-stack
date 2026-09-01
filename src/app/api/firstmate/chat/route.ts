@@ -92,6 +92,15 @@ export async function POST(req: Request) {
   const guard = checkLocalRequest(req);
   if (guard) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
+  // S16 P3 legacy freeze: the FirstMate JSONL writer is inert by default.
+  // Only an explicit SEN_CHAT_LEGACY_WRITER=1 revives it (rollback guard).
+  if (process.env.SEN_CHAT_LEGACY_WRITER !== "1") {
+    return NextResponse.json(
+      { error: "legacy JSONL writer frozen (S16); use canonical /api/v1/sen/chat" },
+      { status: 410 },
+    );
+  }
+
   let body: Record<string, unknown>;
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Body must be JSON." }, { status: 400 }); }
