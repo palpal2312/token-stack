@@ -117,3 +117,24 @@ Lessons:
   CLOSED_GO record → journal lifecycle events; Finalize stays gated by the
   controller-failover state machine (disabled watchdog, reinstall on the live
   host before Phase 12).
+
+## S16 checkpoint and lessons (2026-09-01)
+
+Checkpoint: S16 CLOSED_GO (canonical-default rollout): legacy FirstMate JSONL
+writer frozen (410 unless SEN_CHAT_LEGACY_WRITER=1); canonical chat reachable via
+daemon, fail-closed offline (503/410, 0 silent legacy writes); backup cycle 2
+9/9 hash-verified. S15 DTO alignment (`turn_id`/`chat_attempt_id` from product
+receipt — never synthesize attempt ids) carries into S16.
+
+Lessons:
+- **Freeze-not-delete**: retire legacy writers by fail-closed refusal (410) gated
+  behind an explicit env, keep the archive + backup drives — reversible, still
+  "legacy disabled".
+- **Fail-closed offline**: canonical default means every offline path must be a
+  hard error (503/410), never a silent fallback write.
+- **DTO from source of truth**: expose real PK ids from the durable receipt;
+  adapter maps, never manufactures identity.
+- **Backup cadence**: verify every cycle with `sha256sum -c` from the manifest's
+  own root; keep cycles outside git.
+
+Next known gap: one-command packaging (S17) then live SLO observability.
