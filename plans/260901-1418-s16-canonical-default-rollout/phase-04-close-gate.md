@@ -17,8 +17,7 @@ Standard independent-arbiter close for S16.
 2. Independent arbiter GO -> CLOSED_GO + journal events.
 
 ## Success Criteria
-- [ ] Arbiter GO on committed bytes; CLOSED_GO + journal appended.
-- [ ] `legacy_writer: disabled`, `phase_21: blocked`; no release authority.
-
+- [x] Arbiter GO on committed bytes; CLOSED_GO + journal appended. (_evidence: see CLOSED_GO record)
+- [x] `legacy_writer: disabled`, `phase_21: blocked`; no release authority. (_evidence: see CLOSED_GO record)
 ## Risk Assessment
 N/A (proven S10-15 pattern).

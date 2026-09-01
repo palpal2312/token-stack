@@ -29,9 +29,8 @@ sen-plane starts with the app and canonical config is the default; no manual
 3. Verify: chat round-trip without manual env; legacy write impossible silently.
 
 ## Success Criteria
-- [ ] One command runs app + daemon; chat writes to canonical store.
-- [ ] Offline (no daemon) shows explicit error, zero legacy writes.
-
+- [x] One command runs app + daemon; chat writes to canonical store. (_evidence: see CLOSED_GO record)
+- [x] Offline (no daemon) shows explicit error, zero legacy writes. (_evidence: see CLOSED_GO record)
 ## Risk Assessment
 Assumption: dev entrypoint can spawn Go. Signal: spawn fails on CI — response:
 make the spawn best-effort with offline fallback clearly surfaced.

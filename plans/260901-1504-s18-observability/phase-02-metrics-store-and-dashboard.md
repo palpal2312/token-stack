@@ -78,14 +78,10 @@ state per series) as plain HTML/table.
    panics here — do not rely on it).
 
 ## Success Criteria
-- [ ] `scripts/s18-slo-probes.ps1 -RunOnce` appends timestamped JSONL lines to
-      `%LOCALAPPDATA%\NEWSOS\s12-metrics\` in the four family files.
-- [ ] `GET /api/ops/metrics` returns the four families from disk; the
-      `/ops/observability` page renders them at `next build` + `next start`.
-- [ ] Empty/missing store renders `no data` (no fabricated values); a planted
-      alert line is visible on the page.
-- [ ] Zero third-party dependency added; metrics never enter git.
-
+- [x] `scripts/s18-slo-probes.ps1 -RunOnce` appends timestamped JSONL lines to (_evidence: see CLOSED_GO record)      `%LOCALAPPDATA%\NEWSOS\s12-metrics\` in the four family files.
+- [x] `GET /api/ops/metrics` returns the four families from disk; the (_evidence: see CLOSED_GO record)      `/ops/observability` page renders them at `next build` + `next start`.
+- [x] Empty/missing store renders `no data` (no fabricated values); a planted (_evidence: see CLOSED_GO record)      alert line is visible on the page.
+- [x] Zero third-party dependency added; metrics never enter git. (_evidence: see CLOSED_GO record)
 ## Risk Assessment
 Assumption: the existing app route/page conventions accept a read-only metrics
 route (it is just a JSON GET + a server component — no new surface).

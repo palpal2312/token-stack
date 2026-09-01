@@ -30,8 +30,7 @@ Close S15 through the established independent-arbiter + CLOSED_GO pattern.
 3. Dispatch fresh independent arbiter; on GO write CLOSED_GO + journal.
 
 ## Success Criteria
-- [ ] Arbiter GO recorded on committed bytes; CLOSED_GO + journal appended.
-- [ ] No release/cutover/Phase 21 authority exercised.
-
+- [x] Arbiter GO recorded on committed bytes; CLOSED_GO + journal appended. (_evidence: see CLOSED_GO record)
+- [x] No release/cutover/Phase 21 authority exercised. (_evidence: see CLOSED_GO record)
 ## Risk Assessment
 N/A — gate follows the proven S10-S14 pattern.

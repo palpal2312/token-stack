@@ -38,12 +38,12 @@ path** end-to-end.
 
 ## Success criteria
 
-- [ ] Chat client renders canonical receipt (commandId/turnSeq/turnId/chatAttemptId/status) without adapter hacks.
-- [ ] `npm run dev`-equivalent starts sen-plane + sets canonical env; legacy JSONL path is provably non-default.
-- [ ] UI shows store-backed slots/attempts; chat reads/writes through the canonical store in normal operation.
-- [ ] CI green on pnpm; a daemon-backed integration job runs the canonical chat round-trip.
-- [ ] Restore drill verified against the pre-cutover backup; S10-S14 chains + controls intact.
-
+- [x] Chat client renders canonical receipt (commandId/turnSeq/turnId/chatAttemptId/status) without adapter hacks. (_evidence: see CLOSED_GO record)
+- [x] `npm run dev`-equivalent starts sen-plane + sets canonical env; legacy JSONL path is provably non-default. (_evidence: see CLOSED_GO record)- [ ] UI shows store-backed slots/attempts; chat reads/writes through the canonical store in normal operation.
+    (OPEN: see checklist audit ledger)
+- [ ] CI green on pnpm; a daemon-backed integration job runs the canonical chat round-trip.  (OPEN: see checklist audit ledger)
+    (OPEN: see checklist audit ledger)
+- [x] Restore drill verified against the pre-cutover backup; S10-S14 chains + controls intact. (_evidence: see CLOSED_GO record)
 ## Ownership
 
 Owns only `plans/260901-1356-s15-*`. Hard invariants: `legacy_writer:

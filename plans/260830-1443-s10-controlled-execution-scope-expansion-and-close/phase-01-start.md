@@ -11,10 +11,9 @@ Record the user-approved controlled scope, refresh the manifest, and establish s
 
 ## Requirements
 
-- [ ] Record authorization for persistence, redacted replay, approval/canary/rollback, recovery drills, runbooks, and independent arbitration.
-- [ ] Keep legacy writer disabled, Phase 21 blocked, release cutover excluded, and assign `palpal2312/admin` as integration owner.
-- [ ] Capture current OLC, worker preflight, dirty-root preservation, and disjoint A/B/C ownership.
-
+- [x] Record authorization for persistence, redacted replay, approval/canary/rollback, recovery drills, runbooks, and independent arbitration. (_evidence: see CLOSED_GO record)
+- [x] Keep legacy writer disabled, Phase 21 blocked, release cutover excluded, and assign `palpal2312/admin` as integration owner. (_evidence: see CLOSED_GO record)
+- [x] Capture current OLC, worker preflight, dirty-root preservation, and disjoint A/B/C ownership. (_evidence: see CLOSED_GO record)
 ## Implementation Steps
 
 1. Hash-pin the expanded manifest and phase inputs.
@@ -23,10 +22,9 @@ Record the user-approved controlled scope, refresh the manifest, and establish s
 
 ## Todo
 
-- [ ] Manifest receipt and authorization record
-- [ ] Worker/OLC preflight receipt
-
+- [x] Manifest receipt and authorization record (_evidence: see CLOSED_GO record)
+- [x] Worker/OLC preflight receipt (_evidence: see CLOSED_GO record)
 ## Success Criteria
 
-- [ ] No lane starts before manifest and ownership receipt pass.
-- [ ] Every lane has ACTIVE, NEXT, and FALLBACK plus a bounded receipt path.
+- [x] No lane starts before manifest and ownership receipt pass. (_evidence: see CLOSED_GO record)
+- [x] Every lane has ACTIVE, NEXT, and FALLBACK plus a bounded receipt path. (_evidence: see CLOSED_GO record)

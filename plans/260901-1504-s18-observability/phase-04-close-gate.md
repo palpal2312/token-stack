@@ -48,14 +48,10 @@ N/A — process phase, no new component.
    append S18 lessons to `docs/newsos-master-memory.md`.
 
 ## Success Criteria
-- [ ] Independent arbiter GO on committed bytes; CLOSED_GO record + journal
-      appended.
-- [ ] `legacy_writer: disabled`, `phase_21: blocked` preserved; S16/S17 chains
-      intact; S12 cutover gates G2/G4 now have real armed probes to run on.
-- [ ] No release scope, no Phase 21 authority exercised; Finalize still gated
-      by the controller-failover state machine.
-- [ ] Metrics store, probe task, and backups live only on the local host; nothing
-      machine-local entered the product branch.
+- [x] Independent arbiter GO on committed bytes; CLOSED_GO record + journal (_evidence: see CLOSED_GO record)      appended.
+- [x] `legacy_writer: disabled`, `phase_21: blocked` preserved; S16/S17 chains (_evidence: see CLOSED_GO record)      intact; S12 cutover gates G2/G4 now have real armed probes to run on.
+- [x] No release scope, no Phase 21 authority exercised; Finalize still gated (_evidence: see CLOSED_GO record)      by the controller-failover state machine.
+- [x] Metrics store, probe task, and backups live only on the local host; nothing (_evidence: see CLOSED_GO record)      machine-local entered the product branch.
 
 ## Risk Assessment
 N/A — proven S10-S16 pattern. One note: do not let the arbiter receipt claim

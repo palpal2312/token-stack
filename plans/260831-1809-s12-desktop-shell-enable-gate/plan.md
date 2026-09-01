@@ -16,10 +16,10 @@ deployment, independently of the Phase 12 legacy-writer cutover.
 
 ## Gate inputs (all required before any enable)
 
-- [ ] Production build green (the `next build` smoke from S11 phase 3 is the basis; re-run at the chosen commit).
-- [ ] Shell/web node:test coverage for the flagged modules present and passing (S12 phase 2 sweep).
-- [ ] Live smoke evidence on the target environment: flag OFF = legacy surface; flag ON = shell surface, both 200, on the deployment host (not a controlled checkout).
-- [ ] Owner approval recorded for the enable (named approver + date in the receipt).
+- [x] Production build green (the `next build` smoke from S11 phase 3 is the basis; re-run at the chosen commit). (_evidence: see CLOSED_GO record)
+- [x] Shell/web node:test coverage for the flagged modules present and passing (S12 phase 2 sweep). (_evidence: see CLOSED_GO record)
+- [x] Live smoke evidence on the target environment: flag OFF = legacy surface; flag ON = shell surface, both 200, on the deployment host (not a controlled checkout). (_evidence: see CLOSED_GO record)- [ ] Owner approval recorded for the enable (named approver + date in the receipt).
+    (OPEN: see checklist audit ledger)
 
 ## Enablement mechanics
 

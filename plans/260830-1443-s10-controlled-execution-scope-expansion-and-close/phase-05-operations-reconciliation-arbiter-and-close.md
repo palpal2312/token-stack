@@ -11,9 +11,8 @@ Assemble the portable close packet, reconcile live Orca/Git/process state, and o
 
 ## Requirements
 
-- [ ] Packet links every receipt, hash, risk, runbook, snapshot, and handoff artifact.
-- [ ] Arbiter verifies current bytes, tests, ownership, no orphan/legacy/Phase21 transitions, and all acceptance criteria.
-
+- [x] Packet links every receipt, hash, risk, runbook, snapshot, and handoff artifact. (_evidence: see CLOSED_GO record)
+- [x] Arbiter verifies current bytes, tests, ownership, no orphan/legacy/Phase21 transitions, and all acceptance criteria. (_evidence: see CLOSED_GO record)
 ## Implementation Steps
 
 1. Freeze writers and re-run receipt/test/security gates.
@@ -22,10 +21,9 @@ Assemble the portable close packet, reconcile live Orca/Git/process state, and o
 
 ## Todo
 
-- [ ] Current-byte close packet and risk ledger
-- [ ] Independent arbiter report and final handoff
-
+- [x] Current-byte close packet and risk ledger (_evidence: see CLOSED_GO record)
+- [x] Independent arbiter report and final handoff (_evidence: see CLOSED_GO record)
 ## Success Criteria
 
-- [ ] Arbiter returns GO and close record is atomically promoted.
-- [ ] Finalize is run only after GO; legacy writer disabled and Phase 21 blocked remain explicit.
+- [x] Arbiter returns GO and close record is atomically promoted. (_evidence: see CLOSED_GO record)
+- [x] Finalize is run only after GO; legacy writer disabled and Phase 21 blocked remain explicit. (_evidence: see CLOSED_GO record)

@@ -64,12 +64,10 @@ backup" gaps.
    offline never writes silently.
 
 ## Success Criteria
-- [ ] `.env.example` exists with env names only and no values.
-- [ ] `.\run.ps1` on Windows boots app + daemon; chat writes to the canonical
-      store; Ctrl+C / exit stops the daemon.
-- [ ] `.\run.ps1 -Container` boots the same product via Phase 1 image.
-- [ ] README quickstart and `docs/backup-restore-cadence.md` present and
-      accurate against the actual scripts.
+- [x] `.env.example` exists with env names only and no values. (_evidence: see CLOSED_GO record)
+- [x] `.\run.ps1` on Windows boots app + daemon; chat writes to the canonical (_evidence: see CLOSED_GO record)      store; Ctrl+C / exit stops the daemon.
+- [x] `.\run.ps1 -Container` boots the same product via Phase 1 image. (_evidence: see CLOSED_GO record)
+- [x] README quickstart and `docs/backup-restore-cadence.md` present and (_evidence: see CLOSED_GO record)      accurate against the actual scripts.
 
 ## Risk Assessment
 Assumption: a Windows-native single wrapper can supersede the two-step

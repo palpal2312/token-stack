@@ -23,9 +23,10 @@ daemon mode; slots/attempts views read store data with explicit empty states.
 3. Slots/attempts views show real counts or explicit empty state.
 
 ## Success Criteria
-- [ ] Dispatch works with daemon active.
-- [ ] Chat turn row keyed on turnId; no 404 on attempt-scoped reads.
-- [ ] Empty store renders empty-state, not error.
+- [x] Dispatch works with daemon active. (_evidence: see CLOSED_GO record)- [ ] Chat turn row keyed on turnId; no 404 on attempt-scoped reads.
+    (OPEN: see checklist audit ledger)
+- [ ] Empty store renders empty-state, not error.  (OPEN: see checklist audit ledger)
+    (OPEN: see checklist audit ledger)
 
 ## Risk Assessment
 Seed legacy data shape drift — signal: chat view shows stale shapes; response:

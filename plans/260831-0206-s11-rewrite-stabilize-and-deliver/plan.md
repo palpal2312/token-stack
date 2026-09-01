@@ -48,15 +48,11 @@ blocked` remain hard invariants.
 
 ## Success criteria
 
-- [ ] `go build ./... && go vet ./...` pass on merged tree; shell stores emit on
-      every mutator; node:test suites present for shell/web clusters; no
+- [x] `go build ./... && go vet ./...` pass on merged tree; shell stores emit on (_evidence: see CLOSED_GO record)      every mutator; node:test suites present for shell/web clusters; no
       fabricated data on any live surface.
-- [ ] `feat/rewrite-baseline` review topics merged to `master` with per-topic
-      review evidence; S10 chain receipts remain current-byte verified.
-- [ ] Desktop-shell slice observable behind the flag with a redacted evidence
-      receipt; default-off surface stays byte-equivalent to the legacy shell.
-- [ ] Close gate (independent arbiter) records S11 GO or explicit NO_GO with the
-      same fail-closed pattern as S10; `legacy_writer: disabled`, `phase_21:
+- [x] `feat/rewrite-baseline` review topics merged to `master` with per-topic (_evidence: see CLOSED_GO record)      review evidence; S10 chain receipts remain current-byte verified.
+- [x] Desktop-shell slice observable behind the flag with a redacted evidence (_evidence: see CLOSED_GO record)      receipt; default-off surface stays byte-equivalent to the legacy shell.
+- [x] Close gate (independent arbiter) records S11 GO or explicit NO_GO with the (_evidence: see CLOSED_GO record)      same fail-closed pattern as S10; `legacy_writer: disabled`, `phase_21:
       blocked`, no release/cutover.
 
 ## Ownership

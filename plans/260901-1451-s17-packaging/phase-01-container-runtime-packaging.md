@@ -59,11 +59,10 @@ app's listen host so `docker run -p` can forward it.
    in-container); `docker run` with no published port keeps everything loopback.
 
 ## Success Criteria
-- [ ] `docker build` completes with go vet/test green in the build log.
-- [ ] One `docker run -p 3737:3737` serves dashboard + sen-plane-backed API;
+- [x] `docker build` completes with go vet/test green in the build log. (_evidence: see CLOSED_GO record)- [ ] One `docker run -p 3737:3737` serves dashboard + sen-plane-backed API;
+    (OPEN: see checklist audit ledger)
       chat round-trip observed through the container.
-- [ ] Loopback default intact: no image code change binds an external interface
-      unless the one documented app-host override says so.
+- [x] Loopback default intact: no image code change binds an external interface (_evidence: see CLOSED_GO record)      unless the one documented app-host override says so.
 
 ## Risk Assessment
 Assumption: GitHub runners that build the smoke test can run Docker.

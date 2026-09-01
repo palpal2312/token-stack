@@ -11,9 +11,8 @@ Replay frozen redacted Run Learning Records and evaluate baseline/candidate esti
 
 ## Requirements
 
-- [ ] All seven metrics use pinned denominators, missing-data rules, intervals, and confidence/OOD labels.
-- [ ] Local state/history precedes matched community priors; no private query is sent.
-
+- [x] All seven metrics use pinned denominators, missing-data rules, intervals, and confidence/OOD labels. (_evidence: see CLOSED_GO record)
+- [x] Local state/history precedes matched community priors; no private query is sent. (_evidence: see CLOSED_GO record)
 ## Implementation Steps
 
 1. Pin redacted cohort schema, provenance, and snapshot version/signature.
@@ -22,10 +21,9 @@ Replay frozen redacted Run Learning Records and evaluate baseline/candidate esti
 
 ## Todo
 
-- [ ] Replay/calibration receipt
-- [ ] Independent recomputation receipt
-
+- [x] Replay/calibration receipt (_evidence: see CLOSED_GO record)
+- [x] Independent recomputation receipt (_evidence: see CLOSED_GO record)
 ## Success Criteria
 
-- [ ] Forecasts expose assumptions, interval/confidence, critical path, useful lanes, and estimate-vs-actual.
-- [ ] No result changes execution authority or protected gates.
+- [x] Forecasts expose assumptions, interval/confidence, critical path, useful lanes, and estimate-vs-actual. (_evidence: see CLOSED_GO record)
+- [x] No result changes execution authority or protected gates. (_evidence: see CLOSED_GO record)

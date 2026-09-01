@@ -5,6 +5,8 @@ DONE. Rollout switch added (run harness `-Shell` sets DESKTOP_SHELL_V2=1 for the
 app process; default stays legacy). Enable-gate mechanics (1809) followed: env
 request-time, no query/view flip.
 
+- Approved: palpal2312 (owner), 2026-09-01, host-local S19 desktop-shell rollout.
+
 ## Evidence
 - Flag semantics suite 2/2 (`desktop-shell-flag.test.ts`): OFF default; ON only
   on exact 1/true; test-fixture gating preserved.

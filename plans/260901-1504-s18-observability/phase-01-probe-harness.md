@@ -96,17 +96,14 @@ to the metrics dir and the dashboard land in Phase 2.
    output; no threshold is tuned in the live window.
 
 ## Success Criteria
-- [ ] `scripts/s18-slo-probes.ps1 -RunOnce` against a local daemon emits one
-      timestamped JSON line per probe.
-- [ ] Fake-server test proves: 2 consecutive availability fails emit
+- [x] `scripts/s18-slo-probes.ps1 -RunOnce` against a local daemon emits one (_evidence: see CLOSED_GO record)      timestamped JSON line per probe.
+- [ ] Fake-server test proves: 2 consecutive availability fails emit  (OPEN: see checklist audit ledger)
+    (OPEN: see checklist audit ledger)
       `alert:availability`; restored-ok closes the window and emits the RTO
       duration; RPO age > 5m emits `alert:rpo`.
-- [ ] `-WriteVerify` returns a durable receipt for the canary turn and confirms
-      legacy frozen (410/config-gated) with fixture env set.
-- [ ] No `SEN_GO_BUILDER_EXEC_AUTHORITY`/`DATABASE_URL`/token-like values in any
-      probe output.
-- [ ] Thresholds are the ops-prep §1d values, unmodified, and armed before any
-      live canary run (G4).
+- [x] `-WriteVerify` returns a durable receipt for the canary turn and confirms (_evidence: see CLOSED_GO record)      legacy frozen (410/config-gated) with fixture env set.
+- [x] No `SEN_GO_BUILDER_EXEC_AUTHORITY`/`DATABASE_URL`/token-like values in any (_evidence: see CLOSED_GO record)      probe output.
+- [x] Thresholds are the ops-prep §1d values, unmodified, and armed before any (_evidence: see CLOSED_GO record)      live canary run (G4).
 
 ## Risk Assessment
 Assumption: the daemon is reachable on loopback (running locally or in the S17

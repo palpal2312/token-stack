@@ -82,15 +82,14 @@ enforced and reviewed rather than remembered.
    step list) and record the install + a sample receipt for the report.
 
 ## Success Criteria
-- [ ] `install-s18-probe-task.ps1` is idempotent, registers the probe task, and
-      the task self-heals the Watch loop after a forced stop.
-- [ ] `-SelfCheck` produces a visible `alert:availability` receipt before any
-      live deployment (armed, not discovered).
-- [ ] `s18-backup-cadence.ps1` runs a real verified cycle: backup mirrored to
+- [x] `install-s18-probe-task.ps1` is idempotent, registers the probe task, and (_evidence: see CLOSED_GO record)      the task self-heals the Watch loop after a forced stop.
+- [x] `-SelfCheck` produces a visible `alert:availability` receipt before any (_evidence: see CLOSED_GO record)      live deployment (armed, not discovered).
+- [ ] `s18-backup-cadence.ps1` runs a real verified cycle: backup mirrored to  (OPEN: see checklist audit ledger)
+    (OPEN: see checklist audit ledger)
       the second volume, `sha256sum -c` pass, receipt line written.
-- [ ] Rotation moves monthly JSONL with no dropped appendix lines.
-- [ ] Ops-prep/runbook carry the cadence section; no automation anywhere can
-      flip `legacy_writer`.
+- [ ] Rotation moves monthly JSONL with no dropped appendix lines.  (OPEN: see checklist audit ledger)
+    (OPEN: see checklist audit ledger)
+- [x] Ops-prep/runbook carry the cadence section; no automation anywhere can (_evidence: see CLOSED_GO record)      flip `legacy_writer`.
 
 ## Risk Assessment
 Assumption: the scheduled-task install pattern from the failover installer maps

@@ -52,14 +52,10 @@ invariants.
 
 ## Success criteria
 
-- [ ] One Go control-plane binary runs and serves a real proxy path end-to-end
-      with an evidence receipt; Go tests stay green.
-- [ ] Shell/web node:test coverage closed for the flagged modules; no
-      zero-consumer speculative API remains.
-- [ ] Desktop-shell enablement gate document exists; flag stays OFF by default
-      until a deploy approval records the flip.
-- [ ] S12 close gate (independent arbiter) records GO or explicit NO_GO;
-      `legacy_writer: disabled`, `phase_21: blocked`, no release/cutover.
+- [x] One Go control-plane binary runs and serves a real proxy path end-to-end (_evidence: see CLOSED_GO record)      with an evidence receipt; Go tests stay green.
+- [x] Shell/web node:test coverage closed for the flagged modules; no (_evidence: see CLOSED_GO record)      zero-consumer speculative API remains.
+- [x] Desktop-shell enablement gate document exists; flag stays OFF by default (_evidence: see CLOSED_GO record)      until a deploy approval records the flip.
+- [x] S12 close gate (independent arbiter) records GO or explicit NO_GO; (_evidence: see CLOSED_GO record)      `legacy_writer: disabled`, `phase_21: blocked`, no release/cutover.
 
 ## Ownership
 

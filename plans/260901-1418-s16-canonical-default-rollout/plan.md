@@ -37,15 +37,11 @@ legacy FirstMate JSONL writer.
 
 ## Success criteria
 
-- [ ] `npm run dev`-equivalent runs chat + slots entirely through sen-plane with
-      no `SEN_DAEMON_URL` manual step; offline (daemon absent) fails closed with
+- [x] `npm run dev`-equivalent runs chat + slots entirely through sen-plane with (_evidence: see CLOSED_GO record)      no `SEN_DAEMON_URL` manual step; offline (daemon absent) fails closed with
       a clear error, never silent legacy writes.
-- [ ] Chat UI fully renders canonical receipts; kanban dispatch works in daemon
-      mode; slots/attempts UI show store data or explicit empty states.
-- [ ] Legacy writer is inert by code (no silent JSONL append possible), archives
-      policy documented, second backup cycle hash-verified.
-- [ ] S10-15 chains and CLOSED_GO records intact; `legacy_writer: disabled`,
-      `phase_21: blocked` preserved.
+- [x] Chat UI fully renders canonical receipts; kanban dispatch works in daemon (_evidence: see CLOSED_GO record)      mode; slots/attempts UI show store data or explicit empty states.
+- [x] Legacy writer is inert by code (no silent JSONL append possible), archives (_evidence: see CLOSED_GO record)      policy documented, second backup cycle hash-verified.
+- [x] S10-15 chains and CLOSED_GO records intact; `legacy_writer: disabled`, (_evidence: see CLOSED_GO record)      `phase_21: blocked` preserved.
 
 ## Ownership
 

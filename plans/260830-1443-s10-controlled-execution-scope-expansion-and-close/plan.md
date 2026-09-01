@@ -34,11 +34,10 @@ Execute the user-approved S10 scope expansion with isolated ownership, current-b
 
 ## Success Criteria
 
-- [ ] Expanded manifest is hash-pinned and records the user's controlled authorization.
-- [ ] A/B/C receipts pass current-byte verification with disjoint ownership.
-- [ ] Redacted replay covers all seven metrics, calibration, confidence/OOD, and privacy precedence.
-- [ ] Approval, monitored canary, rejection/no-op, rollback, recovery, runbooks, and SLO/RPO/RTO evidence pass.
-- [ ] Close packet, risk ledger, handoff, and independent arbiter verdict are current-byte verified.
-- [ ] Legacy writer remains disabled and Phase 21 remains blocked throughout.
-
+- [x] Expanded manifest is hash-pinned and records the user's controlled authorization. (_evidence: see CLOSED_GO record)
+- [x] A/B/C receipts pass current-byte verification with disjoint ownership. (_evidence: see CLOSED_GO record)
+- [x] Redacted replay covers all seven metrics, calibration, confidence/OOD, and privacy precedence. (_evidence: see CLOSED_GO record)
+- [x] Approval, monitored canary, rejection/no-op, rollback, recovery, runbooks, and SLO/RPO/RTO evidence pass. (_evidence: see CLOSED_GO record)
+- [x] Close packet, risk ledger, handoff, and independent arbiter verdict are current-byte verified. (_evidence: see CLOSED_GO record)
+- [x] Legacy writer remains disabled and Phase 21 remains blocked throughout. (_evidence: see CLOSED_GO record)
 <!-- slug: s10-controlled-execution-scope-expansion-and-close -->

@@ -39,15 +39,15 @@ zero manual steps. One artifact, one command, documented.
 
 ## Success criteria
 
-- [ ] `docker build` produces one image; `docker run -p 3737:3737` boots app +
+- [ ] `docker build` produces one image; `docker run -p 3737:3737` boots app +  (OPEN: see checklist audit ledger)
+    (OPEN: see checklist audit ledger)
       sen-plane; chat round-trip works through the container.
-- [ ] `.env.example` lists only env NAMES (no values); `run.ps1` boots the whole
-      product on Windows natively and via `-Container`.
-- [ ] CI runs the container smoke when its runner allows, with the identical
+- [x] `.env.example` lists only env NAMES (no values); `run.ps1` boots the whole (_evidence: see CLOSED_GO record)      product on Windows natively and via `-Container`.
+- [ ] CI runs the container smoke when its runner allows, with the identical  (OPEN: see checklist audit ledger)
+    (OPEN: see checklist audit ledger)
       smoke documented for native runs; the Go checks come from the one
       `go:check` definition, not a duplicate.
-- [ ] S16 chain, CLOSED_GO records intact; `legacy_writer: disabled`,
-      `phase_21: blocked` preserved; no release scope.
+- [x] S16 chain, CLOSED_GO records intact; `legacy_writer: disabled`, (_evidence: see CLOSED_GO record)      `phase_21: blocked` preserved; no release scope.
 
 ## Ownership
 

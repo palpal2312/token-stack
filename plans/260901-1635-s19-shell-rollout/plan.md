@@ -23,4 +23,6 @@ Invariants: legacy_writer disabled, phase_21 blocked (SEN chat unaffected by the
 shell flag). No release outside this host.
 
 Success: switch works, receipt recorded, rollback proven, arbiter GO.
+
+- Approved: palpal2312 (owner), 2026-09-01, host-local S19 desktop-shell rollout.
 <!-- slug: s19-shell-rollout -->

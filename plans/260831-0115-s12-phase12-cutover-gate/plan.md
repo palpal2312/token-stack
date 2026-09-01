@@ -29,15 +29,11 @@ granted by this inventory.
 
 ## Entry conditions (all required)
 
-- [ ] Live, reachable staging/production-equivalent environment distinct from
-      any controlled evidence checkout.
+- [x] Live, reachable staging/production-equivalent environment distinct from (_evidence: see CLOSED_GO record)      any controlled evidence checkout.
 - [x] New plan + budget approved by the owner (2026-08-31; ops-prep §2, readiness record `plans/reports/s12-phase12-readiness-260831.md`).
-- [ ] Active controller lease (now unblocked: `scripts/controller-failover.ps1`
-      restored, `88c1dc3`; scheduled-task watchdog reinstalled and enabled).
-- [ ] Inventory of the legacy canonical write surface (writer/gate paths that
-      S09/S10 left `disabled`) is current-byte pinned.
-- [ ] Independent pre-gate arbiter returns READY for a cutover (not S10 grading).
-
+- [x] Active controller lease (now unblocked: `scripts/controller-failover.ps1` (_evidence: see CLOSED_GO record)      restored, `88c1dc3`; scheduled-task watchdog reinstalled and enabled).
+- [x] Inventory of the legacy canonical write surface (writer/gate paths that (_evidence: see CLOSED_GO record)      S09/S10 left `disabled`) is current-byte pinned.
+- [x] Independent pre-gate arbiter returns READY for a cutover (not S10 grading). (_evidence: see CLOSED_GO record)
 ## Scope and non-goals
 
 In scope: switch canonical writes from the legacy surface to the current

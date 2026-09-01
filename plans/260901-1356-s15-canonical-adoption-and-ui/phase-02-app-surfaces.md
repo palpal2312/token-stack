@@ -30,9 +30,8 @@ store-backed chat — replacing proxy-only/empty surfaces.
 3. Probe with the real store: 9 sessions visible, canary session in UI.
 
 ## Success Criteria
-- [ ] UI shows store-backed counts and empty-state for empty projections.
-- [ ] No fabricated data on any surface (fixtures gated to test env).
-
+- [x] UI shows store-backed counts and empty-state for empty projections. (_evidence: see CLOSED_GO record)
+- [x] No fabricated data on any surface (fixtures gated to test env). (_evidence: see CLOSED_GO record)
 ## Risk Assessment
 UI consumes a DTO shape not yet used — signal: schema drift in the view;
 response: assert with the shared parser before mounting.

@@ -30,9 +30,8 @@ and verify the restore drill against the pre-cutover backup.
    (copy back, hash-verify) and record timestamps/hashes.
 
 ## Success Criteria
-- [ ] CI green with daemon job passing.
-- [ ] Restore drill receipt records a clean copy-back verification.
-
+- [x] CI green with daemon job passing. (_evidence: see CLOSED_GO record)
+- [x] Restore drill receipt records a clean copy-back verification. (_evidence: see CLOSED_GO record)
 ## Risk Assessment
 pnpm pack/install differences from npm — signal: lockfile mismatch in CI;
 response: generate pnpm-lock from package.json and commit if intended.

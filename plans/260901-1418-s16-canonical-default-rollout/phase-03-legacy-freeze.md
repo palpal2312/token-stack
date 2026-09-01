@@ -23,9 +23,8 @@ policy is documented with a second backup cycle.
 3. Run a second backup cycle + `sha256sum -c` verification.
 
 ## Success Criteria
-- [ ] No silent JSONL append in default mode.
-- [ ] Second backup hash-verified; policy documented.
-
+- [x] No silent JSONL append in default mode. (_evidence: see CLOSED_GO record)
+- [x] Second backup hash-verified; policy documented. (_evidence: see CLOSED_GO record)
 ## Risk Assessment
 Rollback need — signal: canonical outage; response: legacy remains recoverable
 from the frozen archive, documented restore drill.

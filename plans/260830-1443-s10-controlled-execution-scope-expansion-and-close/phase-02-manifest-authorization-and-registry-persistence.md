@@ -11,9 +11,8 @@ Define and implement privacy-safe immutable signal, candidate, evidence, evaluat
 
 ## Requirements
 
-- [ ] Registry schema is versioned, idempotent, redacted, and replayable.
-- [ ] Writes require approved scope and cannot reactivate legacy authority or Phase 21.
-
+- [x] Registry schema is versioned, idempotent, redacted, and replayable. (_evidence: see CLOSED_GO record)
+- [x] Writes require approved scope and cannot reactivate legacy authority or Phase 21. (_evidence: see CLOSED_GO record)
 ## Implementation Steps
 
 1. Map existing persistence and DTO ownership; move shared surfaces to integration owner.
@@ -22,10 +21,9 @@ Define and implement privacy-safe immutable signal, candidate, evidence, evaluat
 
 ## Todo
 
-- [ ] Registry receipt and schema hash
-- [ ] Migration/rollback test receipt
-
+- [x] Registry receipt and schema hash (_evidence: see CLOSED_GO record)
+- [x] Migration/rollback test receipt (_evidence: see CLOSED_GO record)
 ## Success Criteria
 
-- [ ] All record types have current-byte schema and test evidence.
-- [ ] No private content, secret, prompt, source, or personal data is persisted.
+- [x] All record types have current-byte schema and test evidence. (_evidence: see CLOSED_GO record)
+- [x] No private content, secret, prompt, source, or personal data is persisted. (_evidence: see CLOSED_GO record)

@@ -39,12 +39,9 @@ N/A — process phase, no new component.
    to `docs/newsos-master-memory.md` checkpoint.
 
 ## Success Criteria
-- [ ] Independent arbiter GO on committed bytes; CLOSED_GO record +
-      journal appended.
-- [ ] `legacy_writer: disabled`, `phase_21: blocked` preserved; S16 chains
-      intact.
-- [ ] No release scope, no Phase 21 authority exercised; Finalize still gated
-      by the controller-failover state machine.
+- [x] Independent arbiter GO on committed bytes; CLOSED_GO record + (_evidence: see CLOSED_GO record)      journal appended.
+- [x] `legacy_writer: disabled`, `phase_21: blocked` preserved; S16 chains (_evidence: see CLOSED_GO record)      intact.
+- [x] No release scope, no Phase 21 authority exercised; Finalize still gated (_evidence: see CLOSED_GO record)      by the controller-failover state machine.
 
 ## Risk Assessment
 N/A — proven S10-S16 pattern. One note: do not revive S16's watchdog or

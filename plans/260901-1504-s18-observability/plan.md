@@ -46,21 +46,16 @@ existing app, one scheduled task. No new external dependencies.
 
 ## Success criteria
 
-- [ ] Probe script polls `GET /healthz` every 30s, fires an alert record on 2
-      consecutive failures, computes RPO from the newest durable write in the
+- [x] Probe script polls `GET /healthz` every 30s, fires an alert record on 2 (_evidence: see CLOSED_GO record)      consecutive failures, computes RPO from the newest durable write in the
       canonical store (threshold 5m) and RTO from failure-signal to restored
       (threshold 15m); all samples carry RFC3339 timestamps.
-- [ ] A canary write-verification probe runs after a registry canary and proves a
-      durable receipt (CommandID/TurnID) returns from the canonical path while
+- [x] A canary write-verification probe runs after a registry canary and proves a (_evidence: see CLOSED_GO record)      durable receipt (CommandID/TurnID) returns from the canonical path while
       the legacy path stays frozen.
-- [ ] Metric series are append-only under `%LOCALAPPDATA%\NEWSOS\s12-metrics`;
-      one app-served dashboard route renders latest Availability/RPO/RTO/verification
+- [x] Metric series are append-only under `%LOCALAPPDATA%\NEWSOS\s12-metrics`; (_evidence: see CLOSED_GO record)      one app-served dashboard route renders latest Availability/RPO/RTO/verification
       state — zero third-party ingest.
-- [ ] A scheduled task runs the probe job on the cadence; backup cadence
-      (nightly + pre/post-flip, `sha256sum -c` verified) is enforced/recorded in
+- [x] A scheduled task runs the probe job on the cadence; backup cadence (_evidence: see CLOSED_GO record)      (nightly + pre/post-flip, `sha256sum -c` verified) is enforced/recorded in
       the runbook.
-- [ ] Independent arbiter GO on committed bytes; CLOSED_GO record; `legacy_writer:
-      disabled`, `phase_21: blocked`, S16/S17 chains intact; no release scope.
+- [x] Independent arbiter GO on committed bytes; CLOSED_GO record; `legacy_writer: (_evidence: see CLOSED_GO record)      disabled`, `phase_21: blocked`, S16/S17 chains intact; no release scope.
 
 ## Ownership
 

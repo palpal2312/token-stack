@@ -144,20 +144,16 @@ separate owner-approved deploy outside S13.
 
 ## Success criteria
 
-- [ ] `cmd/sen-plane` serves `slots`/`attempts` from the real `internal/orca`
-      store (memory seed gone); `go test`/`go vet` green; migration applied on a
+- [x] `cmd/sen-plane` serves `slots`/`attempts` from the real `internal/orca` (_evidence: see CLOSED_GO record)      store (memory seed gone); `go test`/`go vet` green; migration applied on a
       fresh data root; current-byte receipt records a live round-trip of all
       proxy clients. `codespace/summary` stays valid-empty with the reason noted.
-- [ ] Desktop-shell v2 preview enabled on ONE staging seat via env flip with
-      smoke (ON/OFF both 200), SLO probe window, rollback drill, and enable
+- [x] Desktop-shell v2 preview enabled on ONE staging seat via env flip with (_evidence: see CLOSED_GO record)      smoke (ON/OFF both 200), SLO probe window, rollback drill, and enable
       receipt; repo default and all other environments remain OFF; production
       flip not performed.
-- [ ] Full-project `tsc --noEmit` at zero errors; read-path node:test suites
-      for query-cache, realtime-reconciler, and go-builder-exec-client land and
+- [x] Full-project `tsc --noEmit` at zero errors; read-path node:test suites (_evidence: see CLOSED_GO record)      for query-cache, realtime-reconciler, and go-builder-exec-client land and
       pass; `sen-plane` runs inside the dev loop on one command; container/
       dev-entry wiring exercised.
-- [ ] S13 close gate records GO or explicit NO_GO on committed bytes, with
-      journal events and memory update; `legacy_writer: disabled`,
+- [x] S13 close gate records GO or explicit NO_GO on committed bytes, with (_evidence: see CLOSED_GO record)      journal events and memory update; `legacy_writer: disabled`,
       `phase_21: blocked`, no release/cutover, Phase 12 untouched.
 
 ## Ownership

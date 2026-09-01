@@ -54,13 +54,12 @@ container job without duplicating the Go commands anywhere.
    --noEmit`, container smoke; confirm no command was duplicated.
 
 ## Success Criteria
-- [ ] Container job builds the image and passes the healthz + chat smoke on a
+- [ ] Container job builds the image and passes the healthz + chat smoke on a  (OPEN: see checklist audit ledger)
+    (OPEN: see checklist audit ledger)
       Docker-capable runner; skipped cleanly otherwise.
-- [ ] Native smoke is documented and passes on Windows without Docker.
-- [ ] `go:check` remains the single Go-command source; grep shows no duplicated
-      vet/test invocations outside `package.json` and the Dockerfile stage.
-- [ ] `npm run test`, `npm run go:check`, and `npx tsc --noEmit` all green on
-      the S17 changes.
+- [x] Native smoke is documented and passes on Windows without Docker. (_evidence: see CLOSED_GO record)
+- [x] `go:check` remains the single Go-command source; grep shows no duplicated (_evidence: see CLOSED_GO record)      vet/test invocations outside `package.json` and the Dockerfile stage.
+- [x] `npm run test`, `npm run go:check`, and `npx tsc --noEmit` all green on (_evidence: see CLOSED_GO record)      the S17 changes.
 
 ## Risk Assessment
 Assumption: the container job's Docker availability can be detected in CI —

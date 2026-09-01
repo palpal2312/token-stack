@@ -39,9 +39,8 @@ of opt-in `SEN_DAEMON_URL`.
 4. Round-trip chat turn through the running app (build + probe).
 
 ## Success Criteria
-- [ ] Chat turn POST->daemon->store->GET verified in the app runtime.
-- [ ] No adapter hacks duplicated; single mapping module used by consumers.
-
+- [x] Chat turn POST->daemon->store->GET verified in the app runtime. (_evidence: see CLOSED_GO record)
+- [x] No adapter hacks duplicated; single mapping module used by consumers. (_evidence: see CLOSED_GO record)
 ## Risk Assessment
 UI consumers using the old shape could break if seeded legacy data is read —
 signal: chat view shows stale shapes in a seeded run; response: keep the mapping
