@@ -106,10 +106,19 @@ function TabCard({ sub, notes }: { sub: LiveSubLane; notes: MasterNote[] }) {
       sub.task && sub.task.status !== "completed" && status !== "WORKING" ? 1 : 0,
   };
   return (
-    <div className="w-72 shrink-0 rounded border border-[var(--line)] bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3">
+    <div
+      className={`w-72 shrink-0 rounded border bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3 ${
+        sub.coordinator ? "border-[var(--gold)]" : "border-[var(--line)]"
+      }`}
+    >
       <div className="text-sm font-semibold text-[var(--cream-soft)] truncate" title={sub.title}>
         {sub.kind === "browser" ? "🌐 " : "⌨ "}
         {sub.title}
+        {sub.coordinator && (
+          <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
+            coordinator
+          </span>
+        )}
       </div>
       <div className={`text-2xl font-bold ${LANE_STATUS_STYLE[status] ?? "text-[var(--cream)]"}`}>
         {status}

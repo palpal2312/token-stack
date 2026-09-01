@@ -34,6 +34,8 @@ export interface LiveSubLane {
   active: boolean;
   /** Terminal output tail / browser URL — the tab card's italic memo line. */
   memo?: string;
+  /** This tab's terminal is the bound coordinator of the latest Orca run. */
+  coordinator?: boolean;
   task?: LiveTask;
 }
 
@@ -113,6 +115,13 @@ interface OrcaWorker {
   workerState: string;
   dispatchStatus: string;
   agentTerminalHandle: string;
+}
+
+interface OrcaRun {
+  id: string;
+  legacy: number;
+  updated_at: string;
+  coordinator_handle?: string | null;
 }
 
 interface OrcaTask {
@@ -232,7 +241,7 @@ export async function deriveOrcaLiveBoard(
   }
 
   const degraded: string[] = [];
-  const [worktrees, terminals, browserTabs, workers, current, repos] = await Promise.all([
+  const [worktrees, terminals, browserTabs, workers, current, repos, runs] = await Promise.all([
     collect<OrcaWorktree[]>("worktrees", degraded, [], async () =>
       (await runOrcaCli<{ worktrees: OrcaWorktree[] }>(["worktree", "list", "--json"])).worktrees),
     collect<OrcaTerminal[]>("terminals", degraded, [], async () =>
@@ -245,7 +254,16 @@ export async function deriveOrcaLiveBoard(
       (await runOrcaCli<{ worktree: OrcaWorktree }>(["worktree", "current", "--json"])).worktree),
     collect<OrcaRepo[]>("repos", degraded, [], async () =>
       (await runOrcaCli<{ repos: OrcaRepo[] }>(["repo", "list", "--json"])).repos),
+    collect<OrcaRun[]>("runs", degraded, [], async () =>
+      (await runOrcaCli<{ runs: OrcaRun[] }>(["orchestration", "run-list", "--json"])).runs),
   ]);
+
+  // The tab holding coordination authority: the bound coordinator terminal of
+  // the most recently updated non-legacy run.
+  const latestRun = runs
+    .filter((r) => !r.legacy && r.coordinator_handle)
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
+  const coordinatorHandle = latestRun?.coordinator_handle ?? null;
 
   // Scopes mirror the Orca sidebar: Project groups (repo list projectGroupId)
   // containing their repos; each repo is one selectable scope. Repos the
@@ -318,6 +336,7 @@ export async function deriveOrcaLiveBoard(
         // Terminal preview can be long multi-line output; last line is the
         // freshest and fits the two-line memo slot.
         memo: t.preview?.trim().split("\n").filter(Boolean).at(-1),
+        coordinator: t.handle === coordinatorHandle || undefined,
         task: worker
           ? {
               id: worker.taskId,
