@@ -1,0 +1,9 @@
+node_modules
+.next
+.next-qa-*
+coverage
+Dockerfile
+.dockerignore
+.git
+plans/backups
+*.log
