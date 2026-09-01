@@ -43,6 +43,20 @@ Ownership changes only through the project lease script. Never edit its state JS
 
 ## After a successful claim
 
+- Declare the takeover on the orchestration dashboard so observers never guess
+  which tab is Master: append one note carrying the exact terminal handle and
+  rename the Orca tab. The dashboard reads both; the handle in the note pins a
+  DECLARED badge onto the exact tab card.
+
+  ```powershell
+  $note = @{ time = (Get-Date).ToUniversalTime().ToString("o"); field = "situation"; writer = "newos-master"; text = "Master takeover active at tab $Terminal ($Owner), generation $Generation" } | ConvertTo-Json -Compress
+  Add-Content -Path "$HOME/.agentic-os/orchestration-notes.jsonl" -Value $note
+  orca terminal rename --terminal $Terminal --title "👑 MASTER takeover — NEWS OS gen $Generation"
+  ```
+
+  Keep the note text free of prompts, transcripts, credentials and project
+  content — handle, owner and generation only.
+
 - Run `-Mode Snapshot`; reconcile its task/lane delta against the newest run's controller config, manifest, backlog, reports and exact Orca terminal handles.
 - Read bounded terminal deltas and completion receipts. Do not replay completed jobs or create a second writer in a worktree.
 - Act as controller only: plan, dispatch, inspect, handle blockers, promote reviewed artifacts and request independent gates. Do not implement product code in master.
