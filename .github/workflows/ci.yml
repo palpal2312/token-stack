@@ -66,3 +66,19 @@ jobs:
             if ($r.turn_seq -lt 1) { throw "turn_seq < 1" }
             Write-Host "canonical-smoke-ok turn=$($r.turn_seq) attempt=$($r.chat_attempt_id)"
           } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
+
+  container-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t agent-os-s17 .
+      - name: Container smoke
+        run: |
+          docker run -d --name s17 -p 3737:3737 agent-os-s17
+          sleep 15
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3737/api/orchestration/state || true)
+          docker logs s17 2>&1 | tail -5 || true
+          docker rm -f s17 >/dev/null 2>&1 || true
+          if [ "$code" != "200" ]; then echo "container-smoke status=$code"; exit 1; fi
+          echo "container-smoke-ok"
