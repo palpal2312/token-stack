@@ -138,3 +138,12 @@ Lessons:
   own root; keep cycles outside git.
 
 Next known gap: one-command packaging (S17) then live SLO observability.
+
+## S18 checkpoint and lessons (2026-09-01)
+S18 CLOSED_GO: SLO probes (Availability/RPO/RTO per ops-prep 1d) as JSONL under
+%LOCALAPPDATA%\NEWSOS\s12-metrics + /api/ops/metrics tail-N route + no-chart
+dashboard + 30m scheduled-task safety detector + backup-cadence hash check.
+Lessons: single watch-loop probe script > external agent per tick; v1 dashboard
+last-state table (sparklines later, no chart lib); scheduled tasks are safety
+detectors, not the normal loop. Next gap: none blocking — the roadmap (S10-S18 +
+Phase 12) is closed; further work is optional.
