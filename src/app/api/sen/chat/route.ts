@@ -44,12 +44,67 @@ function offline() {
   );
 }
 
+// SEN_DAEMON_URL flips POST/GET to the sen-plane daemon /api/v1/sen/chat
+// (fixed contract: {session_id, sender, text} -> {command_id, turn_seq,
+// session_id, created_at}). When unset every code path below runs exactly as
+// before — the daemon is opt-in, legacy/canonical behavior is unchanged.
+function senDaemonURL(): string | null {
+  const v = process.env.SEN_DAEMON_URL?.trim();
+  return v || null;
+}
+
+async function daemonChatGet(base: string, req: Request): Promise<NextResponse> {
+  const url = new URL(req.url);
+  const target = new URL(`/api/v1/sen/chat?${url.searchParams.toString()}`, base);
+  try {
+    const res = await fetch(target, { cache: "no-store", signal: AbortSignal.timeout(10_000) });
+    const body = await res.json().catch(() => null);
+    if (body !== null && typeof body === "object") {
+      return NextResponse.json({ ...body, canonical: true }, { status: res.status });
+    }
+    return NextResponse.json({ error: "sen daemon returned invalid JSON" }, { status: 502 });
+  } catch {
+    return NextResponse.json({ error: "sen daemon unreachable" }, { status: 503 });
+  }
+}
+
+async function daemonChatPost(base: string, req: Request): Promise<NextResponse> {
+  let body: { sessionId?: unknown; content?: unknown; prompt?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid request body" }, { status: 400 });
+  }
+  const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
+  const text = (typeof body.content === "string" ? body.content : typeof body.prompt === "string" ? body.prompt : "").trim();
+  if (!sessionId) {
+    return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+  }
+  if (!text) {
+    return NextResponse.json({ error: "content is required" }, { status: 400 });
+  }
+  try {
+    const res = await fetch(new URL("/api/v1/sen/chat", base), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, sender: "user", text }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const result = await res.json().catch(() => null);
+    return NextResponse.json(result, { status: res.status });
+  } catch {
+    return NextResponse.json({ error: "sen daemon unreachable" }, { status: 503 });
+  }
+}
+
 // GET: session list, or one session's thread with ?session=. Canonical mode
 // answers from the Go read models and stamps canonical:true so the UI picks
 // the canonical interaction path.
 export async function GET(req: Request) {
   const guard = checkLocalRequest(req, { requireJson: false, allowQueryToken: false });
   if (guard) return refuse(guard);
+  const daemon = senDaemonURL();
+  if (daemon) return await daemonChatGet(daemon, req);
   if (!(await canonicalEnabled())) {
     if (process.env.SEN_CHAT_LEGACY_WRITER === "1") {
       const res = await firstmateChatGet(req);
@@ -98,6 +153,8 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const guard = checkLocalRequest(req);
   if (guard) return refuse(guard);
+  const daemon = senDaemonURL();
+  if (daemon) return await daemonChatPost(daemon, req);
   if (!(await canonicalEnabled())) {
     if (process.env.SEN_CHAT_LEGACY_WRITER === "1") {
       const res = await firstmateChatPost(req);

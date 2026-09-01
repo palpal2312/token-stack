@@ -74,7 +74,8 @@ type RuntimeCheckpoint struct {
 // SendTurnInput is the persist-before-ack send command.
 type SendTurnInput struct {
 	CommandID, SessionID, WorkspaceID, Content, BuilderPolicy string
-	Now                                                       time.Time
+	Role                                                       string // optional; default "user"
+	Now                                                        time.Time
 }
 
 // SendTurnReceipt is returned only after the durable commit.
@@ -104,6 +105,13 @@ func SendTurn(ctx context.Context, db *sql.DB, input SendTurnInput) (SendTurnRec
 	}
 	if input.CommandID == "" || input.SessionID == "" || input.WorkspaceID == "" || input.Content == "" {
 		return zero, errors.New("command id, session id, workspace id, and content are required")
+	}
+	role := input.Role
+	if role == "" {
+		role = "user"
+	}
+	if !validRoles[role] {
+		return zero, errors.New("role must be user, assistant, or system")
 	}
 	now := input.Now
 	if now.IsZero() {
@@ -155,9 +163,9 @@ func SendTurn(ctx context.Context, db *sql.DB, input SendTurnInput) (SendTurnRec
 
 	if _, err := tx.ExecContext(ctx, `INSERT INTO sen_session_turns
 		(turn_id, session_id, turn_seq, role, message_kind, content, chat_attempt_id, client_command_id, outcome_status, recorded_at)
-		VALUES (?, ?, ?, 'user', 'text', ?, ?, ?, NULL, ?)`,
-		turnID, input.SessionID, turnSeq, input.Content, attemptID, input.CommandID, stamp); err != nil {
-		return zero, fmt.Errorf("insert user turn: %w", err)
+		VALUES (?, ?, ?, ?, 'text', ?, ?, ?, NULL, ?)`,
+		turnID, input.SessionID, turnSeq, role, input.Content, attemptID, input.CommandID, stamp); err != nil {
+		return zero, fmt.Errorf("insert turn: %w", err)
 	}
 	if _, err := tx.ExecContext(ctx, `INSERT INTO sen_chat_attempts
 		(chat_attempt_id, session_id, input_first_turn_seq, input_last_turn_seq, ordinal, state, builder_id,

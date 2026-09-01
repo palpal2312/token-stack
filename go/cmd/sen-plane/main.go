@@ -10,6 +10,9 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -19,6 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"agentic-os/internal/localdb/product"
 	"agentic-os/internal/orca"
 )
 
@@ -58,6 +62,24 @@ type ExecutionPreferenceDTO struct {
 	ResolutionReason string `json:"resolution_reason"`
 	UpdatedAt        string `json:"updated_at,omitempty"`
 }
+
+// SenChatTurnRequest is the fixed POST /api/v1/sen/chat wire shape.
+type SenChatTurnRequest struct {
+	SessionID string `json:"session_id"`
+	Sender    string `json:"sender"`
+	Text      string `json:"text"`
+}
+
+// SenChatTurnResponse is the persist-before-ack receipt projection.
+type SenChatTurnResponse struct {
+	CommandID string `json:"command_id"`
+	TurnSeq   int    `json:"turn_seq"`
+	SessionID string `json:"session_id"`
+	CreatedAt string `json:"created_at"`
+}
+
+// validSenders mirrors the sen_session_turns.role CHECK constraint.
+var validSenders = map[string]bool{"user": true, "assistant": true, "system": true}
 
 // ProjectionSource is the live read seam for orca-backed projections.
 type ProjectionSource interface {
@@ -180,12 +202,112 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+// newCommandID mints a replay-safe idempotency key, same shape as the
+// scheduler fencing token. ponytail: 16-byte hex, not a v4 UUID.
+func newCommandID() (string, error) {
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(buf), nil
+}
+
 // NewHandler assembles the control-plane routes. Every read fails closed:
-// a projection error is a 503, never a partial/empty success.
-func NewHandler(src ProjectionSource) http.Handler {
+// a projection error is a 503, never a partial/empty success. chat is the
+// canonical product store (sen.db); when nil the chat route answers 503.
+func NewHandler(src ProjectionSource, chat *sql.DB) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
+	mux.HandleFunc("POST /api/v1/sen/chat", func(w http.ResponseWriter, r *http.Request) {
+		if chat == nil {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "chat_store_unavailable"})
+			return
+		}
+		var body SenChatTurnRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_chat_request"})
+			return
+		}
+		if body.SessionID == "" || body.Text == "" || !validSenders[body.Sender] {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid_chat_request"})
+			return
+		}
+		now := time.Now().UTC()
+		commandID, err := newCommandID()
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "command_id_generation_failed"})
+			return
+		}
+		receipt, err := product.SendTurn(r.Context(), chat, product.SendTurnInput{
+			CommandID: commandID, SessionID: body.SessionID,
+			WorkspaceID: body.SessionID, Content: body.Text, Role: body.Sender, Now: now,
+		})
+		if err != nil {
+			// SendTurn is persist-before-ack: an error here means no mutation committed.
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "chat_store_unavailable"})
+			return
+		}
+		writeJSON(w, http.StatusOK, SenChatTurnResponse{
+			CommandID: receipt.CommandID, TurnSeq: receipt.TurnSeq,
+			SessionID: receipt.SessionID, CreatedAt: now.Format(time.RFC3339),
+		})
+	})
+	// GET reads back persisted chat so the backfilled product store is visible.
+	// No ?session -> session list; ?session=<id> -> that session's turns
+	// (role/text/ts rows the Next.js proxy passed through as canonical).
+	mux.HandleFunc("GET /api/v1/sen/chat", func(w http.ResponseWriter, r *http.Request) {
+		if chat == nil {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "chat_store_unavailable"})
+			return
+		}
+		session := r.URL.Query().Get("session")
+		if session == "" {
+			rows, err := chat.QueryContext(r.Context(), `SELECT session_id, title, selected_builder_policy, created_at, updated_at
+				FROM sen_sessions ORDER BY updated_at DESC`)
+			if err != nil {
+				writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "chat_sessions_unavailable"})
+				return
+			}
+			defer rows.Close()
+			sessions := []map[string]any{}
+			for rows.Next() {
+				var sessionID, title, builder, createdAt, updatedAt string
+				if err := rows.Scan(&sessionID, &title, &builder, &createdAt, &updatedAt); err != nil {
+					writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "chat_sessions_unavailable"})
+					return
+				}
+				row := map[string]any{"id": sessionID, "title": title, "createdAt": createdAt, "updatedAt": updatedAt}
+				if row["title"] == "" {
+					row["title"] = sessionID
+				}
+				if builder != "" {
+					row["builder"] = builder
+				}
+				sessions = append(sessions, row)
+			}
+			if err := rows.Err(); err != nil {
+				writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "chat_sessions_unavailable"})
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]any{"sessions": sessions})
+			return
+		}
+		turns, err := product.ListTurnsAfter(r.Context(), chat, session, 0, 1000)
+		if err != nil {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "chat_thread_unavailable"})
+			return
+		}
+		out := []map[string]any{}
+		for _, t := range turns {
+			out = append(out, map[string]any{
+				"role": t.Role,
+				"text": t.Content,
+				"ts":   t.RecordedAt.UTC().Format(time.RFC3339),
+			})
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"turns": out})
 	})
 	mux.HandleFunc("GET /api/v1/runtime/slots", func(w http.ResponseWriter, _ *http.Request) {
 		ss, err := src.Slots()
@@ -274,9 +396,19 @@ func main() {
 	}
 	defer store.Close()
 
+	// The canonical product chat store (sen-product.db) under the same root.
+	// Failure is not fatal here: existing projection routes stay up and
+	// /api/v1/sen/chat answers 503 while the store is unavailable.
+	chat, err := product.Open(context.Background(), root)
+	if err != nil {
+		slog.Warn("sen-plane continuing without product store; /api/v1/sen/chat returns 503", "root", root, "error", err)
+	} else {
+		defer chat.Close()
+	}
+
 	srv := &http.Server{
 		Addr:              addr,
-		Handler:           NewHandler(&storeSource{store: store}),
+		Handler:           NewHandler(&storeSource{store: store}, chat),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	slog.Info("sen-plane listening", "addr", addr, "store_root", root)
