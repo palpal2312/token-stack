@@ -39,3 +39,30 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit
+  canonical-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - run: npm ci
+      - run: npm run test
+      - name: sen-plane canonical smoke
+        shell: pwsh
+        run: |
+          cd go
+          go build -o $env:RUNNER_TEMP/sen-plane.exe ./cmd/sen-plane
+          $p = Start-Process -FilePath $env:RUNNER_TEMP/sen-plane.exe -PassThru -NoNewWindow -Environment @{ SEN_PLANE_STORE_DIR = "$env:RUNNER_TEMP/sen-plane-store"; SEN_PLANE_ADDR = "127.0.0.1:3979" }
+          try {
+            Start-Sleep -Seconds 4
+            $h = Invoke-RestMethod http://127.0.0.1:3979/healthz
+            if ($h.status -ne "ok") { throw "healthz != ok" }
+            $r = Invoke-RestMethod -Method Post -Uri http://127.0.0.1:3979/api/v1/sen/chat -ContentType "application/json" -Body '{"session_id":"ci-smoke","sender":"user","text":"ci"}'
+            if ($r.turn_seq -lt 1) { throw "turn_seq < 1" }
+            Write-Host "canonical-smoke-ok turn=$($r.turn_seq) attempt=$($r.chat_attempt_id)"
+          } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
