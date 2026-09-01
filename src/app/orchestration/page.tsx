@@ -95,12 +95,15 @@ function TabCard({
   sub,
   notes,
   pinned,
+  declared,
   onTogglePin,
 }: {
   sub: LiveSubLane;
   notes: MasterNote[];
   /** Manual pin (user) or auto main (server) — sticky first on the row. */
   pinned: "manual" | "auto" | null;
+  /** The master agent named this tab's terminal handle in a note. */
+  declared: boolean;
   onTogglePin: () => void;
 }) {
   // WORKING = dispatch running on this tab; ACTIVE = tab open; IDLE = closed.
@@ -139,6 +142,11 @@ function TabCard({
           {sub.focused && (
             <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--emerald)] border border-[var(--emerald)] rounded px-1">
               ▶ focus
+            </span>
+          )}
+          {declared && (
+            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--plum)] border border-[var(--plum)] rounded px-1">
+              ★ declared
             </span>
           )}
         </div>
@@ -261,6 +269,7 @@ export default function OrchestrationPage() {
           sub={sub}
           notes={notes}
           pinned={pinOf(sub)}
+          declared={sub.id === declaredHandle}
           onTogglePin={() => togglePin(laneKey, sub.id)}
         />
       ));
@@ -336,6 +345,17 @@ export default function OrchestrationPage() {
 
   const latestNote = (field: NoteField): MasterNote | undefined =>
     [...notes].reverse().find((n) => (n.field ?? "situation") === field);
+
+  // The master agent declares its takeover tab by naming its terminal handle
+  // (term_xxx) in a note — the exact tab then gets a DECLARED badge instead
+  // of relying on title/focus inference.
+  const declaredHandle = (() => {
+    for (const n of [...notes].reverse()) {
+      const m = /term_[0-9a-f-]{8,}/.exec(n.text);
+      if (m) return m[0];
+    }
+    return null;
+  })();
 
   // Most recent master note = last write shown on the MASTER card.
   const lastNote = notes.length > 0 ? notes[notes.length - 1] : undefined;
