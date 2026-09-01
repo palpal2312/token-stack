@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { checkLocalRequest } from "@/lib/localOnly";
 import { shadowObserveResponse } from "@/lib/senShadowProxy";
+import { mapCanonicalChatReceipt } from "@/lib/sen/canonical-chat-adapter";
 import { goApiAvailable, goApiFetch } from "@/lib/goApiProxy";
 import {
   GET as firstmateChatGet,
@@ -91,7 +92,12 @@ async function daemonChatPost(base: string, req: Request): Promise<NextResponse>
       signal: AbortSignal.timeout(10_000),
     });
     const result = await res.json().catch(() => null);
-    return NextResponse.json(result, { status: res.status });
+    // S15 P1: canonical receipt is snake_case; expose the consumer shape.
+    const canonical =
+      result && typeof result.command_id === "string"
+        ? mapCanonicalChatReceipt(result)
+        : result;
+    return NextResponse.json(canonical, { status: res.status });
   } catch {
     return NextResponse.json({ error: "sen daemon unreachable" }, { status: 503 });
   }
