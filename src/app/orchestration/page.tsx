@@ -119,11 +119,17 @@ function TabCard({
     pending:
       sub.task && sub.task.status !== "completed" && status !== "WORKING" ? 1 : 0,
   };
+  // Settled dispatch (completed/failed) but tab still open = zombie awaiting
+  // worker-release; dim the card so unreleased zombies stand out.
+  const settled =
+    sub.task !== undefined &&
+    sub.task.status !== "running" &&
+    sub.task.status !== "ready";
   return (
     <div
       className={`w-72 shrink-0 rounded border bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3 ${
         pinned || sub.coordinator ? "border-[var(--gold)]" : "border-[var(--line)]"
-      } ${pinned ? "sticky left-0 z-10" : ""}`}
+      } ${pinned ? "sticky left-0 z-10" : ""} ${settled ? "opacity-60" : ""}`}
     >
       <div className="flex items-start gap-2">
         <div className="text-sm font-semibold text-[var(--cream-soft)] truncate flex-1" title={sub.title}>
