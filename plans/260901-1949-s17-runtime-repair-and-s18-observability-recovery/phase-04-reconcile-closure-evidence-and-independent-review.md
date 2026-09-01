@@ -17,11 +17,11 @@ self-declare roadmap closure.
 
 ## Requirements
 
-- [ ] Run the exact review-brief regression command set on current committed candidate bytes.
-- [ ] Verify both S10 receipt chains remain 8/8 and 25/25 PASS after the repair.
-- [ ] Reconcile Git status, task/process/port ownership, metric receipt, all 11 CLOSED_GO records, and matching journal DONE events.
-- [ ] Produce a new repair receipt and independent verdict with `GO` only when S17 lifecycle and S18 healthy proof pass; otherwise retain `NO_GO` with exact evidence.
-- [ ] Keep historical CLOSED_GO records immutable; normalize only status/closure metadata in corresponding S10-S19 and Phase 12 plan files after records and journal agree.
+- [x] Run the exact review-brief regression command set on current committed candidate bytes.
+- [x] Verify both S10 receipt chains remain 8/8 and 25/25 PASS after the repair.
+- [x] Reconcile Git status, task/process/port ownership, metric receipt, all 11 CLOSED_GO records, and matching journal DONE events.
+- [x] Produce a new repair receipt and independent verdict with `GO` only when S17 lifecycle and S18 healthy proof pass; otherwise retain `NO_GO` with exact evidence.
+- [x] Keep historical CLOSED_GO records immutable; normalize only status/closure metadata in corresponding S10-S19 and Phase 12 plan files after records and journal agree.
 
 ## Related Code Files
 
@@ -40,13 +40,13 @@ self-declare roadmap closure.
 
 ## Todo
 
-- [ ] Receipt records commands, exit codes, hashes, lifecycle ownership, and redacted metric rows.
-- [ ] Independent review is authored by a fresh session and is not the repair author.
+- [x] Receipt records commands, exit codes, hashes, lifecycle ownership, and redacted metric rows.
+- [x] Independent review is authored by a fresh session and is not the repair author.
 
 ## Success Criteria
 
-- [ ] No release/cutover/flip occurred; legacy writer remains disabled; Phase 21 remains blocked.
-- [ ] The final review is reproducible from repository bytes plus redacted local-runtime receipt.
+- [x] No release/cutover/flip occurred; legacy writer remains disabled; Phase 21 remains blocked.
+- [x] The final review is reproducible from repository bytes plus redacted local-runtime receipt.
 
 ## Risk Assessment
 

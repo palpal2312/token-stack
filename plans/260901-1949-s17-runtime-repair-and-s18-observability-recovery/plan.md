@@ -1,7 +1,7 @@
 ---
 title: "S17 runtime repair and S18 observability recovery"
 description: "Repair the native-runner defect, add a local Scheduled-Task daemon with Pester lifecycle coverage, repair S18 observability, normalize historical plan statuses, and re-arbitrate without release or flips."
-status: pending
+status: completed
 priority: P1
 effort: "9-14h"
 tags: [bugfix, infra, observability, s17, s18, critical]

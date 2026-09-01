@@ -1,10 +1,10 @@
 # S17/S18 runtime repair receipt — 2026-09-01
 
-Status: `READY_FOR_OWNER_COMMIT`
+Status: `PASS`
 
 ## Current workspace evidence
 
-- Base `HEAD`: `06cd3d4` (no commit was created by this controller).
+- Candidate `HEAD`: `d0b549a` (`fix: recover local s17 runtime observability`).
 - Native runner and task contract Pester suites: `18 passed / 0 failed`.
 - JavaScript regression: `npm run test` — `58 passed / 0 failed`.
 - Go: `go build ./...`, `go vet ./...`, and
@@ -42,6 +42,7 @@ Status: `READY_FOR_OWNER_COMMIT`
 
 ## Gate
 
-The repaired bytes and evidence are ready for independent review and an
-owner-created commit. This receipt intentionally does not claim a committed
-master verdict, because the owner instructed this controller not to commit.
+Independent review of committed candidate `d0b549a` returned `REVIEWED PASS` in
+`plans/reports/s17-s18-runtime-repair-independent-review-260901.md`. This is a
+repair close gate only; it grants no release, cutover, desktop-shell, legacy
+writer, or Phase 21 authority.
