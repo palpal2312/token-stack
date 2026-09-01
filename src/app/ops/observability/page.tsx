@@ -13,12 +13,16 @@ export default function ObservabilityPage() {
       <table style={{ borderCollapse: "collapse" }}>
         <thead><tr><th style={th}>time</th><th style={th}>healthz</th><th style={th}>fails</th><th style={th}>rpo_min</th></tr></thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td style={td}>{r.t}</td><td style={td}>{r.healthz}</td>
-              <td style={td}>{r.consec_fails}</td><td style={td}>{r.rpo_min}</td>
-            </tr>
-          ))}
+          {rows.length === 0 ? (
+            <tr><td style={td} colSpan={4}>no data</td></tr>
+          ) : (
+            rows.map((r, i) => (
+              <tr key={i}>
+                <td style={td}>{r.t}</td><td style={td}>{r.healthz}</td>
+                <td style={td}>{r.consec_fails}</td><td style={td}>{r.rpo_min}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </main>
