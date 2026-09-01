@@ -1,7 +1,7 @@
 ---
 title: "S12 Go control-plane integration and coverage"
 description: "Sprint 12: wire the merged Go control-plane into the app runtime, close the shell/web test-coverage debt, and prepare desktop-shell enablement as a deploy-gated surface."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [s12, go-plane, coverage, desktop-shell]

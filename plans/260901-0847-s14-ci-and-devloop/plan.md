@@ -1,7 +1,7 @@
 ---
 title: "S14 CI and dev-loop hardening"
 description: "Sprint 14: wire a runnable local QA harness, a dev-loop starter for sen-plane, and a CI workflow; close with the standard arbiter gate."
-status: pending
+status: completed
 priority: P1
 tags: [s14, ci, dev-loop, qa]
 created: 2026-09-01

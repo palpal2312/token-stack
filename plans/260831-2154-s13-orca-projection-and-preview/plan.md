@@ -1,7 +1,7 @@
 ---
 title: "S13 orca projection and preview"
 description: "Wire the real orca-store projection into cmd/sen-plane, enable desktop-shell preview on a staging seat under the 1809 gate, close the recorded debt pass, and close the sprint under an independent gate."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [s13, go-plane, orca, projection, desktop-shell, debt]

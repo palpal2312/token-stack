@@ -1,7 +1,7 @@
 ---
 title: "S10 controlled execution scope expansion and close"
 description: "Controlled expansion of Sprint 10 from offline evidence to approved registries, replay, canary/recovery operations, and independent closure."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: []

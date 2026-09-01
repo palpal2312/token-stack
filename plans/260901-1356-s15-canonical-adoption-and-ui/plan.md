@@ -1,7 +1,7 @@
 ---
 title: "S15 canonical adoption and app integration"
 description: "Sprint 15: make the canonical Go chat + sen-plane projections the runtime path the app actually uses, align the chat client DTO, and harden CI/backup around the adopted store."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [s15, canonical-chat, sen-plane, adoption, ui, ci]

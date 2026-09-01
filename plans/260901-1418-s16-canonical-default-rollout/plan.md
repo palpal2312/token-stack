@@ -1,7 +1,7 @@
 ---
 title: "S16 canonical default rollout"
 description: "Sprint 16: make the canonical Go chat + sen-plane the DEFAULT runtime (no env opt-in), finish UI consumption, and freeze the legacy writer."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [s16, canonical, rollout, default, legacy-freeze]

@@ -1,7 +1,7 @@
 ---
 title: "S17 one-command packaging"
 description: "Sprint 17: package app + sen-plane as ONE portable commitment — Docker multi-stage image, .env.example env-name surface, top-level run script (Windows + container), CI container smoke reusing go:check, restore cadence doc."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [s17, packaging, docker, ci, run-script]

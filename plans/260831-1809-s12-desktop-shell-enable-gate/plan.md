@@ -1,7 +1,7 @@
 ---
 title: "S12 desktop-shell deploy-enablement gate"
 description: "Deploy-gated enablement of the desktop_shell_v2 surface (Phase 19a desktop shell), distinct from the Phase 12 legacy cutover."
-status: pending
+status: completed
 priority: P2
 created: 2026-08-31
 ---

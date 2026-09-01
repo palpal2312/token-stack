@@ -1,7 +1,7 @@
 ---
 title: "Phase 12 gate: legacy cutover and retirement contract"
 description: "Gate definition for release cutover and legacy-writer retirement, deferred by Sprint 10 to this separate gate. Not an authorization."
-status: pending
+status: completed
 priority: P2
 effort: ""
 tags: [gate, phase12, cutover, legacy-retirement]

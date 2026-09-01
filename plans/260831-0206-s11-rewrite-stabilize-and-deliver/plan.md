@@ -1,7 +1,7 @@
 ---
 title: "S11 rewrite stabilization and first delivery"
 description: "Sprint 11: bring the split rewrite (feat/rewrite-baseline) to merge quality and land the first vertical slice behind the desktop-shell flag."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [s11, rewrite, desktop-shell, go-plane]

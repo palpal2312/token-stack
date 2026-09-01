@@ -1,7 +1,7 @@
 ---
 title: "S18 live SLO observability"
 description: "Sprint 18: live SLO probes that are actually measured (Availability/RPO/RTO/write-verification), a local metrics store + dashboard under %LOCALAPPDATA%\\NEWSOS\\s12-metrics (no third-party), cadence automation (scheduled probe job + backup cadence enforcement), and the standard independent-arbiter close gate."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [s18, observability, slo, probes, metrics, dashboard, automation, close-gate]

@@ -1,7 +1,7 @@
 ---
 title: "S19 desktop-shell rollout"
 description: "Sprint 19: enable the desktop_shell_v2 surface per the 1809 enable-gate on this host, with rollback and evidence."
-status: pending
+status: completed
 priority: P1
 tags: [s19, desktop-shell, rollout, enable-gate]
 created: 2026-09-01
