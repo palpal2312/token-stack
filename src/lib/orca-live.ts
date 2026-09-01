@@ -36,6 +36,8 @@ export interface LiveSubLane {
   memo?: string;
   /** This tab's terminal is the bound coordinator of the latest Orca run. */
   coordinator?: boolean;
+  /** The lane's main running tab — pinned first and sticky on the row. */
+  main?: boolean;
   task?: LiveTask;
 }
 
@@ -99,6 +101,7 @@ interface OrcaTerminal {
   title: string;
   connected: boolean;
   preview?: string | null;
+  lastOutputAt?: string | null;
 }
 
 interface OrcaBrowserTab {
@@ -359,6 +362,33 @@ export async function deriveOrcaLiveBoard(
     return subLanes;
   };
 
+  // The lane's "main" tab: an in-flight dispatch wins (a worker is actually
+  // running there); otherwise the connected terminal with the freshest
+  // output. One per lane; pinned first on the row.
+  const markMainTab = (subLanes: LiveSubLane[]): void => {
+    const running = subLanes.find(
+      (s) => s.task && (s.task.status === "running" || s.task.status === "ready"),
+    );
+    if (running) {
+      running.main = true;
+      return;
+    }
+    let freshest: LiveSubLane | undefined;
+    let freshestAt = "";
+    for (const s of subLanes) {
+      if (s.kind !== "terminal" || !s.active) continue;
+      const t = terminals.find((t) => t.handle === s.id);
+      const at = t?.lastOutputAt ?? "";
+      if (at > freshestAt) {
+        freshestAt = at;
+        freshest = s;
+      }
+    }
+    if (freshest) freshest.main = true;
+    // Pinned first; the row's sticky CSS keeps it in place while scrolling.
+    subLanes.sort((a, b) => Number(b.main ?? false) - Number(a.main ?? false));
+  };
+
   const scoped = worktrees.filter((w) => w.repoId === scope);
   // Lanes = the primary worktree's direct children, mirroring the sidebar's
   // "N children" group. The master/parent itself is not a lane; root-level
@@ -368,6 +398,7 @@ export async function deriveOrcaLiveBoard(
     .filter((w) => w.parentWorktreeId && w.parentWorktreeId === primary?.id)
     .map((w) => {
       const subLanes = buildSubLanes(w.id);
+      markMainTab(subLanes);
       // Old-card counters: latest dispatch per tab terminal. completed→done,
       // running/ready→active, anything else unfinished→pending.
       const counters = { done: 0, active: 0, pending: 0 };
@@ -400,11 +431,19 @@ export async function deriveOrcaLiveBoard(
     scopes,
     groups,
     primary: primary
-      ? {
-          name: primary.displayName,
-          branch: primary.branch.replace(/^refs\/heads\//, ""),
-          subLanes: buildSubLanes(primary.id),
-        }
+      ? (() => {
+          const subLanes = buildSubLanes(primary.id);
+          // Master's main tab is the coordinator; fall back to the busiest.
+          const coord = subLanes.find((s) => s.coordinator);
+          if (coord) coord.main = true;
+          else markMainTab(subLanes);
+          subLanes.sort((a, b) => Number(b.main ?? false) - Number(a.main ?? false));
+          return {
+            name: primary.displayName,
+            branch: primary.branch.replace(/^refs\/heads\//, ""),
+            subLanes,
+          };
+        })()
       : null,
     lanes,
     generatedAt: new Date().toISOString(),

@@ -108,12 +108,17 @@ function TabCard({ sub, notes }: { sub: LiveSubLane; notes: MasterNote[] }) {
   return (
     <div
       className={`w-72 shrink-0 rounded border bg-[var(--bg-card)] shadow p-5 flex flex-col gap-3 ${
-        sub.coordinator ? "border-[var(--gold)]" : "border-[var(--line)]"
-      }`}
+        sub.main || sub.coordinator ? "border-[var(--gold)]" : "border-[var(--line)]"
+      } ${sub.main ? "sticky left-0 z-10" : ""}`}
     >
       <div className="text-sm font-semibold text-[var(--cream-soft)] truncate" title={sub.title}>
         {sub.kind === "browser" ? "🌐 " : "⌨ "}
         {sub.title}
+        {sub.main && (
+          <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
+            📌 main
+          </span>
+        )}
         {sub.coordinator && (
           <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
             coordinator
