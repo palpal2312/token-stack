@@ -1,8 +1,11 @@
-# S17 one-command runner.
+# S17 one-command runner (+ S19 shell rollout switch).
 # -Native: starts sen-plane (backgrounded) then the app (npm run dev); the app
 #          is the foreground process; Ctrl+C stops it (daemon child cleaned).
 # -Container: prints the image assemble + run commands for a Docker host.
-param([ValidateSet('Native','Container')][string]$Mode = 'Native')
+# -Shell: sets DESKTOP_SHELL_V2=1 for the app process (S19 rollout; rollback =
+#         run without -Shell).
+param([ValidateSet('Native','Container')][string]$Mode = 'Native',
+      [switch]$Shell)
 if ($Mode -eq 'Container') {
   Write-Host 'docker build -t agent-os-s17 .'
   Write-Host 'docker run --rm -p 3737:3737 -e SEN_PLANE_STORE_DIR=/data/store -v newsos-data:/data agent-os-s17'
@@ -18,6 +21,7 @@ if (-not (Test-Path $daemon)) {
   finally { Pop-Location }
 }
 if (-not $env:SEN_DAEMON_URL) { $env:SEN_DAEMON_URL = 'http://127.0.0.1:3979' }
+if ($Shell -and $env:DESKTOP_SHELL_V2 -ne '1') { $env:DESKTOP_SHELL_V2 = '1'; Write-Host 'DESKTOP_SHELL_V2=1 (S19 shell rollout)' }
 $p = Start-Process -FilePath $daemon -PassThru -WindowStyle Hidden
 try {
   Write-Host ('sen-plane pid=' + $p.Id + ' -> ' + $env:SEN_DAEMON_URL)
