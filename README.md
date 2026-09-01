@@ -199,3 +199,12 @@ For AIPB members only. Not for redistribution.
 You can fork it for personal use. Just don't resell.
 
 — Julian Goldie · [AIPB](https://aiprofitboardroom.com)
+
+## S17 quickstart (one command)
+
+- Native (Windows): `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-s17.ps1 -Mode Native`
+  starts sen-plane (canonical chat/slots) then the app; open `http://127.0.0.1:3737`.
+- Container: image assemble with `docker build -t agent-os-s17 .`, then
+  `docker run --rm -p 3737:3737 agent-os-s17` (canonical daemon inside).
+- Env names: `.env.example` (values stay in your secret store).
+- Chat writes go to the canonical Go store; the legacy JSONL writer is frozen.

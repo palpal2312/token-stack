@@ -30,6 +30,9 @@ COPY --from=nodebuild /app/public ./public
 COPY --from=nodebuild /app/package.json /app/package-lock.json* ./
 COPY --from=nodebuild /app/node_modules ./node_modules
 COPY --from=nodebuild /app/next.config.* ./
+COPY --from=nodebuild /app/server.ts ./
+COPY --from=nodebuild /app/src ./src
+COPY --from=nodebuild /app/tsconfig.json ./
 EXPOSE 3737
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s CMD node -e "require('http').get('http://127.0.0.1:3737/api/orchestration/state',r=>process.exit(r.statusCode>=500?1:0)).on('error',()=>process.exit(1))" || exit 1
 CMD ["sh","-c","sen-plane & exec npm start"]
