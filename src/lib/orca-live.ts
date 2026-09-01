@@ -40,6 +40,8 @@ export interface LiveSubLane {
   main?: boolean;
   /** This tab is the focused tab of its worktree's Orca window group. */
   focused?: boolean;
+  /** Connected terminal with fresh output (< 5 min) but no master dispatch. */
+  live?: boolean;
   task?: LiveTask;
 }
 
@@ -370,6 +372,12 @@ export async function deriveOrcaLiveBoard(
     for (const t of terminals.filter((t) => t.worktreeId === worktreeId)) {
       const worker = byTerminal.get(t.handle);
       const taskInfo = worker ? taskTitles.get(worker.taskId) : undefined;
+      const dispatched =
+        worker !== undefined &&
+        (worker.dispatchStatus === "running" || worker.dispatchStatus === "ready");
+      // Fresh-output window for the LIVE marker: terminal doing something on
+      // its own (not master-dispatched) within the last 5 minutes.
+      const lastOutputMs = t.lastOutputAt ? Number(t.lastOutputAt) : 0;
       subLanes.push({
         kind: "terminal",
         id: t.handle,
@@ -377,6 +385,10 @@ export async function deriveOrcaLiveBoard(
         active: t.connected,
         focused:
           t.tabId !== undefined && t.tabId === focusedTabByWorktree.get(t.worktreeId)
+            ? true
+            : undefined,
+        live:
+          !dispatched && t.connected && Date.now() - lastOutputMs < 5 * 60_000
             ? true
             : undefined,
         // Terminal preview can be long multi-line output; last line is the

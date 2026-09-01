@@ -149,6 +149,16 @@ function TabCard({
               ★ declared
             </span>
           )}
+          {sub.task && (sub.task.status === "running" || sub.task.status === "ready") && (
+            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
+              ⚙ worker
+            </span>
+          )}
+          {sub.live && (
+            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--emerald)] border border-[var(--emerald)] rounded px-1">
+              ● live
+            </span>
+          )}
         </div>
         <button
           type="button"
