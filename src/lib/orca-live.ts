@@ -98,10 +98,20 @@ interface OrcaWorktree {
 interface OrcaTerminal {
   handle: string;
   worktreeId: string;
+  tabId?: string;
   title: string;
   connected: boolean;
   preview?: string | null;
   lastOutputAt?: string | null;
+}
+
+/** visualLayouts entry: Orca window tab titles, keyed by tabId. */
+interface OrcaVisualLayout {
+  worktreeId: string;
+  root?: {
+    tabs?: { tabId: string; title?: string }[];
+    groups?: { tabs?: { tabId: string; title?: string }[] }[];
+  };
 }
 
 interface OrcaBrowserTab {
@@ -244,11 +254,18 @@ export async function deriveOrcaLiveBoard(
   }
 
   const degraded: string[] = [];
-  const [worktrees, terminals, browserTabs, workers, current, repos, runs] = await Promise.all([
+  const [worktrees, terminalData, browserTabs, workers, current, repos, runs] = await Promise.all([
     collect<OrcaWorktree[]>("worktrees", degraded, [], async () =>
       (await runOrcaCli<{ worktrees: OrcaWorktree[] }>(["worktree", "list", "--json"])).worktrees),
-    collect<OrcaTerminal[]>("terminals", degraded, [], async () =>
-      (await runOrcaCli<{ terminals: OrcaTerminal[] }>(["terminal", "list", "--json"])).terminals),
+    collect<{ terminals: OrcaTerminal[]; visualLayouts?: OrcaVisualLayout[] }>(
+      "terminals",
+      degraded,
+      { terminals: [] },
+      async () =>
+        runOrcaCli<{ terminals: OrcaTerminal[]; visualLayouts?: OrcaVisualLayout[] }>([
+          "terminal", "list", "--include-visual-layouts", "--json",
+        ]),
+    ),
     collect<OrcaBrowserTab[]>("browser tabs", degraded, [], async () =>
       (await runOrcaCli<{ tabs: OrcaBrowserTab[] }>(["tab", "list", "--json"])).tabs),
     collect<OrcaWorker[]>("workers", degraded, [], async () =>
@@ -267,6 +284,18 @@ export async function deriveOrcaLiveBoard(
     .filter((r) => !r.legacy && r.coordinator_handle)
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0];
   const coordinatorHandle = latestRun?.coordinator_handle ?? null;
+
+  const terminals = terminalData.terminals;
+  // Orca window tab titles (what the tab bar shows), keyed by tabId. Terminal
+  // `title` is only the process name; the tab title is the real label.
+  const tabTitles = new Map<string, string>();
+  for (const layout of terminalData.visualLayouts ?? []) {
+    for (const group of [layout.root, ...(layout.root?.groups ?? [])]) {
+      for (const tab of group?.tabs ?? []) {
+        if (tab.title) tabTitles.set(tab.tabId, tab.title);
+      }
+    }
+  }
 
   // Scopes mirror the Orca sidebar: Project groups (repo list projectGroupId)
   // containing their repos; each repo is one selectable scope. Repos the
@@ -334,7 +363,7 @@ export async function deriveOrcaLiveBoard(
       subLanes.push({
         kind: "terminal",
         id: t.handle,
-        title: t.title,
+        title: (t.tabId && tabTitles.get(t.tabId)) ?? t.title,
         active: t.connected,
         // Terminal preview can be long multi-line output; last line is the
         // freshest and fits the two-line memo slot.
