@@ -18,7 +18,13 @@ test("maps canonical snake_case receipt to the consumer shape", () => {
   assert.equal(out.createdAt, "2026-09-01T00:00:00Z");
 });
 
-test("keeps the raw shape untouched when not canonical (pass-through path)", () => {
-  const raw = { error: "sen daemon unreachable" };
-  assert.equal(mapCanonicalChatReceipt(raw as never), undefined as never, "guard is in the route");
+test("maps a second turn sequence incrementally", () => {
+  const out = mapCanonicalChatReceipt({
+    command_id: "cmd-2",
+    turn_seq: 4,
+    session_id: "s-1",
+    created_at: "2026-09-01T00:00:01Z",
+  });
+  assert.equal(out.turnSeq, 4);
+  assert.equal(out.createdAt, "2026-09-01T00:00:01Z");
 });

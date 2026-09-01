@@ -15,7 +15,8 @@
     "postinstall": "node scripts/copy-ghostty-wasm.mjs",
     "test": "tsx --test src/shell/view-session-store.test.ts src/shell/intent-prefetch.test.ts src/shell/desktop-shell-flag.test.ts src/shell/panel-layout-store.test.ts src/shell/panel-resize-controller.test.ts src/shell/sen-surface-store.test.ts src/shell/desktop-module-registry.test.ts src/lib/agentRuntime/orca-slot-client.test.ts qa/tests/s10-*.test.ts",
     "test:shell": "tsx --test src/shell/view-session-store.test.ts src/shell/intent-prefetch.test.ts src/shell/desktop-shell-flag.test.ts src/shell/panel-layout-store.test.ts src/shell/panel-resize-controller.test.ts src/shell/sen-surface-store.test.ts src/shell/desktop-module-registry.test.ts src/lib/agentRuntime/orca-slot-client.test.ts",
-    "go:check": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"cd go; go vet ./...; go test ./internal/... ./cmd/sen-plane\""
+    "go:check": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"cd go; go vet ./...; go test ./internal/... ./cmd/sen-plane\"",
+    "dev:canonical": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-sen-plane.ps1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
