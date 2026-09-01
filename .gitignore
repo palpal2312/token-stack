@@ -61,3 +61,8 @@ qa-build.log
 # editor/IDE
 repomix-output.xml
 .repo_memory/
+
+# local S17 runtime binaries and controller-memory cache
+/go/bin/
+/go/sen-plane.exe
+/.memorax-code/

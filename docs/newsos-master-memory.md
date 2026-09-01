@@ -147,3 +147,11 @@ Lessons: single watch-loop probe script > external agent per tick; v1 dashboard
 last-state table (sparklines later, no chart lib); scheduled tasks are safety
 detectors, not the normal loop. Next gap: none blocking — the roadmap (S10-S18 +
 Phase 12) is closed; further work is optional.
+
+## Roadmap closed checkpoint (2026-09-01)
+S10..S19 + Phase 12 all CLOSED_GO (independent arbiters); evidence + journal
+complete; legacy writer disabled + frozen, canonical Go store live, packaging +
+observability in place. The local `NEWSOS-S17-SEN-PLANE` task owns the loopback
+daemon and S18 currently observes `healthz: 200`; shell rollout remains
+host-local, and CI container jobs still await a Docker runner. See
+`plans/reports/retro-260901-s10-to-s19.md` for the full retrospective.
