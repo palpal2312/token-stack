@@ -20,9 +20,9 @@ P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3
 |----|---------|----------|-------------|----------|
 | **G1** | `/journal` page | P1 | **PASS** (closed) | GET `/journal` → 200; `JournalView` + vault day files |
 | **G2** | `GET /api/goals` local guard | P1 | **PASS** (closed) | Unauthenticated → **401**; authed → 200 |
-| **G3** | Settings preview-only | P2 | **NOT-PRODUCTION** | `src/app/settings/page.tsx` |
-| **G4** | Dify E2E not proven | P2 | **BLOCKED** | connections 401 without token; no workflow drill |
-| **G5** | Live container E2E skipped | P2 | **SKIP** | `total-e2e-test-…json` `-SkipLive` |
+| **G3** | Settings preview-only | P2 | **NOT-PRODUCTION** (documented) | README + `src/app/settings/page.tsx` |
+| **G4** | Dify E2E not proven | P2 | **BLOCKED** | no Dify connection credentials in local config |
+| **G5** | Live container E2E | P2 | **SKIP** | `newsos-s22-prod` up but **does not publish 3737/tcp to host** — receipt `total-e2e-test-2026-09-02T230116.json` |
 | **G6** | README journal mismatch | P2 | **PASS** (closed) | Route + nav + API ship; README claim matches |
 
 ---
@@ -54,9 +54,9 @@ P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3
 
 ## Residual risks
 
-1. **Live ops unverified (G5)** — container canary / legacy-inert not run.
+1. **Live ops unverified (G5)** — `newsos-s22-prod` healthy but host port 3737 not published; publish mapping then rerun total harness.
 2. **Dify bridge (G4)** — no end-to-end run/handoff with credentials.
-3. **Settings (G3)** — preview surface; not production persistence.
+3. **Settings (G3)** — preview UI documented; durable edits stay in `~/.agentic-os/config.json`.
 
 ---
 
@@ -64,9 +64,9 @@ P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3
 
 | Priority | Action | Owner |
 |----------|--------|-------|
-| P2 | Rerun `scripts/run-total-tests.ps1` without `-SkipLive` | Ops |
+| P2 | Publish `3737/tcp` for `newsos-s22-prod` (or recreate with `-p 127.0.0.1:3737:3737`) then rerun `scripts/run-total-tests.ps1` | Ops |
 | P2 | Dify UAT with token + connection | Integrations |
-| P3 | Document settings as preview-only | Docs |
+| P3 | Ship Go settings write path; until then keep `/settings` preview-only | Product |
 
 ---
 
@@ -77,7 +77,7 @@ P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3
 - `reports/static-gate-receipt.md`
 - `reports/surface-acceptance.md`
 - `reports/workflow-durability-receipt.md`
-- `plans/reports/total-e2e-test-2026-09-02T203029.json`
+- `plans/reports/total-e2e-test-2026-09-02T230116.json`
 
 ---
 

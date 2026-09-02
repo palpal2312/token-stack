@@ -19,7 +19,7 @@ Legend: **PASS** | **FAIL** | **BLOCKED** | **SKIP** | **NOT-IN-SCOPE** | **NOT-
 | C10 | Backup / recovery / S22 | Go + local fixtures | S22 rehearsal script | `S22-LOCAL-REHEARSAL-PASS` | **PASS** |
 | C11 | Static gates | Committed bytes | npm/go/tsc/pester/protected | `reports/static-gate-receipt.md` | **PASS** |
 | C12 | Production build | Clean `.next/dev` | `npm run build` | build log 2026-09-02 (pass after dev cleanup) | **PASS** |
-| C13 | Live container E2E | Docker stack running | total-tests live steps | `plans/reports/total-e2e-test-2026-09-02T203029.json` | **SKIP** |
+| C13 | Live container E2E | Docker stack running + **host port 3737 published** | total-tests live steps | `plans/reports/total-e2e-test-2026-09-02T230116.json` — SKIP: container up, no host publish | **SKIP** |
 | C15 | QA fixture routes (4) | Dev server | `/qa-fixtures/*` in build manifest | build route list | **NOT-IN-SCOPE** (test fixtures) |
 | C16 | Agent list `/agents` | Dynamic routes only | `/agents` → 404; `/agents/new` → 200 | surface smoke | **PASS** (no index route by design) |
 

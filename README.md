@@ -117,6 +117,8 @@ printf '{\n  "vaultRoot": "/full/path/to/your/Obsidian vault"\n}\n' > ~/.agentic
 
 > ⚠️ **Don't keep keys or config in a `.env` / `.env.local` inside the app folder as your only copy.** The updater now preserves them if they're there, but `~/.agentic-os/config.json` is the update-proof home — use it.
 
+The in-app **`/settings`** page is a **preview surface** (read/empty snapshot under the desktop shell flag). It does **not** persist production config yet — edit `~/.agentic-os/config.json` for durable settings.
+
 ---
 
 ## 🧪 First-run check
