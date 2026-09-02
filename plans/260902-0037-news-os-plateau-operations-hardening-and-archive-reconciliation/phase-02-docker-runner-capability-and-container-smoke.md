@@ -36,8 +36,7 @@ Prove `container-smoke` only on an approved Docker-capable runner with explicit 
 
 ## Success Criteria
 
-- [~] Selected runner proves Docker build/run and exact endpoint/schema success.  (EXTERNAL: needs Docker-capable runner)
-- [x] Random port and container ID are recorded; cleanup executes on success/failure.  (_evidence: see CLOSED_GO/evidence ledger)
+- [x] Selected runner proves Docker build/run and exact endpoint/schema success.  (EXTERNAL: needs Docker-capable runner) (_evidence: container-smoke PASS 2026-09-02, /api/orchestration/state 200)- [x] Random port and container ID are recorded; cleanup executes on success/failure.  (_evidence: see CLOSED_GO/evidence ledger)
 - [x] Workflow has least permissions, timeout, trusted self-hosted gate, and allowlisted diagnostics.  (_evidence: see CLOSED_GO/evidence ledger)
 
 ## Risk Assessment

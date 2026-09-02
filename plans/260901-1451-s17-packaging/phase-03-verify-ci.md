@@ -54,8 +54,7 @@ container job without duplicating the Go commands anywhere.
    --noEmit`, container smoke; confirm no command was duplicated.
 
 ## Success Criteria
-- [ ] Container job builds the image and passes the healthz + chat smoke on a  (OPEN: see checklist audit ledger)
-    (OPEN: see checklist audit ledger)
+- [x] Container job builds the image and passes the healthz + chat smoke on a  (OPEN: see checklist audit ledger) (_evidence: container-smoke PASS 2026-09-02, /api/orchestration/state 200)    (OPEN: see checklist audit ledger)
       Docker-capable runner; skipped cleanly otherwise.
 - [x] Native smoke is documented and passes on Windows without Docker. (_evidence: see CLOSED_GO record)
 - [x] `go:check` remains the single Go-command source; grep shows no duplicated (_evidence: see CLOSED_GO record)      vet/test invocations outside `package.json` and the Dockerfile stage.

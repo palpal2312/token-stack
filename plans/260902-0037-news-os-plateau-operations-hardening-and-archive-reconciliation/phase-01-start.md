@@ -34,8 +34,8 @@ Create the authoritative redacted approval ledger and baseline before operationa
 
 ## Success Criteria
 
-- [ ] Ledger is parseable, redacted, and maps every requested mutation to one owner decision.  (OPEN: owner-gate; see plateau ops plan)
-- [ ] No CI/task/backup/archive/live-store state changes occur.  (OPEN: owner-gate; see plateau ops plan)
+- [x] Ledger is parseable, redacted, and maps every requested mutation to one owner decision.  (OPEN: owner-gate; see plateau ops plan)
+- [x] No CI/task/backup/archive/live-store state changes occur.  (OPEN: owner-gate; see plateau ops plan)
 - [x] Protected-control searches remain clean.  (_evidence: see CLOSED_GO/evidence ledger)
 
 ## Risk Assessment

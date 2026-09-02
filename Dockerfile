@@ -10,9 +10,11 @@ RUN go build -o /out/sen-plane.exe ./cmd/sen-plane && go vet ./... && go test ./
 
 FROM node:24-bookworm-slim AS nodebuild
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ libtool automake && rm -rf /var/lib/apt/lists/*
+# COPY before npm ci so the postinstall script (scripts/copy-ghostty-wasm.mjs)
+# exists in the image when npm runs lifecycle hooks.
 COPY . .
+RUN npm ci
 ENV AGENTIC_OS_NEXT_DIST_DIR=.next
 RUN npm run build
 
