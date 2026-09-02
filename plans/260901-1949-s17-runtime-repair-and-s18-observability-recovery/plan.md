@@ -47,11 +47,11 @@ blocked` remain hard invariants.
 
 ## Success Criteria
 
-- [ ] `run-s17.ps1 -Mode Native` resolves the current repository, starts a loopback-only daemon against an explicit local store, and cleans up only its own child process.
-- [ ] Pester 3.4-compatible coverage proves root resolution and child-lifecycle failure paths without launching unrelated processes.
-- [ ] A dedicated local `NEWSOS-S17-SEN-PLANE` Scheduled Task owns one loopback daemon, produces `S18-PROBE-SELFCHECK-OK`, and records at least one `healthz: "200"` metric row.
-- [ ] Fresh full regression and both S10 receipt verifiers pass; control scans remain zero-hit.
-- [ ] A fresh independent reviewer records whether the repaired plateau is GO or retains an exact NO_GO/WARN reason.
+- [x] `run-s17.ps1 -Mode Native` resolves the current repository, starts a loopback-only daemon against an explicit local store, and cleans up only its own child process.  (_evidence: see CLOSED_GO/evidence ledger)
+- [ ] Pester 3.4-compatible coverage proves root resolution and child-lifecycle failure paths without launching unrelated processes.  (OPEN: owner-gate; see plateau ops plan)
+- [x] A dedicated local `NEWSOS-S17-SEN-PLANE` Scheduled Task owns one loopback daemon, produces `S18-PROBE-SELFCHECK-OK`, and records at least one `healthz: "200"` metric row.  (_evidence: see CLOSED_GO/evidence ledger)
+- [x] Fresh full regression and both S10 receipt verifiers pass; control scans remain zero-hit.  (_evidence: see CLOSED_GO/evidence ledger)
+- [x] A fresh independent reviewer records whether the repaired plateau is GO or retains an exact NO_GO/WARN reason.  (_evidence: see CLOSED_GO/evidence ledger)
 
 ## Dependency and Ownership Matrix
 

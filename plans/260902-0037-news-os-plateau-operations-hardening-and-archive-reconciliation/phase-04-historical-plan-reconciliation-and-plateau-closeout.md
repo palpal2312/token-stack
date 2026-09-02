@@ -35,9 +35,9 @@ Determine the truthful disposition of the S08-10 umbrella plan independently of 
 
 ## Success Criteria
 
-- [ ] S08, S09, and S10 have distinct provenance rows.
-- [ ] No unsupported completed status exists.
-- [ ] Every unresolved item includes evidence gap plus owner disposition.
+- [ ] S08, S09, and S10 have distinct provenance rows.  (OPEN: owner-gate; see plateau ops plan)
+- [x] No unsupported completed status exists.  (_evidence: see CLOSED_GO/evidence ledger)
+- [ ] Every unresolved item includes evidence gap plus owner disposition.  (OPEN: owner-gate; see plateau ops plan)
 
 ## Risk Assessment
 
