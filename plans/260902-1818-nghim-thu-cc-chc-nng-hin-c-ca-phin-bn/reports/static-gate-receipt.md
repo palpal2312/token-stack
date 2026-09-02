@@ -13,7 +13,7 @@
 | Protected controls | `npm run protected:check` | 0 | **PASS** | `PROTECTED-CONTROLS-OK (phase_21: closed_g0, canonical writer live, legacy rollback not pre-enabled)` |
 | Pester S17 | `npm run pester:runner` | 0 | **PASS** | Quiet pass |
 | S22 local rehearsal | `scripts/run-s22-local-rehearsal.ps1` | 0 | **PASS** | `S22-LOCAL-REHEARSAL-PASS port=3982/3984 isolated=true` |
-| Total harness | `scripts/run-total-tests.ps1 -SkipLive` | 0 | **6 PASS / 3 SKIP** | Receipt: `plans/reports/total-e2e-test-2026-09-02T203029.json` — JSON `verdict: ALL-PASS` counts only executed steps; 3 `-SkipLive` steps are **not** PASS |
+| Total harness (live attempted) | `scripts/run-total-tests.ps1` | 0 | **6 PASS / 3 SKIP** | Receipt: `plans/reports/total-e2e-test-2026-09-02T230116.json` — live SKIP reason: `newsos-s22-prod` does not publish 3737/tcp to host |
 | Production build | `npm run build` | 0 | **PASS** | After stopping dev server + removing corrupted `.next/dev` |
 
 ## Build note (not a product defect)
