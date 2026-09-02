@@ -17,7 +17,8 @@ const suites = [
   'skill-router.test.cjs',
   'data-lens.test.cjs',
   'cli-e2e.test.cjs',
-  'stress-edge-cases.test.cjs'
+  'stress-edge-cases.test.cjs',
+  'setup.test.cjs'
 ];
 
 console.log("===============================================================================");

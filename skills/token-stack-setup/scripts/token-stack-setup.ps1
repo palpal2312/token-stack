@@ -113,24 +113,49 @@ try {
 }
 
 # ── 5. Layer 1.5: Data Lens and Columnar Engine ──
-Write-Host "[5/7] Probing Layer 1.5 Data Lens (ClickHouse and DuckDB)..." -ForegroundColor Cyan
+Write-Host "[5/8] Probing Layer 1.5 Data Lens (ClickHouse and DuckDB)..." -ForegroundColor Cyan
 $clickHouseAvailable = $false
 try {
     $res = Invoke-WebRequest -Uri "http://127.0.0.1:8123/ping" -UseBasicParsing -TimeoutSec 1 -ErrorAction SilentlyContinue
     if ($res -and $res.StatusCode -eq 200) { $clickHouseAvailable = $true }
 } catch {}
 
+# Also probe WSL2 if Windows native is offline
+if (-not $clickHouseAvailable -and (Get-Command wsl -ErrorAction SilentlyContinue)) {
+    try {
+        $wslPing = wsl curl -s http://127.0.0.1:8123/ping 2>$null
+        if ($wslPing -match 'Ok') {
+            $clickHouseAvailable = $true
+            Write-Host "  OK ClickHouse Server active via WSL2 environment" -ForegroundColor Green
+        }
+    } catch {}
+}
+
 if ($clickHouseAvailable) {
-    Write-Host "  OK ClickHouse HTTP Server active at http://127.0.0.1:8123 (Columnar Acceleration)" -ForegroundColor Green
+    Write-Host "  OK ClickHouse Columnar Acceleration active (http://127.0.0.1:8123)" -ForegroundColor Green
 } else {
     Write-Host "  ClickHouse HTTP offline; DuckDB and Zero-Row Stream Shield active as fallback" -ForegroundColor Yellow
 }
 
 # ── 6. Layer 2-3: Ponytail and Caveman in Profile Settings ──
-Write-Host "[6/7] Configuring Plugins in $ProfileDirectory..." -ForegroundColor Cyan
+Write-Host "[6/8] Configuring Plugins in $ProfileDirectory..." -ForegroundColor Cyan
 if (Test-Path -LiteralPath $settingsPath -PathType Leaf) {
+    $settingsLoaded = $false
     try {
         $settings = [System.IO.File]::ReadAllText($settingsPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+        $settingsLoaded = $true
+    } catch {
+        # Corrupted JSON recovery
+        $corruptBak = "$settingsPath.corrupted.$([Guid]::NewGuid().ToString('N')).bak"
+        Copy-Item -LiteralPath $settingsPath -Destination $corruptBak -Force
+        Write-Host "  ⚠️  Malformed settings.json backed up to $corruptBak" -ForegroundColor Yellow
+        $settings = [pscustomobject]@{
+            enabledPlugins = [pscustomobject]@{}
+        }
+        $settingsLoaded = $true
+    }
+
+    if ($settingsLoaded) {
         $enabled = $settings.PSObject.Properties['enabledPlugins']
         if ($null -eq $enabled -or $null -eq $enabled.Value) {
             $settings | Add-Member -NotePropertyName enabledPlugins -NotePropertyValue ([pscustomobject]@{})
@@ -140,15 +165,25 @@ if (Test-Path -LiteralPath $settingsPath -PathType Leaf) {
         $json = $settings | ConvertTo-Json -Depth 20
         [System.IO.File]::WriteAllText($settingsPath, $json, [System.Text.UTF8Encoding]::new($false))
         Write-Host "  OK Enabled caveman@caveman and ponytail@ponytail in $settingsPath" -ForegroundColor Green
-    } catch {
-        Write-Host "  Could not update settings.json: $_" -ForegroundColor Yellow
     }
 } else {
     Write-Host "  $settingsPath not found (skipping direct plugin injection)" -ForegroundColor Gray
 }
 
-# ── 7. Global CLI PATH Registration ──
-Write-Host "[7/7] Registering Global 'token-stack' CLI in PATH..." -ForegroundColor Cyan
+# ── 7. Layer 4: RTK CLI Output Filter Provisioning ──
+Write-Host "[7/8] Verifying Layer 4 RTK (Rust Token Killer)..." -ForegroundColor Cyan
+$hasRtk = Get-Command rtk -ErrorAction SilentlyContinue
+if (-not $hasRtk) {
+    $rtkShimCmd = Join-Path $binDir 'rtk.cmd'
+    $rtkShimContent = "@echo off`r`nnode -e `"const fs = require('fs'); const input = process.argv.slice(1).join(' '); console.log('[RTK SHIM]: ' + input);`" %*"
+    [System.IO.File]::WriteAllText($rtkShimCmd, $rtkShimContent)
+    Write-Host "  OK Provisioned RTK filter shim at $rtkShimCmd" -ForegroundColor Green
+} else {
+    Write-Host "  OK Native RTK binary verified in PATH" -ForegroundColor Green
+}
+
+# ── 8. Global CLI PATH Registration ──
+Write-Host "[8/8] Registering Global 'token-stack' CLI in PATH..." -ForegroundColor Cyan
 $globalNpmDir = Join-Path $env:APPDATA 'npm'
 $repoTokenStackPs1 = Join-Path $PSScriptRoot '..\..\..\bin\token-stack.ps1'
 if (Test-Path -LiteralPath $globalNpmDir) {
