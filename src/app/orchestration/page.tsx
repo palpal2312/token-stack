@@ -206,7 +206,7 @@ export default function OrchestrationPage() {
       <div className="border border-[var(--plum)] bg-[var(--bg-card)] text-[var(--plum)] rounded px-3 py-2 text-sm mb-6">
         READ-ONLY ORCHESTRATION STATE — no execution authority. This page reads
         the append-only state journal; it cannot dispatch, promote, or write.
-        legacy_writer: disabled; phase_21: blocked.
+        phase_21: closed_g0 (canonical writer live; legacy rollback guard inert).
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

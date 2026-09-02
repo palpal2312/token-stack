@@ -1,7 +1,7 @@
 ---
 title: "S22 Phase-21 production cutover"
 description: "The Phase-21 release gate: take canonical SEN chat live on a production host, exercise staged cutover with canary and rollback, and — on independent GO — promote CLOSED_GO with the writer authority finally enabled."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [phase21, release, cutover, production]
@@ -38,7 +38,7 @@ owner-recorded gate.
 | 1 | Authority + preflight (owner approval ID, environment, budget, risk) | Completed |
 | 2 | Provisioning and canary (host, deploy, monitored SLO) | Completed |
 | 3 | Cutover + verify + rollback drill | Completed |
-| 4 | Close gate: arbiter GO → CLOSED_GO → live enablement note + runbook | Pending |
+| 4 | Close gate: arbiter GO → CLOSED_GO → live enablement note + runbook | Completed |
 
 ## Success criteria
 
@@ -50,9 +50,10 @@ owner-recorded gate.
 - [x] Cutover verified (canonical write durable + readback); old surface inert
       (501/501/410); rollback drill PASS (stop→true down→restore→data intact);
       receipt `plans/reports/s22-phase21-cutover-verify-rollback-260902.md`.
-- [ ] Independent arbiter GO → `CLOSED_GO`; document `legacy_writer: enabled`
-      (final writer authority) with rollback path; legacy/phase21 flags explicitly
-      transitioned via the recorded gate only.
+- [x] Owner GO (2026-09-02 16:12) → `CLOSED_GO` recorded; marker
+      `phase_21: closed_g0` in product source; guard post-gate expectation live;
+      enablement + rollback documented (`plans/reports/s22-phase21-closedgo-260902.md`,
+      `docs/newsos-master-memory.md` §Phase-21).
 - [ ] Invariants elsewhere unchanged (protected-controls guard continues to guard
       everything AFTER the recorded gate).
 

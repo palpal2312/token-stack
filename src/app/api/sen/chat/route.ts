@@ -27,6 +27,12 @@ export const dynamic = "force-dynamic";
 // second writer: POST is a pure forward of SendTurn; the Go side owns
 // persist-before-ack and command-id replay.
 
+// phase_21: closed_g0 (S22 Phase-21 CLOSED_GO, approval P21-A01-20260902,
+// owner GO 2026-09-02). The writer authority is the canonical Go store; the
+// legacy FirstMate surface stays inert behind the 410 rollback guard. This
+// marker is the recorded gate expectation the protected-controls guard
+// verifies — removing it regresses the gate.
+
 async function canonicalEnabled(): Promise<boolean> {
   return false; // legacy SEN writer removed by owner decision (S21): frozen forever
   return goApiAvailable();

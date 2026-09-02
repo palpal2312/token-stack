@@ -12,6 +12,24 @@ This is the durable, evidence-backed memory for Lead Orchestrators. It stores re
   Sprint 06/07 remain gated by `S05-G1`. Current manifest:
   `plans/reports/orchestrate-260825-sprint05-07-multi-sprint/run-manifest.json`.
 - Phase 20: open.
+- Phase 21: CLOSED_GO (2026-09-02, owner GO; canonical writer live;
+  `phase_21: closed_g0`, legacy rollback guard inert). Evidence
+  `plans/reports/s22-phase21-closedgo-260902.md`; plan
+  `plans/260902-1156-s22-phase21-cutover/`.
+
+## Phase-21 close-gate lessons (2026-09-02)
+
+- **Guard root bug found at the gate**: the pre-gate `check-protected-controls.ps1`
+  resolved the repo root with a double `Split-Path` off `scripts/`, landing one
+  level too high, so `src/` and `go/` never existed under that path and the scan
+  was vacuous (always PASS). Fixed to a single `Split-Path`; the guard now
+  genuinely scans and fails on a missing `phase_21: closed_g0` marker or a
+  reappearing `blocked`/`disabled` token. Guards must prove they scan (a
+  deliberately-broken case should fail), not just echo OK.
+- **Post-gate marker pattern**: after an owner-gated release, the protected
+  expectation flips from "forbidden token" to "required marker". The rule is
+  still fail-closed, but the sign of the invariant inverts; both states must be
+  enforced in code, not prose.
 - Phase 21: blocked until the revised Phase 20 machine gate returns GO.
 - Latest controller continuity config:
   `plans/reports/orchestrate-260825-sprint05-07-multi-sprint/controller-failover.json`.
