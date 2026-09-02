@@ -1,14 +1,14 @@
 # Hướng Dẫn & Tổng Kết Kinh Nghiệm Cài Đặt Token Stack Cho OpenAI Codex CLI
 
-Tài liệu đúc kết toàn bộ quy trình, kiến trúc, bài học kinh nghiệm xử lý sự cố (troubleshooting) và các quy chuẩn thực chiến khi triển khai giải pháp **4-Layer Token Stack** cho **OpenAI Codex CLI** trên mọi môi trường Windows (`~/.codex`).
+Tài liệu đúc kết toàn bộ quy trình, kiến trúc, bài học kinh nghiệm xử lý sự cố (troubleshooting) và các quy chuẩn thực chiến khi triển khai giải pháp **Token Stack (Tập trung 4 tầng In-Flight: Ponytail, Caveman, RTK, Headroom thuộc Hệ thống 7 Tầng Master)** cho **OpenAI Codex CLI** trên mọi môi trường Windows (`~/.codex`).
 
 ---
 
-## 1. Tổng Quan Kiến Trúc 4 Tầng Tối Ưu
+## 1. Tổng Quan Kiến Trúc Tối Ưu Cho Codex CLI
 
 ```text
 +-------------------------------------------------------------------------------+
-|                             4-LAYER TOKEN STACK                               |
+|                    TOKEN STACK FOR CODEX (IN-FLIGHT ENGINE)                   |
 +-------------------------------------------------------------------------------+
 |  Layer 1: CODE REDUCTION        -> Ponytail (KISS, YAGNI, No fluff code)      |
 |  Layer 2: PROMPT/WORD REDUCTION -> Caveman (Concise technical responses)      |
