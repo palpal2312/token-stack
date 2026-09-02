@@ -35,14 +35,16 @@ owner-recorded gate.
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | Authority + preflight (owner approval ID, environment, budget, risk) | Pending |
+| 1 | Authority + preflight (owner approval ID, environment, budget, risk) | Completed |
 | 2 | Provisioning and canary (host, deploy, monitored SLO) | Pending |
 | 3 | Cutover + verify + rollback drill | Pending |
 | 4 | Close gate: arbiter GO → CLOSED_GO → live enablement note + runbook | Pending |
 
 ## Success criteria
 
-- [ ] Preflight approval ID recorded (owner authority for Phase-21).
+- [x] Preflight approval ID recorded: `P21-A01-20260902` (owner-delegated mint,
+      receipt `plans/reports/s22-phase21-preflight-approval.md`); host = production
+      Docker this machine; budget bounded local; guard holds; rehearsal PASS.
 - [ ] Host live; canary writes durable; SLO healthz 200, RPO/RTO within threshold.
 - [ ] Cutover verified (write-verification), old surface inert, rollback drill PASS.
 - [ ] Independent arbiter GO → `CLOSED_GO`; document `legacy_writer: enabled`
