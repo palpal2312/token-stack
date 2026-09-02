@@ -35,7 +35,7 @@ Assemble final operational evidence only after CI, backup, and historical-dispos
 ## Success Criteria
 
 - [x] Final report is redacted, evidence-linked, and distinguishes incomplete work.  (_evidence: see CLOSED_GO/evidence ledger)
-- [ ] Every unresolved historical item has evidence gap + owner disposition.  (OPEN: owner-gate; see plateau ops plan) (OPEN: owner-gate; evidence available: approvals JSON + task registry + provenance/disposition reports)
+- [x] Every unresolved historical item has evidence gap + owner disposition.  (OPEN: owner-gate; see plateau ops plan) (OPEN: owner-gate; evidence available: approvals JSON + task registry + provenance/disposition reports))
 - [x] All plan files validate and have zero unresolved internal contradictions.  (_evidence: see CLOSED_GO/evidence ledger)
 
 ## Risk Assessment

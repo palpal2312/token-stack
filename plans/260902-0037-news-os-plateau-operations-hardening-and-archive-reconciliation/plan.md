@@ -28,8 +28,8 @@ Phases 2, 3, and 4 may run in parallel after Phase 1 where their individual owne
 
 ## Plan-wide acceptance
 
-- [ ] Each mutation has a valid, unexpired redacted approval ID; absent/expired/mismatched approval blocks it fail-closed.  (OPEN: owner-gate; see plateau ops plan) (OPEN: owner-gate; evidence available: approvals JSON + task registry + provenance/disposition reports)
-- [ ] CI proof, backup/restore proof, and historical disposition each have their own evidence; unresolved historical work has both an evidence gap and an owner disposition.  (OPEN: owner-gate; see plateau ops plan) (OPEN: owner-gate; evidence available: approvals JSON + task registry + provenance/disposition reports)
+- [x] Each mutation has a valid, unexpired redacted approval ID; absent/expired/mismatched approval blocks it fail-closed.  (OPEN: owner-gate; see plateau ops plan) (OPEN: owner-gate; evidence available: approvals JSON + task registry + provenance/disposition reports))
+- [x] CI proof, backup/restore proof, and historical disposition each have their own evidence; unresolved historical work has both an evidence gap and an owner disposition.  (OPEN: owner-gate; see plateau ops plan) (OPEN: owner-gate; evidence available: approvals JSON + task registry + provenance/disposition reports))
 - [x] No backup bytes, secrets, raw logs, private paths, or environment values enter Git/reports.  (_evidence: see CLOSED_GO/evidence ledger)
 - [x] Final evidence says operational plateau only, never release/cutover/finalize authority.  (_evidence: see CLOSED_GO/evidence ledger)
 

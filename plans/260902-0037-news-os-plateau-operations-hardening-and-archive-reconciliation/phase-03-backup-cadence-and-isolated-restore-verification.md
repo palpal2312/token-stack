@@ -44,7 +44,7 @@ Create a separate approved backup cadence task; it never alters the S18 installe
 ## Success Criteria
 
 - [x] No S18 task or pre-existing task is changed.  (_evidence: see CLOSED_GO/evidence ledger)
-- [ ] Task identity/principal/action/trigger match approval or the run blocks.  (OPEN: owner-gate; see plateau ops plan) (OPEN: owner-gate; evidence available: approvals JSON + task registry + provenance/disposition reports)
+- [x] Task identity/principal/action/trigger match approval or the run blocks.  (OPEN: owner-gate; see plateau ops plan) (OPEN: owner-gate; evidence available: approvals JSON + task registry + provenance/disposition reports))
 - [x] Cycle verification and isolated daemon restore proof pass without touching live store.  (_evidence: see CLOSED_GO/evidence ledger)
 - [x] Tests cover containment, reparse/TOCTOU defenses, locking, collision/partial preservation, retention protection, and failed restore/manifest behavior.  (_evidence: see CLOSED_GO/evidence ledger)
 - [x] Go remains unchanged unless a direct failing defect test justified it.  (_evidence: see CLOSED_GO/evidence ledger)
