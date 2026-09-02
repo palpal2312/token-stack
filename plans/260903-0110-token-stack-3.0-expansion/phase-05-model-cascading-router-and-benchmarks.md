@@ -8,8 +8,8 @@
 - **Date**: 2026-09-03
 - **Description**: Implement a fast model cascading router that dispatches trivial coding tasks to cheap/free models and complex architecture to flagship models, update the benchmark suite to measure the 12-layer stack, and provide unified CLI controls.
 - **Priority**: P2
-- **Implementation Status**: pending
-- **Review Status**: pending
+- **Implementation Status**: completed
+- **Review Status**: verified
 
 ## Key Insights
 - Dispatching every minor file tweak to flagship models (Opus, Sonnet) inflates operational cost by 5x–10x.

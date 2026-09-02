@@ -1,6 +1,6 @@
-# Token-Stack 2.0 Makefile (Inspired by sub2api DX)
+# Token-Stack 3.0 Makefile (12-Layer Master Architecture)
 
-.PHONY: all status doctor up down verify clean help
+.PHONY: all status doctor up down verify test bench clean help
 
 all: status
 
@@ -19,14 +19,22 @@ down:
 verify:
 	@powershell -NoProfile -ExecutionPolicy Bypass -File ./bin/token-stack.ps1 verify
 
+test:
+	@powershell -NoProfile -ExecutionPolicy Bypass -File ./bin/token-stack.ps1 test
+
+bench:
+	@powershell -NoProfile -ExecutionPolicy Bypass -File ./bin/token-stack.ps1 bench
+
 clean:
 	@powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-Process headroom -ErrorAction SilentlyContinue | Stop-Process -Force"
 
 help:
-	@echo Token-Stack 2.0 DX Tooling
+	@echo Token-Stack 3.0 DX Tooling
 	@echo ---------------------------
 	@echo make status   - Check live profile and port status
-	@echo make doctor   - Run full 7-layer health inspection
+	@echo make doctor   - Run full 12-layer health inspection
 	@echo make up       - Launch all configured Headroom proxies
 	@echo make down     - Stop all Headroom proxies
 	@echo make verify   - Run automated 3-stage E2E validation
+	@echo make test     - Run all 5 new layer test suites
+	@echo make bench    - Launch interactive 12-layer benchmark TUI

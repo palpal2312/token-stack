@@ -9,8 +9,8 @@
 - **Date**: 2026-09-03
 - **Description**: Implement an in-flight conversation folding engine that automatically condenses stale tool outputs in long-running sessions, preventing mid-session context bloat while preserving Anthropic prompt caching.
 - **Priority**: P1 (Highest Urgency)
-- **Implementation Status**: pending
-- **Review Status**: pending
+- **Implementation Status**: completed
+- **Review Status**: verified
 
 ## Key Insights
 - In sessions exceeding 15 turns, stale `tool_result` blocks (`view_file` 500 lines, old `grep_search` matches) continue to re-transmit on every turn, driving payload sizes up to 80k tokens.

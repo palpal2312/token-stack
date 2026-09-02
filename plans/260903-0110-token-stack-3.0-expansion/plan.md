@@ -1,7 +1,7 @@
 ---
 title: "Token-Stack 3.0 Expansion: 12-Layer Master Architecture"
 description: "Expand Token-Stack with 5 new orthogonal layers: Turn Folding, Loop Breaker & Waterfall Failover, CoT Budget Governor, Semantic Cache, and Model Cascading Router."
-status: pending
+status: completed
 priority: P1
 effort: 8h
 branch: main
@@ -17,11 +17,11 @@ Expanding Token-Stack to achieve end-to-end token and cost optimization across 1
 
 | Phase | Description | Status | Est. Effort | Details Link |
 |:---|:---|:---:|:---:|:---|
-| **Phase 01** | Dynamic In-Flight Turn Folding (Historical Context Compactor) | pending | 2.0h | [phase-01-dynamic-in-flight-turn-folding.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-01-dynamic-in-flight-turn-folding.md) |
-| **Phase 02** | Runaway Loop Breaker & Smart Waterfall Failover | pending | 1.5h | [phase-02-runaway-loop-breaker-and-guardrails.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-02-runaway-loop-breaker-and-guardrails.md) |
-| **Phase 03** | Reasoning & CoT Budget Governor (Extended Thinking Throttler) | pending | 1.0h | [phase-03-reasoning-and-cot-budget-governor.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-03-reasoning-and-cot-budget-governor.md) |
-| **Phase 04** | Zero-Token Semantic Response Cache (SQLite-VSS Vector Cache) | pending | 2.0h | [phase-04-zero-token-semantic-cache.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-04-zero-token-semantic-cache.md) |
-| **Phase 05** | Model Cascading Router, Benchmark Suite & DX Integration | pending | 1.5h | [phase-05-model-cascading-router-and-benchmarks.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-05-model-cascading-router-and-benchmarks.md) |
+| **Phase 01** | Dynamic In-Flight Turn Folding (Historical Context Compactor) | completed | 2.0h | [phase-01-dynamic-in-flight-turn-folding.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-01-dynamic-in-flight-turn-folding.md) |
+| **Phase 02** | Runaway Loop Breaker & Smart Waterfall Failover | completed | 1.5h | [phase-02-runaway-loop-breaker-and-guardrails.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-02-runaway-loop-breaker-and-guardrails.md) |
+| **Phase 03** | Reasoning & CoT Budget Governor (Extended Thinking Throttler) | completed | 1.0h | [phase-03-reasoning-and-cot-budget-governor.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-03-reasoning-and-cot-budget-governor.md) |
+| **Phase 04** | Zero-Token Semantic Response Cache (SQLite-VSS Vector Cache) | completed | 2.0h | [phase-04-zero-token-semantic-cache.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-04-zero-token-semantic-cache.md) |
+| **Phase 05** | Model Cascading Router, Benchmark Suite & DX Integration | completed | 1.5h | [phase-05-model-cascading-router-and-benchmarks.md](file:///C:/Users/ADMIN/Documents/token-stack/plans/260903-0110-token-stack-3.0-expansion/phase-05-model-cascading-router-and-benchmarks.md) |
 
 ## Dependencies & Pre-requisites
 - Token-Stack 2.0 CLI (`bin/token-stack.ps1`, `token-stack.registry.json`) is operational.

@@ -43,8 +43,17 @@ const c = {
 const OUTPUTS_DIR = path.join(process.cwd(), 'benchmark-outputs');
 const REPORT_PATH = path.join(process.cwd(), 'token-stack-benchmark-report.md');
 
-// ── 7-LAYER CONFIGURATION WITH MULTI-ENGINE CHOICES ([← / →]) ──
+// ── 12-LAYER MASTER CONFIGURATION WITH MULTI-ENGINE CHOICES ([← / →]) ──
 const AVAILABLE_LAYERS = [
+  {
+    id: 'l_semcache',
+    key: 'L-1: Semantic Cache',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'gptcache', name: 'Zero-Token Semantic Cache', label: 'SQLite N-Gram Cosine Cache', ratio: 0.05, qualityBonus: 15, star: '🏆', desc: 'Instant 0-token response (<15ms) for repeated queries' }
+    ]
+  },
   {
     id: 'l0',
     key: 'L0: Code Topology',
@@ -112,6 +121,42 @@ const AVAILABLE_LAYERS = [
       { id: 'openviking', name: 'OpenViking', label: 'Multi-Session Trajectory Distillation', ratio: 0.031, qualityBonus: 30, star: '🏆', desc: 'Distills 8-turn failure loops into definitive root cause' },
       { id: 'mnemosyne', name: 'Mnemosyne', label: 'Cognitive Consolidation & Subagent Pruning', ratio: 0.049, qualityBonus: 25, star: '', desc: 'Subagent context condensation and trajectory pruning' }
     ]
+  },
+  {
+    id: 'l_turnfolding',
+    key: 'L7: Turn Folding',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'turnfolder', name: 'Dynamic Turn Folding', label: '5-Turn Epoch Freezing & Tool Truncator', ratio: 0.25, qualityBonus: 20, star: '🏆', desc: 'Folds stale tool results >1000 chars in long sessions' }
+    ]
+  },
+  {
+    id: 'l_guardrail',
+    key: 'L8: Loop Breaker',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'guardrail', name: 'Loop Breaker & Failover', label: 'SHA256 Loop Halter & Waterfall Retry', ratio: 0.80, qualityBonus: 20, star: '🏆', desc: 'Halts 3x circular tool loops and auto-fails over on 429' }
+    ]
+  },
+  {
+    id: 'l_cot',
+    key: 'L9: CoT Governor',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'cotgovernor', name: 'CoT Budget Governor', label: 'Dynamic Task-Aware Thinking Throttler', ratio: 0.35, qualityBonus: 15, star: '🏆', desc: 'Throttles thinking tokens on trivial edits (1024 tokens)' }
+    ]
+  },
+  {
+    id: 'l_router',
+    key: 'L10: Model Router',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'modelrouter', name: 'Model Cascading Router', label: 'RouteLLM & Frugal Classifier', ratio: 0.15, qualityBonus: 10, star: '🏆', desc: 'Routes simple tasks to fast cheap tier (saving 85% $)' }
+    ]
   }
 ];
 
@@ -134,13 +179,18 @@ const ALL_QUESTIONS = [
     dominantLayer: 'L0: Graphify (-91.5%)',
     baselineQualityScore: 90,
     baseDeltas: {
+      l_semcache: 0,
       l0: -3884,
       l1: 0,
       l2: 0,
       l3: 0,
       l4: 0,
       l5: 35,
-      l6: 25
+      l6: 25,
+      l_turnfolding: -50,
+      l_guardrail: 0,
+      l_cot: -75,
+      l_router: 0
     },
     isolatedScores: {
       raw: { tok: 4247, pct: '0.0%', quality: 90, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
@@ -187,13 +237,18 @@ const ALL_QUESTIONS = [
     dominantLayer: 'L3: RTK (-54.7%) & L2: Caveman (-69.5%)',
     baselineQualityScore: 85,
     baseDeltas: {
+      l_semcache: 0,
       l0: -3050,
       l1: -150,
       l2: -730,
       l3: -175,
       l4: 0,
       l5: 40,
-      l6: 25
+      l6: 25,
+      l_turnfolding: -30,
+      l_guardrail: 0,
+      l_cot: -20,
+      l_router: 0
     },
     isolatedScores: {
       raw: { tok: 4250, pct: '0.0%', quality: 85, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
@@ -239,13 +294,18 @@ const ALL_QUESTIONS = [
     dominantLayer: 'L5: MemoraX (-99.3%) & L4: Headroom (-86.0%)',
     baselineQualityScore: 75,
     baseDeltas: {
+      l_semcache: -10,
       l0: -875,
       l1: -275,
       l2: -50,
       l3: 0,
       l4: -4175,
       l5: -830,
-      l6: 0
+      l6: 0,
+      l_turnfolding: 0,
+      l_guardrail: 0,
+      l_cot: 0,
+      l_router: 0
     },
     isolatedScores: {
       raw: { tok: 6250, pct: '0.0%', quality: 75, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
@@ -290,13 +350,18 @@ const ALL_QUESTIONS = [
     dominantLayer: 'L6: OpenViking (-93.0% Trajectory Compaction)',
     baselineQualityScore: 70,
     baseDeltas: {
+      l_semcache: 0,
       l0: -875,
       l1: -275,
       l2: -50,
       l3: 0,
       l4: -850,
       l5: -1400,
-      l6: -2605
+      l6: -2605,
+      l_turnfolding: -40,
+      l_guardrail: -30,
+      l_cot: -15,
+      l_router: 0
     },
     isolatedScores: {
       raw: { tok: 6250, pct: '0.0%', quality: 70, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
@@ -342,13 +407,18 @@ const ALL_QUESTIONS = [
     dominantLayer: 'L0: Graphify (-82.4%) & L3: RTK (-56.7%) & L2: Caveman (-68.0%)',
     baselineQualityScore: 80,
     baseDeltas: {
+      l_semcache: 0,
       l0: -7000,
       l1: -250,
       l2: -600,
       l3: -380,
       l4: 0,
       l5: 35,
-      l6: 25
+      l6: 25,
+      l_turnfolding: -50,
+      l_guardrail: 0,
+      l_cot: -30,
+      l_router: 0
     },
     isolatedScores: {
       raw: { tok: 8500, pct: '0.0%', quality: 80, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },

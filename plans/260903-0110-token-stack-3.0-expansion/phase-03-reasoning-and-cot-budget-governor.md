@@ -9,8 +9,8 @@
 - **Date**: 2026-09-03
 - **Description**: Dynamically modulate reasoning token budgets (`thinking.budget_tokens`) based on prompt complexity, preventing hidden CoT bloat on routine tasks while reserving deep reasoning for complex architecture.
 - **Priority**: P2
-- **Implementation Status**: pending
-- **Review Status**: pending
+- **Implementation Status**: completed
+- **Review Status**: verified
 
 ## Key Insights
 - Models like Claude 3.7 Sonnet Thinking, o1/o3-mini, and DeepSeek R1 generate thousands of invisible chain-of-thought tokens.

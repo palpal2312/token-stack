@@ -40,20 +40,22 @@ if (-not $RepoRoot) {
 
 function Show-Help {
     Write-Host @"
-Token-Stack 2.0 CLI - Unified Context & Token Architecture Controller
+Token-Stack 3.0 CLI - 12-Layer Master Token & Context Engine
 
 Usage:
   token-stack <command> [arguments]
 
 Commands:
   status                   Display live table of all profiles, ports, upstream & health
-  doctor                   Run full 7-layer health inspection and diagnostic probes
+  doctor                   Run full 12-layer health inspection and diagnostic probes
   up [<name>|--all]        Start Headroom proxy daemon for profile(s)
   down [<name>|--all]      Stop Headroom proxy daemon for profile(s)
   profile list             List registered agent profiles
   profile add <name>       Register a new profile (auto-allocates free port and DB path)
   profile remove <name>    Unregister an existing profile
   verify [<name>]          Run automated 3-stage E2E validation pipeline
+  test                     Run all unit & integration tests across the 5 new layers
+  bench [args]             Launch interactive 12-layer Benchmark TUI
   help                     Show this help message
 "@
 }
@@ -248,6 +250,15 @@ function Invoke-Verify {
     }
 }
 
+function Invoke-Test {
+    $testRunner = Join-Path $RepoRoot "tests\test-all-layers.cjs"
+    if (Test-Path -LiteralPath $testRunner) {
+        & node $testRunner
+    } else {
+        Write-Error "Test runner not found at $testRunner"
+    }
+}
+
 function Invoke-Bench {
     param([string[]]$SubArgs)
     $tuiPath = Join-Path $RepoRoot "skills\token-stack-benchmark\scripts\benchmark-tui.cjs"
@@ -266,6 +277,7 @@ switch ($Command.ToLower()) {
     "doctor"   { Invoke-Doctor }
     "profile"  { Invoke-Profile -SubArgs $CommandArgs }
     "verify"   { Invoke-Verify -Target ($CommandArgs -join " ") }
+    "test"     { Invoke-Test }
     "bench"    { Invoke-Bench -SubArgs $CommandArgs }
     "help"     { Show-Help }
     "--help"   { Show-Help }
