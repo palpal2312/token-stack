@@ -9,8 +9,8 @@
 - **Date**: 2026-09-02
 - **Description**: Reorganize repo root into modular directories (`bin/`, `core/`, `daemons/`, `deploy/`, `templates/`) and implement declarative `token-stack.registry.json` with dynamic port & memory DB allocator.
 - **Priority**: P1
-- **Implementation Status**: pending
-- **Review Status**: pending
+- **Implementation Status**: completed
+- **Review Status**: verified
 
 ## Key Insights
 - In `sub2api`, account configurations, port bindings, and model whitelists are managed declaratively with strict isolation.

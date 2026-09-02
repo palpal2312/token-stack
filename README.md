@@ -1,4 +1,4 @@
-﻿# token-stack
+# token-stack
 
 The Complete **7-Layer Master Token & Context Engine** for AI coding CLIs (OpenAI Codex CLI, Claude Code, Cursor, Kimi, Antigravity).
 
@@ -137,6 +137,36 @@ powershell -NoProfile -ExecutionPolicy Bypass `
   -File .\skills\token-stack-health\scripts\token-stack-health.ps1
 ```
 
+## 🛠️ Token-Stack 2.0 Unified CLI
+
+Inspired by `sub2api` clean modular architecture, Token-Stack 2.0 provides a single unified CLI (`token-stack`) with centralized registry and process supervision:
+
+```powershell
+# Live Profile & Proxy Table
+token-stack status
+
+# Full 7-Layer Health & Diagnostic Probe
+token-stack doctor
+
+# Automated 3-Stage E2E Stream Verification (Readyz -> Upstream -> Proxy Stream)
+token-stack verify kimicode
+
+# Manage Multi-Instance Headroom Proxies
+token-stack up --all
+token-stack down
+
+# Register New Profile with Auto-Allocated Port & DB Isolation
+token-stack profile add my-agent --upstream https://api.kimi.com/coding --model kimi-k3
+```
+
+Or using the standard `Makefile`:
+```bash
+make status
+make up
+make doctor
+make verify
+```
+
 ---
 
 ## 📚 Documentation
@@ -144,3 +174,4 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 2. Multi-Profile Setup Guide: [`docs/setup-guide.md`](docs/setup-guide.md)
 3. OpenAI Codex CLI Setup Guide: [`docs/codex-setup-guide.md`](docs/codex-setup-guide.md)
 4. Comprehensive Benchmark Report: [`token-stack-benchmark-report.md`](token-stack-benchmark-report.md)
+5. Architecture Overhaul Plan: [`plans/260902-2335-token-stack-architecture-overhaul/plan.md`](plans/260902-2335-token-stack-architecture-overhaul/plan.md)

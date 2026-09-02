@@ -1,0 +1,18 @@
+{
+  "provider": "kimi",
+  "description": "Moonshot Kimi Coding API (direct context reasoning)",
+  "default_upstream": "https://api.kimi.com/coding",
+  "recommended_model": "kimi-k3",
+  "allowed_models": [
+    "kimi-k3",
+    "kimi-latest"
+  ],
+  "env_template": {
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+  },
+  "plugins": {
+    "caveman@caveman": true,
+    "ponytail@ponytail": true
+  }
+}

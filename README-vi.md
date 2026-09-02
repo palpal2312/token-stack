@@ -1,4 +1,4 @@
-﻿# token-stack
+# token-stack
 
 Động cơ **Tối ưu hóa Token & Quản lý Ngữ cảnh Master 7 Tầng Hoàn Chỉnh** cho các công cụ AI Coding CLI (OpenAI Codex CLI, Claude Code, Cursor, Kimi, Antigravity).
 
@@ -137,6 +137,36 @@ powershell -NoProfile -ExecutionPolicy Bypass `
   -File .\skills\token-stack-health\scripts\token-stack-health.ps1
 ```
 
+## 🛠️ Bộ Lệnh Điều Phối Token-Stack 2.0 (Unified CLI)
+
+Học hỏi kiến trúc module hoá chuẩn chỉnh của `sub2api`, Token-Stack 2.0 trang bị một công cụ dòng lệnh duy nhất (`token-stack`) với registry tập trung và bộ quản lý tiến trình tự động:
+
+```powershell
+# Bảng trạng thái Profile & Proxy thời gian thực
+token-stack status
+
+# Khảo sát & chẩn đoán chuyên sâu toàn diện 7 tầng
+token-stack doctor
+
+# Kiểm thử tự động 3 giai đoạn (Readyz -> Upstream -> Proxy Stream)
+token-stack verify kimicode
+
+# Khởi động / Dừng cụm proxy Headroom đa phiên bản
+token-stack up --all
+token-stack down
+
+# Đăng ký Profile mới với cổng & Database cách ly tự động
+token-stack profile add my-agent --upstream https://api.kimi.com/coding --model kimi-k3
+```
+
+Hoặc sử dụng `Makefile`:
+```bash
+make status
+make up
+make doctor
+make verify
+```
+
 ---
 
 ## 📚 Danh Mục Tài Liệu Chi Tiết
@@ -144,3 +174,4 @@ powershell -NoProfile -ExecutionPolicy Bypass `
 2. Hướng Dẫn Cài Đặt Đa Profile: [`docs/setup-guide.md`](docs/setup-guide.md)
 3. Hướng Dẫn Thiết Lập OpenAI Codex CLI: [`docs/codex-setup-guide.md`](docs/codex-setup-guide.md)
 4. Báo Cáo Thực Nghiệm Chi Tiết Toàn Diện: [`token-stack-benchmark-report.md`](token-stack-benchmark-report.md)
+5. Kế Hoạch Tái Cấu Trúc Kiến Trúc: [`plans/260902-2335-token-stack-architecture-overhaul/plan.md`](plans/260902-2335-token-stack-architecture-overhaul/plan.md)
