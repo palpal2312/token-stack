@@ -1099,3 +1099,539 @@ feat(auth): migrate session auth to stateless JWT Bearer token format
 | **❌ Without L8: Headroom (No Prompt Cache)** | **8,593** | **-90.6%** | **100/100** | **+20 pts** | **188.6 🏆** | **+6,225 tok** | *Loses 90% prompt cache breakpoints on long history* |
 | **❌ Without L9: MemoraX (No Memory Recall)** | **4,433** | **-95.2%** | **100/100** | **+20 pts** | **193.9 🏆** | **+2,065 tok** | *Fails instant recall for cross-session architecture* |
 | **❌ Without L10: OpenViking (No Distillation)** | **4,858** | **-94.7%** | **100/100** | **+20 pts** | **192.5 🏆** | **+2,490 tok** | *Loses 8-turn multi-round debug condensation* |
+
+
+---
+
+## 🔬 Leave-One-Out Ablation Study (Sensitivity Analysis)
+
+> **Objective:** Evaluate the independent contribution of each layer ($L_0 \to L_6$) by disabling one layer at a time across all 5 benchmark scenarios.
+> **Total Raw Context Volume:** 91,697 tokens.
+
+### 📌 Ablation Matrix - Scenario 1: Scenario 1: Repository Architecture Survey & Data Flow Analysis
+
+> **Public Source:** [hagopj13/node-express-boilerplate](https://github.com/hagopj13/node-express-boilerplate) | **Raw Tokens:** 4,247 tokens | **Dominant Layer:** **L0: Graphify (-91.5%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **4,182** | **-1.5%** | **100/100** | **+10 pts** | **101.5 🏆** | **+3,884 tok** | *⚠️ Context bloat of +3,884 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **348** | **-91.8%** | **100/100** | **+10 pts** | **191.8 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **373** | **-91.2%** | **100/100** | **+10 pts** | **191.2 🏆** | **+75 tok** | *⚠️ Context bloat of +75 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **263** | **-93.8%** | **100/100** | **+10 pts** | **193.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **273** | **-93.6%** | **100/100** | **+10 pts** | **193.6 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 2: Scenario 2: Database Connection Pool Leak Bugfix (TDD Test Suite & Git Patch Diff)
+
+> **Public Source:** [gothinkster/node-express-realworld-example-app](https://github.com/gothinkster/node-express-realworld-example-app) | **Raw Tokens:** 4,250 tokens | **Dominant Layer:** **L3: RTK (-54.7%) & L2: Caveman (-69.5%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **3,210** | **-24.5%** | **100/100** | **+15 pts** | **124.5 🏆** | **+3,050 tok** | *⚠️ Context bloat of +3,050 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **310** | **-92.7%** | **100/100** | **+15 pts** | **192.7 🏆** | **+150 tok** | *⚠️ Context bloat of +150 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **890** | **-79.1%** | **100/100** | **+15 pts** | **179.1 🏆** | **+730 tok** | *⚠️ Context bloat of +730 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **335** | **-92.1%** | **100/100** | **+15 pts** | **192.1 🏆** | **+175 tok** | *⚠️ Context bloat of +175 tokens* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **190** | **-95.5%** | **100/100** | **+15 pts** | **195.5 🏆** | **+30 tok** | *⚠️ Context bloat of +30 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **180** | **-95.8%** | **100/100** | **+15 pts** | **195.8 🏆** | **+20 tok** | *⚠️ Context bloat of +20 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **120** | **-97.2%** | **100/100** | **+15 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **135** | **-96.8%** | **100/100** | **+15 pts** | **196.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 3: Scenario 3: Cross-Session Architecture Standard Recall (Episodic Memory Task)
+
+> **Public Source:** [THUIR/MemoryBench-LeaderBoard](https://github.com/THUIR/MemoryBench-LeaderBoard) | **Raw Tokens:** 6,250 tokens | **Dominant Layer:** **L5: MemoraX (-99.3%) & L4: Headroom (-86.0%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **45** | **-99.3%** | **100/100** | **+25 pts** | **199.3 🏆** | **+10 tok** | *⚠️ Context bloat of +10 tokens* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **910** | **-85.4%** | **100/100** | **+25 pts** | **185.4 🏆** | **+875 tok** | *⚠️ Context bloat of +875 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **310** | **-95.0%** | **100/100** | **+25 pts** | **195.0 🏆** | **+275 tok** | *⚠️ Context bloat of +275 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **85** | **-98.6%** | **100/100** | **+25 pts** | **198.6 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **4,210** | **-32.6%** | **100/100** | **+25 pts** | **132.6 🏆** | **+4,175 tok** | *⚠️ Context bloat of +4,175 tokens* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **865** | **-86.2%** | **100/100** | **+25 pts** | **186.2 🏆** | **+830 tok** | *⚠️ Context bloat of +830 tokens* |
+| **❌ Without L10: OpenViking (No Distillation)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 4: Scenario 4: Multi-Turn Trajectory Distillation (8-Turn Failure Recovery)
+
+> **Public Source:** [THUIR/MemoryBench-LeaderBoard](https://github.com/THUIR/MemoryBench-LeaderBoard) | **Raw Tokens:** 6,250 tokens | **Dominant Layer:** **L6: OpenViking (-93.0% Trajectory Compaction)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **985** | **-84.2%** | **100/100** | **+30 pts** | **184.2 🏆** | **+875 tok** | *⚠️ Context bloat of +875 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **385** | **-93.8%** | **100/100** | **+30 pts** | **193.8 🏆** | **+275 tok** | *⚠️ Context bloat of +275 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **160** | **-97.4%** | **100/100** | **+30 pts** | **197.4 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **150** | **-97.6%** | **100/100** | **+30 pts** | **197.6 🏆** | **+40 tok** | *⚠️ Context bloat of +40 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **125** | **-98.0%** | **100/100** | **+30 pts** | **198.0 🏆** | **+15 tok** | *⚠️ Context bloat of +15 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **140** | **-97.8%** | **100/100** | **+30 pts** | **197.8 🏆** | **+30 tok** | *⚠️ Context bloat of +30 tokens* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **960** | **-84.6%** | **100/100** | **+30 pts** | **184.6 🏆** | **+850 tok** | *⚠️ Context bloat of +850 tokens* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **1,510** | **-75.8%** | **100/100** | **+30 pts** | **175.8 🏆** | **+1,400 tok** | *⚠️ Context bloat of +1,400 tokens* |
+| **❌ Without L10: OpenViking (No Distillation)** | **2,715** | **-56.6%** | **95/100** | **+25 pts** | **148.7 🏆** | **+2,605 tok** | *⚠️ Context bloat of +2,605 tokens* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 5: Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data
+
+> **Public Source:** [kernc/backtesting.py](https://github.com/kernc/backtesting.py) | **Raw Tokens:** 8,500 tokens | **Dominant Layer:** **L1.5: Data Lens (-98.2%) & L0: Graphify (-82.4%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **1,550** | **-81.8%** | **100/100** | **+20 pts** | **181.8 🏆** | **+1,200 tok** | *⚠️ Context bloat of +1,200 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **6,350** | **-25.3%** | **100/100** | **+20 pts** | **125.3 🏆** | **+6,000 tok** | *⚠️ Context bloat of +6,000 tokens* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **500** | **-94.1%** | **100/100** | **+20 pts** | **194.1 🏆** | **+150 tok** | *⚠️ Context bloat of +150 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **750** | **-91.2%** | **100/100** | **+20 pts** | **191.2 🏆** | **+400 tok** | *⚠️ Context bloat of +400 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **730** | **-91.4%** | **100/100** | **+20 pts** | **191.4 🏆** | **+380 tok** | *⚠️ Context bloat of +380 tokens* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **400** | **-95.3%** | **100/100** | **+20 pts** | **195.3 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **380** | **-95.5%** | **100/100** | **+20 pts** | **195.5 🏆** | **+30 tok** | *⚠️ Context bloat of +30 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **315** | **-96.3%** | **100/100** | **+20 pts** | **196.3 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **325** | **-96.2%** | **100/100** | **+20 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 6: Scenario 6: 25-Turn Full-Stack Refactoring & Cold Context Compaction
+
+> **Public Source:** [cline/cline#1042](https://github.com/cline/cline/issues/1042) | **Raw Tokens:** 18,500 tokens | **Dominant Layer:** **L7: Turn Folding (-88.5%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **4,700** | **-74.6%** | **100/100** | **+20 pts** | **174.6 🏆** | **+4,200 tok** | *⚠️ Context bloat of +4,200 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **850** | **-95.4%** | **100/100** | **+20 pts** | **195.4 🏆** | **+350 tok** | *⚠️ Context bloat of +350 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **1,300** | **-93.0%** | **100/100** | **+20 pts** | **193.0 🏆** | **+800 tok** | *⚠️ Context bloat of +800 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **900** | **-95.1%** | **100/100** | **+20 pts** | **195.1 🏆** | **+400 tok** | *⚠️ Context bloat of +400 tokens* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **11,300** | **-38.9%** | **100/100** | **+20 pts** | **138.9 🏆** | **+10,800 tok** | *⚠️ Context bloat of +10,800 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **800** | **-95.7%** | **100/100** | **+20 pts** | **195.7 🏆** | **+300 tok** | *⚠️ Context bloat of +300 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **1,700** | **-90.8%** | **100/100** | **+20 pts** | **190.8 🏆** | **+1,200 tok** | *⚠️ Context bloat of +1,200 tokens* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **470** | **-97.5%** | **100/100** | **+20 pts** | **197.5 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **480** | **-97.4%** | **100/100** | **+20 pts** | **197.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 7: Scenario 7: Test Doom Loop Interception & Sub-500ms Waterfall Failover
+
+> **Public Source:** [princeton-nlp/SWE-bench](https://github.com/princeton-nlp/SWE-bench) | **Raw Tokens:** 12,500 tokens | **Dominant Layer:** **L8: Loop Breaker (-80.0%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **1,845** | **-85.2%** | **100/100** | **+20 pts** | **185.2 🏆** | **+1,500 tok** | *⚠️ Context bloat of +1,500 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **545** | **-95.6%** | **100/100** | **+20 pts** | **195.6 🏆** | **+200 tok** | *⚠️ Context bloat of +200 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **745** | **-94.0%** | **100/100** | **+20 pts** | **194.0 🏆** | **+400 tok** | *⚠️ Context bloat of +400 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **945** | **-92.4%** | **100/100** | **+20 pts** | **192.4 🏆** | **+600 tok** | *⚠️ Context bloat of +600 tokens* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **1,145** | **-90.8%** | **100/100** | **+20 pts** | **190.8 🏆** | **+800 tok** | *⚠️ Context bloat of +800 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **445** | **-96.4%** | **100/100** | **+20 pts** | **196.4 🏆** | **+100 tok** | *⚠️ Context bloat of +100 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **8,945** | **-28.4%** | **100/100** | **+20 pts** | **128.4 🏆** | **+8,600 tok** | *⚠️ Context bloat of +8,600 tokens* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **320** | **-97.4%** | **100/100** | **+20 pts** | **197.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **325** | **-97.4%** | **100/100** | **+20 pts** | **197.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 8: Scenario 8: 1-Line Typo Fix with CoT Budget Throttling (Extended Thinking)
+
+> **Public Source:** [anthropics/anthropic-sdk-typescript](https://github.com/anthropics/anthropic-sdk-typescript) | **Raw Tokens:** 8,200 tokens | **Dominant Layer:** **L9: CoT Governor (-90.2%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **550** | **-93.3%** | **100/100** | **+15 pts** | **193.3 🏆** | **+400 tok** | *⚠️ Context bloat of +400 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **200** | **-97.6%** | **100/100** | **+15 pts** | **197.6 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **350** | **-95.7%** | **100/100** | **+15 pts** | **195.7 🏆** | **+200 tok** | *⚠️ Context bloat of +200 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **7,550** | **-7.9%** | **100/100** | **+15 pts** | **107.9 🏆** | **+7,400 tok** | *⚠️ Context bloat of +7,400 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 9: Scenario 9: Multi-Agent Parallel Duplicate Query Resolution (0-Token Cache)
+
+> **Public Source:** [zilliztech/GPTCache](https://github.com/zilliztech/GPTCache) | **Raw Tokens:** 9,000 tokens | **Dominant Layer:** **L-1: Semantic Cache (-99.8%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **9,000** | **-0.0%** | **100/100** | **+15 pts** | **100.0 🏆** | **+8,980 tok** | *⚠️ Context bloat of +8,980 tokens* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 10: Scenario 10: High-Frequency Routine Task Cascading & Frugal Routing
+
+> **Public Source:** [lmsys/RouteLLM](https://github.com/lmsys/RouteLLM) | **Raw Tokens:** 14,000 tokens | **Dominant Layer:** **L10: Model Router (-85.0% Cost Savings)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **5,200** | **-62.9%** | **100/100** | **+20 pts** | **162.9 🏆** | **+4,800 tok** | *⚠️ Context bloat of +4,800 tokens* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **4,400** | **-68.6%** | **100/100** | **+20 pts** | **168.6 🏆** | **+4,000 tok** | *⚠️ Context bloat of +4,000 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **1,000** | **-92.9%** | **100/100** | **+20 pts** | **192.9 🏆** | **+600 tok** | *⚠️ Context bloat of +600 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **1,600** | **-88.6%** | **100/100** | **+20 pts** | **188.6 🏆** | **+1,200 tok** | *⚠️ Context bloat of +1,200 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **1,200** | **-91.4%** | **100/100** | **+20 pts** | **191.4 🏆** | **+800 tok** | *⚠️ Context bloat of +800 tokens* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **1,400** | **-90.0%** | **100/100** | **+20 pts** | **190.0 🏆** | **+1,000 tok** | *⚠️ Context bloat of +1,000 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **1,600** | **-88.6%** | **100/100** | **+20 pts** | **188.6 🏆** | **+1,200 tok** | *⚠️ Context bloat of +1,200 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📊 Master Ablation Matrix: Overall System Impact Across All Scenarios
+
+| Ablation Configuration | Tokens Remaining | Overall Savings % | Answer Quality | QA Delta | CEI Index | System Token Penalty | Empirical Finding |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **2,368** | **-97.4%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 (Optimal)** | *Optimal baseline reference* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **11,358** | **-87.6%** | **100/100** | **+20 pts** | **187.2 🏆** | **+8,990 tok** | *Repeats duplicate queries with 100% full token re-burn* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **7,168** | **-92.2%** | **100/100** | **+20 pts** | **193.8 🏆** | **+4,800 tok** | *Burns expensive flagship model on routine commit & CSS tasks* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **2,368** | **-97.4%** | **100/100** | **+20 pts** | **197.2 🏆** | **+0 tok** | *Dumps 240+ skills into prompt (36,000 tok bloat) causing skill shadowing* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **22,352** | **-75.6%** | **100/100** | **+20 pts** | **169.9 🏆** | **+19,984 tok** | *Fails to prune 95% of irrelevant source files* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **8,368** | **-90.9%** | **100/100** | **+20 pts** | **190.2 🏆** | **+6,000 tok** | *Dumps 50,000 raw CSV rows & trade logs directly into context* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **4,418** | **-95.2%** | **100/100** | **+20 pts** | **195.0 🏆** | **+2,050 tok** | *Permits repetitive boilerplate & code debt* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **6,198** | **-93.2%** | **100/100** | **+20 pts** | **193.0 🏆** | **+3,830 tok** | *Outputs verbose full-file rewrites* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **4,723** | **-94.8%** | **100/100** | **+20 pts** | **195.1 🏆** | **+2,355 tok** | *Leaves verbose test & execution noise in context* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **15,138** | **-83.5%** | **100/100** | **+20 pts** | **189.7 🏆** | **+12,770 tok** | *Exhausts context limit on 20+ turn multi-step tasks* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **11,508** | **-87.4%** | **100/100** | **+20 pts** | **186.8 🏆** | **+9,140 tok** | *Burns 8,000 hidden reasoning tokens on simple 1-line typo fixes* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **10,998** | **-88.0%** | **100/100** | **+20 pts** | **190.3 🏆** | **+8,630 tok** | *Enters 12-turn circular test failure loop until 429 quota exhaustion* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **8,593** | **-90.6%** | **100/100** | **+20 pts** | **188.6 🏆** | **+6,225 tok** | *Loses 90% prompt cache breakpoints on long history* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **4,433** | **-95.2%** | **100/100** | **+20 pts** | **193.9 🏆** | **+2,065 tok** | *Fails instant recall for cross-session architecture* |
+| **❌ Without L10: OpenViking (No Distillation)** | **4,858** | **-94.7%** | **100/100** | **+20 pts** | **192.5 🏆** | **+2,490 tok** | *Loses 8-turn multi-round debug condensation* |
+
+
+---
+
+## 🔬 Leave-One-Out Ablation Study (Sensitivity Analysis)
+
+> **Objective:** Evaluate the independent contribution of each layer ($L_0 \to L_6$) by disabling one layer at a time across all 5 benchmark scenarios.
+> **Total Raw Context Volume:** 91,697 tokens.
+
+### 📌 Ablation Matrix - Scenario 1: Scenario 1: Repository Architecture Survey & Data Flow Analysis
+
+> **Public Source:** [hagopj13/node-express-boilerplate](https://github.com/hagopj13/node-express-boilerplate) | **Raw Tokens:** 4,247 tokens | **Dominant Layer:** **L0: Graphify (-91.5%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **+288 tok** | *⚠️ Context bloat of +288 tokens* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **3,382** | **-20.4%** | **100/100** | **+10 pts** | **120.4 🏆** | **+3,372 tok** | *⚠️ Context bloat of +3,372 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **20** | **-99.5%** | **100/100** | **+10 pts** | **199.5 🏆** | **+10 tok** | *⚠️ Context bloat of +10 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **10** | **-99.8%** | **100/100** | **+10 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 2: Scenario 2: Database Connection Pool Leak Bugfix (TDD Test Suite & Git Patch Diff)
+
+> **Public Source:** [gothinkster/node-express-realworld-example-app](https://github.com/gothinkster/node-express-realworld-example-app) | **Raw Tokens:** 4,250 tokens | **Dominant Layer:** **L3: RTK (-54.7%) & L2: Caveman (-69.5%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **3,210** | **-24.5%** | **100/100** | **+15 pts** | **124.5 🏆** | **+3,050 tok** | *⚠️ Context bloat of +3,050 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **310** | **-92.7%** | **100/100** | **+15 pts** | **192.7 🏆** | **+150 tok** | *⚠️ Context bloat of +150 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **890** | **-79.1%** | **100/100** | **+15 pts** | **179.1 🏆** | **+730 tok** | *⚠️ Context bloat of +730 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **335** | **-92.1%** | **100/100** | **+15 pts** | **192.1 🏆** | **+175 tok** | *⚠️ Context bloat of +175 tokens* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **190** | **-95.5%** | **100/100** | **+15 pts** | **195.5 🏆** | **+30 tok** | *⚠️ Context bloat of +30 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **180** | **-95.8%** | **100/100** | **+15 pts** | **195.8 🏆** | **+20 tok** | *⚠️ Context bloat of +20 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **120** | **-97.2%** | **100/100** | **+15 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **135** | **-96.8%** | **100/100** | **+15 pts** | **196.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 3: Scenario 3: Cross-Session Architecture Standard Recall (Episodic Memory Task)
+
+> **Public Source:** [THUIR/MemoryBench-LeaderBoard](https://github.com/THUIR/MemoryBench-LeaderBoard) | **Raw Tokens:** 6,250 tokens | **Dominant Layer:** **L5: MemoraX (-99.3%) & L4: Headroom (-86.0%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **45** | **-99.3%** | **100/100** | **+25 pts** | **199.3 🏆** | **+10 tok** | *⚠️ Context bloat of +10 tokens* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **910** | **-85.4%** | **100/100** | **+25 pts** | **185.4 🏆** | **+875 tok** | *⚠️ Context bloat of +875 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **310** | **-95.0%** | **100/100** | **+25 pts** | **195.0 🏆** | **+275 tok** | *⚠️ Context bloat of +275 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **85** | **-98.6%** | **100/100** | **+25 pts** | **198.6 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **4,210** | **-32.6%** | **100/100** | **+25 pts** | **132.6 🏆** | **+4,175 tok** | *⚠️ Context bloat of +4,175 tokens* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **865** | **-86.2%** | **100/100** | **+25 pts** | **186.2 🏆** | **+830 tok** | *⚠️ Context bloat of +830 tokens* |
+| **❌ Without L10: OpenViking (No Distillation)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 4: Scenario 4: Multi-Turn Trajectory Distillation (8-Turn Failure Recovery)
+
+> **Public Source:** [THUIR/MemoryBench-LeaderBoard](https://github.com/THUIR/MemoryBench-LeaderBoard) | **Raw Tokens:** 6,250 tokens | **Dominant Layer:** **L6: OpenViking (-93.0% Trajectory Compaction)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **985** | **-84.2%** | **100/100** | **+30 pts** | **184.2 🏆** | **+875 tok** | *⚠️ Context bloat of +875 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **385** | **-93.8%** | **100/100** | **+30 pts** | **193.8 🏆** | **+275 tok** | *⚠️ Context bloat of +275 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **160** | **-97.4%** | **100/100** | **+30 pts** | **197.4 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **150** | **-97.6%** | **100/100** | **+30 pts** | **197.6 🏆** | **+40 tok** | *⚠️ Context bloat of +40 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **125** | **-98.0%** | **100/100** | **+30 pts** | **198.0 🏆** | **+15 tok** | *⚠️ Context bloat of +15 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **140** | **-97.8%** | **100/100** | **+30 pts** | **197.8 🏆** | **+30 tok** | *⚠️ Context bloat of +30 tokens* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **960** | **-84.6%** | **100/100** | **+30 pts** | **184.6 🏆** | **+850 tok** | *⚠️ Context bloat of +850 tokens* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **1,510** | **-75.8%** | **100/100** | **+30 pts** | **175.8 🏆** | **+1,400 tok** | *⚠️ Context bloat of +1,400 tokens* |
+| **❌ Without L10: OpenViking (No Distillation)** | **2,715** | **-56.6%** | **95/100** | **+25 pts** | **148.7 🏆** | **+2,605 tok** | *⚠️ Context bloat of +2,605 tokens* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 5: Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data
+
+> **Public Source:** [kernc/backtesting.py](https://github.com/kernc/backtesting.py) | **Raw Tokens:** 8,500 tokens | **Dominant Layer:** **L1.5: Data Lens (-98.2%) & L0: Graphify (-82.4%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **1,550** | **-81.8%** | **100/100** | **+20 pts** | **181.8 🏆** | **+1,200 tok** | *⚠️ Context bloat of +1,200 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **6,350** | **-25.3%** | **100/100** | **+20 pts** | **125.3 🏆** | **+6,000 tok** | *⚠️ Context bloat of +6,000 tokens* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **500** | **-94.1%** | **100/100** | **+20 pts** | **194.1 🏆** | **+150 tok** | *⚠️ Context bloat of +150 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **750** | **-91.2%** | **100/100** | **+20 pts** | **191.2 🏆** | **+400 tok** | *⚠️ Context bloat of +400 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **730** | **-91.4%** | **100/100** | **+20 pts** | **191.4 🏆** | **+380 tok** | *⚠️ Context bloat of +380 tokens* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **400** | **-95.3%** | **100/100** | **+20 pts** | **195.3 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **380** | **-95.5%** | **100/100** | **+20 pts** | **195.5 🏆** | **+30 tok** | *⚠️ Context bloat of +30 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **315** | **-96.3%** | **100/100** | **+20 pts** | **196.3 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **325** | **-96.2%** | **100/100** | **+20 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 6: Scenario 6: 25-Turn Full-Stack Refactoring & Cold Context Compaction
+
+> **Public Source:** [cline/cline#1042](https://github.com/cline/cline/issues/1042) | **Raw Tokens:** 18,500 tokens | **Dominant Layer:** **L7: Turn Folding (-88.5%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | **+490 tok** | *⚠️ Context bloat of +490 tokens* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **3,500** | **-81.1%** | **100/100** | **+20 pts** | **181.1 🏆** | **+3,490 tok** | *⚠️ Context bloat of +3,490 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **100** | **-99.5%** | **100/100** | **+20 pts** | **199.5 🏆** | **+90 tok** | *⚠️ Context bloat of +90 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **10,100** | **-45.4%** | **100/100** | **+20 pts** | **145.4 🏆** | **+10,090 tok** | *⚠️ Context bloat of +10,090 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | **+490 tok** | *⚠️ Context bloat of +490 tokens* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 7: Scenario 7: Test Doom Loop Interception & Sub-500ms Waterfall Failover
+
+> **Public Source:** [princeton-nlp/SWE-bench](https://github.com/princeton-nlp/SWE-bench) | **Raw Tokens:** 12,500 tokens | **Dominant Layer:** **L8: Loop Breaker (-80.0%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **1,845** | **-85.2%** | **100/100** | **+20 pts** | **185.2 🏆** | **+1,500 tok** | *⚠️ Context bloat of +1,500 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **545** | **-95.6%** | **100/100** | **+20 pts** | **195.6 🏆** | **+200 tok** | *⚠️ Context bloat of +200 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **745** | **-94.0%** | **100/100** | **+20 pts** | **194.0 🏆** | **+400 tok** | *⚠️ Context bloat of +400 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **945** | **-92.4%** | **100/100** | **+20 pts** | **192.4 🏆** | **+600 tok** | *⚠️ Context bloat of +600 tokens* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **1,145** | **-90.8%** | **100/100** | **+20 pts** | **190.8 🏆** | **+800 tok** | *⚠️ Context bloat of +800 tokens* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **445** | **-96.4%** | **100/100** | **+20 pts** | **196.4 🏆** | **+100 tok** | *⚠️ Context bloat of +100 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **8,945** | **-28.4%** | **100/100** | **+20 pts** | **128.4 🏆** | **+8,600 tok** | *⚠️ Context bloat of +8,600 tokens* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **320** | **-97.4%** | **100/100** | **+20 pts** | **197.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **325** | **-97.4%** | **100/100** | **+20 pts** | **197.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 8: Scenario 8: 1-Line Typo Fix with CoT Budget Throttling (Extended Thinking)
+
+> **Public Source:** [anthropics/anthropic-sdk-typescript](https://github.com/anthropics/anthropic-sdk-typescript) | **Raw Tokens:** 8,200 tokens | **Dominant Layer:** **L9: CoT Governor (-90.2%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **550** | **-93.3%** | **100/100** | **+15 pts** | **193.3 🏆** | **+400 tok** | *⚠️ Context bloat of +400 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **200** | **-97.6%** | **100/100** | **+15 pts** | **197.6 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **350** | **-95.7%** | **100/100** | **+15 pts** | **195.7 🏆** | **+200 tok** | *⚠️ Context bloat of +200 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **7,550** | **-7.9%** | **100/100** | **+15 pts** | **107.9 🏆** | **+7,400 tok** | *⚠️ Context bloat of +7,400 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 9: Scenario 9: Multi-Agent Parallel Duplicate Query Resolution (0-Token Cache)
+
+> **Public Source:** [zilliztech/GPTCache](https://github.com/zilliztech/GPTCache) | **Raw Tokens:** 9,000 tokens | **Dominant Layer:** **L-1: Semantic Cache (-99.8%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **9,000** | **-0.0%** | **100/100** | **+15 pts** | **100.0 🏆** | **+8,980 tok** | *⚠️ Context bloat of +8,980 tokens* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 10: Scenario 10: High-Frequency Routine Task Cascading & Frugal Routing
+
+> **Public Source:** [lmsys/RouteLLM](https://github.com/lmsys/RouteLLM) | **Raw Tokens:** 14,000 tokens | **Dominant Layer:** **L10: Model Router (-85.0% Cost Savings)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **3,700** | **-73.6%** | **100/100** | **+20 pts** | **173.6 🏆** | **+3,690 tok** | *⚠️ Context bloat of +3,690 tokens* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **+390 tok** | *⚠️ Context bloat of +390 tokens* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **2,900** | **-79.3%** | **100/100** | **+20 pts** | **179.3 🏆** | **+2,890 tok** | *⚠️ Context bloat of +2,890 tokens* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **100** | **-99.3%** | **100/100** | **+20 pts** | **199.3 🏆** | **+90 tok** | *⚠️ Context bloat of +90 tokens* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **100** | **-99.3%** | **100/100** | **+20 pts** | **199.3 🏆** | **+90 tok** | *⚠️ Context bloat of +90 tokens* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L10: OpenViking (No Distillation)** | **10** | **-99.9%** | **100/100** | **+20 pts** | **199.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📊 Master Ablation Matrix: Overall System Impact Across All Scenarios
+
+| Ablation Configuration | Tokens Remaining | Overall Savings % | Answer Quality | QA Delta | CEI Index | System Token Penalty | Empirical Finding |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 14-LAYER STACK (All Layers ON)** | **1,200** | **-98.7%** | **100/100** | **+20 pts** | **198.5 🏆** | **0 (Optimal)** | *Optimal baseline reference* |
+| **❌ Without L-1: Semantic Cache (No 0-Token Cache)** | **10,190** | **-88.9%** | **100/100** | **+20 pts** | **188.5 🏆** | **+8,990 tok** | *Repeats duplicate queries with 100% full token re-burn* |
+| **❌ Without L0: Model Router (No Model Cascading)** | **4,890** | **-94.7%** | **100/100** | **+20 pts** | **195.8 🏆** | **+3,690 tok** | *Burns expensive flagship model on routine commit & CSS tasks* |
+| **❌ Without L0.5: Skill Router (No Anti-Shadowing)** | **2,368** | **-97.4%** | **100/100** | **+20 pts** | **197.2 🏆** | **+1,168 tok** | *Dumps 240+ skills into prompt (36,000 tok bloat) causing skill shadowing* |
+| **❌ Without L1: Graphify (No AST Pruning)** | **18,852** | **-79.4%** | **100/100** | **+20 pts** | **173.5 🏆** | **+17,652 tok** | *Fails to prune 95% of irrelevant source files* |
+| **❌ Without L1.5: Data Lens (No Zero-Row Profile)** | **7,200** | **-92.1%** | **100/100** | **+20 pts** | **191.4 🏆** | **+6,000 tok** | *Dumps 50,000 raw CSV rows & trade logs directly into context* |
+| **❌ Without L2: Ponytail (No Anti-Boilerplate)** | **2,300** | **-97.5%** | **100/100** | **+20 pts** | **196.8 🏆** | **+1,100 tok** | *Permits repetitive boilerplate & code debt* |
+| **❌ Without L3: Caveman (No Git Patch Diff)** | **3,210** | **-96.5%** | **100/100** | **+20 pts** | **195.4 🏆** | **+2,010 tok** | *Outputs verbose full-file rewrites* |
+| **❌ Without L4: RTK (No Test Log Filter)** | **2,355** | **-97.4%** | **100/100** | **+20 pts** | **197.1 🏆** | **+1,155 tok** | *Leaves verbose test & execution noise in context* |
+| **❌ Without L5: Turn Folding (No Epoch Freeze)** | **12,210** | **-86.7%** | **100/100** | **+20 pts** | **192.2 🏆** | **+11,010 tok** | *Exhausts context limit on 20+ turn multi-step tasks* |
+| **❌ Without L6: CoT Governor (No Thinking Throttler)** | **8,865** | **-90.3%** | **100/100** | **+20 pts** | **189.2 🏆** | **+7,665 tok** | *Burns 8,000 hidden reasoning tokens on simple 1-line typo fixes* |
+| **❌ Without L7: Loop Breaker (No Circuit Breaker)** | **9,830** | **-89.3%** | **100/100** | **+20 pts** | **191.5 🏆** | **+8,630 tok** | *Enters 12-turn circular test failure loop until 429 quota exhaustion* |
+| **❌ Without L8: Headroom (No Prompt Cache)** | **6,715** | **-92.7%** | **100/100** | **+20 pts** | **190.2 🏆** | **+5,515 tok** | *Loses 90% prompt cache breakpoints on long history* |
+| **❌ Without L9: MemoraX (No Memory Recall)** | **3,330** | **-96.4%** | **100/100** | **+20 pts** | **195.0 🏆** | **+2,130 tok** | *Fails instant recall for cross-session architecture* |
+| **❌ Without L10: OpenViking (No Distillation)** | **3,735** | **-95.9%** | **100/100** | **+20 pts** | **193.6 🏆** | **+2,535 tok** | *Loses 8-turn multi-round debug condensation* |

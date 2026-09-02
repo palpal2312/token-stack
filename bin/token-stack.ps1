@@ -40,14 +40,14 @@ if (-not $RepoRoot) {
 
 function Show-Help {
     Write-Host @"
-Token-Stack 3.1 CLI - 13-Layer Master Token & Context Engine
+Token-Stack 3.2 CLI - 14-Layer Master Token & Context Engine
 
 Usage:
   token-stack <command> [arguments]
 
 Commands:
   status                   Display live table of all profiles, ports, upstream & health
-  doctor                   Run full 13-layer health inspection and diagnostic probes
+  doctor                   Run full 14-layer health inspection and diagnostic probes
   up [<name>|--all]        Start Headroom proxy daemon for profile(s)
   down [<name>|--all]      Stop Headroom proxy daemon for profile(s)
   profile list             List registered agent profiles
@@ -55,10 +55,11 @@ Commands:
   profile remove <name>    Unregister an existing profile
   verify [<name>]          Run automated 3-stage E2E validation pipeline
   test                     Run all unit & integration tests across the modular layers
-  bench [args]             Launch interactive 13-layer Benchmark TUI
+  bench [args]             Launch interactive 14-layer Benchmark TUI
   data profile <file>      Profile CSV/TSV into a compact Data Contract (<100 tokens)
   quant tearsheet <file>   Collapse thousands of trade log lines into Quant Tear-Sheet
   cache [stats|clear]      Inspect or clear Layer -1 Zero-Token Semantic Cache
+  skill route <prompt>     Route intent to Top-K skills (Anti-Skill-Shadowing, -98% bloat)
   help                     Show this help message
 "@
 }
@@ -309,6 +310,19 @@ function Invoke-Cache {
     }
 }
 
+function Invoke-Skill {
+    param([string[]]$SubArgs)
+    $query = if ($SubArgs -and $SubArgs.Length -gt 1) { ($SubArgs[1..($SubArgs.Length - 1)]) -join " " } elseif ($SubArgs -and $SubArgs.Length -eq 1) { $SubArgs[0] } else { "" }
+    if (-not $query) {
+        Write-Host "Usage: token-stack skill route <prompt>" -ForegroundColor Yellow
+        return
+    }
+    $routerScript = Join-Path $RepoRoot "core\skill-router.cjs"
+    $escaped = $query.Replace("'", "\'").Replace('"', '\"')
+    $nodeCode = "const { SkillRouter } = require('$($routerScript.Replace('\', '/'))'); const router = new SkillRouter(); const res = router.route('$escaped'); console.log(router.generateActiveSkillContext(res));"
+    & node -e $nodeCode
+}
+
 # Router
 switch ($Command.ToLower()) {
     "status"   { Invoke-Status }
@@ -322,6 +336,7 @@ switch ($Command.ToLower()) {
     "data"     { Invoke-Data -SubArgs $CommandArgs }
     "quant"    { Invoke-Quant -SubArgs $CommandArgs }
     "cache"    { Invoke-Cache -SubArgs $CommandArgs }
+    "skill"    { Invoke-Skill -SubArgs $CommandArgs }
     "help"     { Show-Help }
     "--help"   { Show-Help }
     "-h"       { Show-Help }

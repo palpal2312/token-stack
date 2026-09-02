@@ -211,6 +211,13 @@ $routerDetail = if ($routerReady) { 'classifier=routellm-frugal cheap-tier=kimi/
 $routerStatus = if ($routerReady) { 'OK' } else { 'OPTIONAL' }
 $components += [pscustomobject]@{ Name = 'router'; Status = $routerStatus; Detail = $routerDetail }
 
+# --- Layer 0.5: Dynamic Skill Router (Anti-Skill-Shadowing) ---
+$skillRouterScript = Join-Path $PSScriptRoot '..\..\..\core\skill-router.cjs'
+$skillRouterReady = Test-Path -LiteralPath $skillRouterScript -PathType Leaf
+$skillRouterDetail = if ($skillRouterReady) { 'two-stage=retrieve+rerank anti-shadowing=active bloat-cut=-98%' } else { 'router=none' }
+$skillRouterStatus = if ($skillRouterReady) { 'OK' } else { 'OPTIONAL' }
+$components += [pscustomobject]@{ Name = 'skillrouter'; Status = $skillRouterStatus; Detail = $skillRouterDetail }
+
 # --- Layer 1.5: Data & Quant Lens ---
 $dataLensScript = Join-Path $PSScriptRoot '..\..\..\core\data-lens.cjs'
 $dataLensReady = Test-Path -LiteralPath $dataLensScript -PathType Leaf

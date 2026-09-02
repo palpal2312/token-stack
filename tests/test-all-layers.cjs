@@ -14,13 +14,14 @@ const suites = [
   'cot-governor.test.cjs',
   'semantic-cache.test.cjs',
   'model-router.test.cjs',
+  'skill-router.test.cjs',
   'data-lens.test.cjs',
   'cli-e2e.test.cjs',
   'stress-edge-cases.test.cjs'
 ];
 
 console.log("===============================================================================");
-console.log("🚀 TOKEN-STACK 3.1: 13-LAYER MASTER INTEGRATION TEST RUNNER");
+console.log("🚀 TOKEN-STACK 3.2: 14-LAYER MASTER INTEGRATION TEST RUNNER");
 console.log("===============================================================================\n");
 
 let passed = 0;

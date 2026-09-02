@@ -66,6 +66,15 @@ const AVAILABLE_LAYERS = [
     ]
   },
   {
+    id: 'l_skillrouter',
+    key: 'L0.5: Skill Router',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'skillrouter', name: 'SkillRouter (arXiv:2603.22455)', label: 'Two-Stage Retrieve & Rerank', ratio: 0.02, qualityBonus: 25, star: '🏆', desc: 'Prunes 240+ skills to Top-3 active skills (-98% prompt bloat & zero skill shadowing)' }
+    ]
+  },
+  {
     id: 'l_datalens',
     key: 'L1.5: Data Lens',
     active: true,
@@ -190,6 +199,7 @@ const ALL_QUESTIONS = [
     baseDeltas: {
       l_semcache: 0,
       l0: -3884,
+      l_skillrouter: -800,
       l1: 0,
       l2: 0,
       l3: 0,
@@ -511,6 +521,7 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
     baseDeltas: {
       l_semcache: 0,
       l0: -4200,
+      l_skillrouter: -1200,
       l1: -350,
       l2: -800,
       l3: -400,
@@ -715,6 +726,7 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
     baseDeltas: {
       l_semcache: 0,
       l0: -4000,
+      l_skillrouter: -1500,
       l1: -600,
       l2: -1200,
       l3: -800,
@@ -1390,14 +1402,15 @@ class InteractiveBenchmarkApp {
   runAblationStudy() {
     console.clear();
     console.log(`${c.brightCyan}╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
-    console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   🔬 ABLATION STUDY: MEASURING EMPIRICAL SENSITIVITY VIA LEAVE-ONE-OUT (L-1 ➔ L10)                                ${c.brightCyan}║${c.reset}`);
+    console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   🔬 ABLATION STUDY: MEASURING EMPIRICAL SENSITIVITY VIA LEAVE-ONE-OUT (L-1 ➔ L10, 14 LAYERS)                     ${c.brightCyan}║${c.reset}`);
     console.log(`${c.brightCyan}║${c.gray}   Evaluates impact when disabling each layer individually across all 10 public GitHub scenarios                   ${c.brightCyan}║${c.reset}`);
     console.log(`${c.brightCyan}╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝${c.reset}\n`);
 
     const ablationConfigurations = [
-      { id: 'full', name: '★ FULL 13-LAYER STACK (All Layers ON)', disabledLayerId: null, role: 'Optimal baseline reference' },
+      { id: 'full', name: '★ FULL 14-LAYER STACK (All Layers ON)', disabledLayerId: null, role: 'Optimal baseline reference' },
       { id: 'no_semcache', name: '❌ Without L-1: Semantic Cache (No 0-Token Cache)', disabledLayerId: 'l_semcache', role: 'Repeats duplicate queries with 100% full token re-burn' },
       { id: 'no_router', name: '❌ Without L0: Model Router (No Model Cascading)', disabledLayerId: 'l_router', role: 'Burns expensive flagship model on routine commit & CSS tasks' },
+      { id: 'no_skillrouter', name: '❌ Without L0.5: Skill Router (No Anti-Shadowing)', disabledLayerId: 'l_skillrouter', role: 'Dumps 240+ skills into prompt (36,000 tok bloat) causing skill shadowing' },
       { id: 'no_l0', name: '❌ Without L1: Graphify (No AST Pruning)', disabledLayerId: 'l0', role: 'Fails to prune 95% of irrelevant source files' },
       { id: 'no_datalens', name: '❌ Without L1.5: Data Lens (No Zero-Row Profile)', disabledLayerId: 'l_datalens', role: 'Dumps 50,000 raw CSV rows & trade logs directly into context' },
       { id: 'no_l1', name: '❌ Without L2: Ponytail (No Anti-Boilerplate)', disabledLayerId: 'l1', role: 'Permits repetitive boilerplate & code debt' },
@@ -1501,9 +1514,9 @@ class InteractiveBenchmarkApp {
     });
 
     // OVERALL ABLATION SUMMARY TABLE
-    console.log(`${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════════════════════════${c.reset}`);
-    console.log(`${c.bold}${c.brightWhite}📊 OVERALL ABLATION MATRIX: TOTAL SYSTEM IMPACT ACROSS ALL 10 SCENARIOS (13 LAYERS)${c.reset}`);
-    console.log(`${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════════════════════════${c.reset}\n`);
+    console.log(`\n${c.bold}${c.brightCyan}════════════════════════════════════════════════════════════════════════════════════════════════════════════════${c.reset}`);
+    console.log(`${c.bold}${c.brightWhite}📊 OVERALL ABLATION MATRIX: TOTAL SYSTEM IMPACT ACROSS ALL 10 SCENARIOS (14 LAYERS)${c.reset}`);
+    console.log(`${c.bold}${c.brightCyan}════════════════════════════════════════════════════════════════════════════════════════════════════════════════${c.reset}\n`);
 
     console.log(`${c.gray}┌──────────────────────────────────────────────────┬──────────────┬──────────────┬─────────────┬─────────────┬──────────────┬──────────────────────────────────┐${c.reset}`);
     console.log(`${c.gray}│${c.bold}${c.white} Ablation Experiment (Leave-One-Out)              │${c.bold}${c.white} Tokens Remain │${c.bold}${c.white} Savings %     │${c.bold}${c.white}Answer Quality│${c.bold}${c.white}QA Delta      │${c.bold}${c.white} CEI Index     │${c.bold}${c.white} Overall System Impact            ${c.gray}│${c.reset}`);
