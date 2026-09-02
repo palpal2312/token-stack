@@ -14,7 +14,8 @@ const suites = [
   'cot-governor.test.cjs',
   'semantic-cache.test.cjs',
   'model-router.test.cjs',
-  'data-lens.test.cjs'
+  'data-lens.test.cjs',
+  'cli-e2e.test.cjs'
 ];
 
 console.log("===============================================================================");

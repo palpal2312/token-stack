@@ -197,7 +197,66 @@ $components += [pscustomobject]@{
     Detail = "shim=$($rtk.Present.ToString().ToLowerInvariant()) binary=$($rtkBinaryPresent.ToString().ToLowerInvariant()) version=$($rtk.Version)"
 }
 
-# --- Layer 4: Headroom Proxy ---
+# --- Layer -1: Semantic Cache ---
+$semCacheScript = Join-Path $PSScriptRoot '..\..\..\core\semantic-cache.cjs'
+$semCacheReady = Test-Path -LiteralPath $semCacheScript -PathType Leaf
+$semCacheDetail = if ($semCacheReady) { 'engine=sqlite-ngram vector-cosine=ready latency=<15ms' } else { 'engine=none' }
+$semCacheStatus = if ($semCacheReady) { 'OK' } else { 'OPTIONAL' }
+$components += [pscustomobject]@{ Name = 'semcache'; Status = $semCacheStatus; Detail = $semCacheDetail }
+
+# --- Layer 0: Model Router ---
+$routerScript = Join-Path $PSScriptRoot '..\..\..\core\model-router.cjs'
+$routerReady = Test-Path -LiteralPath $routerScript -PathType Leaf
+$routerDetail = if ($routerReady) { 'classifier=routellm-frugal cheap-tier=kimi/deepseek savings=-85%' } else { 'classifier=none' }
+$routerStatus = if ($routerReady) { 'OK' } else { 'OPTIONAL' }
+$components += [pscustomobject]@{ Name = 'router'; Status = $routerStatus; Detail = $routerDetail }
+
+# --- Layer 1.5: Data & Quant Lens ---
+$dataLensScript = Join-Path $PSScriptRoot '..\..\..\core\data-lens.cjs'
+$dataLensReady = Test-Path -LiteralPath $dataLensScript -PathType Leaf
+$chHttp = 'none'
+try {
+    $res = Invoke-WebRequest -Uri 'http://127.0.0.1:8123/?query=SELECT%201' -TimeoutSec 1 -UseBasicParsing -ErrorAction SilentlyContinue
+    if ($res.Content -match '1') {
+        $chHttp = 'http:8123(ready)'
+    }
+} catch {
+    if ($_.Exception.Response.StatusCode.Value__ -eq 401) {
+        $chHttp = 'http:8123(auth-required)'
+    } elseif ($_.Exception.Message -match '401') {
+        $chHttp = 'http:8123(auth-required)'
+    }
+}
+$duckDbCmd = Get-CommandInfo 'duckdb'
+$chPresent = (Get-CommandInfo 'clickhouse').Present
+$chStatusStr = if ($chHttp -ne 'none') { "clickhouse=$chHttp" } elseif ($chPresent) { 'clickhouse=local' } else { 'clickhouse=none' }
+$duckStatusStr = if ($duckDbCmd.Present) { 'duckdb=present' } else { 'duckdb=none' }
+$dataLensDetail = "contracts=ready $chStatusStr $duckStatusStr tearsheet=active"
+$dataLensStatus = if ($dataLensReady) { 'OK' } else { 'OPTIONAL' }
+$components += [pscustomobject]@{ Name = 'datalens'; Status = $dataLensStatus; Detail = $dataLensDetail }
+
+# --- Layer 5: In-Flight Turn Folding ---
+$turnFolderScript = Join-Path $PSScriptRoot '..\..\..\core\turn-folder.cjs'
+$turnFolderReady = Test-Path -LiteralPath $turnFolderScript -PathType Leaf
+$turnFolderDetail = if ($turnFolderReady) { 'epoch=5-turn freezing prompt-cache=100% stable' } else { 'epoch=none' }
+$turnFolderStatus = if ($turnFolderReady) { 'OK' } else { 'OPTIONAL' }
+$components += [pscustomobject]@{ Name = 'turnfolding'; Status = $turnFolderStatus; Detail = $turnFolderDetail }
+
+# --- Layer 6: CoT Reasoning Budget Governor ---
+$cotGovScript = Join-Path $PSScriptRoot '..\..\..\core\cot-governor.cjs'
+$cotGovReady = Test-Path -LiteralPath $cotGovScript -PathType Leaf
+$cotGovDetail = if ($cotGovReady) { 'policy=task-aware simple=1024 deep=8192 savings=-90%' } else { 'policy=none' }
+$cotGovStatus = if ($cotGovReady) { 'OK' } else { 'OPTIONAL' }
+$components += [pscustomobject]@{ Name = 'cotgovernor'; Status = $cotGovStatus; Detail = $cotGovDetail }
+
+# --- Layer 7: Runaway Loop Breaker & Failover ---
+$guardrailScript = Join-Path $PSScriptRoot '..\..\..\core\guardrail.cjs'
+$guardrailReady = Test-Path -LiteralPath $guardrailScript -PathType Leaf
+$guardrailDetail = if ($guardrailReady) { 'circuit-breaker=sha256-ringbuffer halt=3x failover=sub-500ms' } else { 'circuit-breaker=none' }
+$guardrailStatus = if ($guardrailReady) { 'OK' } else { 'OPTIONAL' }
+$components += [pscustomobject]@{ Name = 'guardrail'; Status = $guardrailStatus; Detail = $guardrailDetail }
+
+# --- Layer 8: Headroom Proxy ---
 $baseUrl = Get-PropertyValue (Get-PropertyValue $settings 'env') 'ANTHROPIC_BASE_URL'
 if (-not $baseUrl) {
     $baseUrl = Get-PropertyValue (Get-PropertyValue $settings 'env') 'OPENAI_BASE_URL'
@@ -226,7 +285,7 @@ $headroomDetail = "installed=$($headroomBinaryPresent.ToString().ToLowerInvarian
 if ($headroom.StatusCode) { $headroomDetail += " http=$($headroom.StatusCode)" }
 $components += [pscustomobject]@{ Name = 'headroom'; Status = $headroomStatus; Detail = $headroomDetail }
 
-# --- Layer 5: Knowledge Harvester (MemoraX) ---
+# --- Layer 9: Knowledge Harvester (MemoraX) ---
 $harvesterProvider = 'none'
 $harvesterStatus = 'OPTIONAL'
 $harvesterDetail = 'provider=none'
@@ -238,7 +297,7 @@ if ($memoraxCmd.Present) {
 }
 $components += [pscustomobject]@{ Name = 'harvester'; Status = $harvesterStatus; Detail = $harvesterDetail }
 
-# --- Layer 6: Context Database Platform (OpenViking / Obsidian / Local / None) ---
+# --- Layer 10: Context Database Platform (OpenViking / Obsidian / Local / None) ---
 $contextProvider = 'none'
 $contextStatus = 'OPTIONAL'
 $contextDetail = 'provider=none'

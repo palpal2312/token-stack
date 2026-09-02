@@ -34,22 +34,23 @@ class DataLens {
   _detectClickHouse() {
     // 1. Check local native clickhouse binary
     try {
-      execSync('clickhouse local --version', { stdio: 'ignore' });
+      execSync('clickhouse local --version', { stdio: 'ignore', timeout: 1000 });
       return { type: 'local', cmd: 'clickhouse local' };
     } catch {}
 
-    // 2. Check ClickHouse HTTP server on default port 8123
+    // 2. Check ClickHouse HTTP server on default port 8123 with query validation
     try {
-      const ping = execSync('curl -s -m 1 http://127.0.0.1:8123/ping', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
-      if (ping && ping.trim() === 'Ok.') {
-        return { type: 'http', url: 'http://127.0.0.1:8123' };
+      const user = process.env.CLICKHOUSE_USER || '';
+      const password = process.env.CLICKHOUSE_PASSWORD || '';
+      const authParams = user ? `&user=${encodeURIComponent(user)}&password=${encodeURIComponent(password)}` : '';
+      const test = execSync(`curl.exe -s -m 1 "http://127.0.0.1:8123/?query=SELECT%201${authParams}"`, {
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+        timeout: 1500
+      });
+      if (test && test.trim() === '1') {
+        return { type: 'http', url: 'http://127.0.0.1:8123', auth: authParams };
       }
-    } catch {}
-
-    // 3. Check WSL clickhouse binary
-    try {
-      execSync('wsl clickhouse local --version', { stdio: 'ignore' });
-      return { type: 'wsl_local', cmd: 'wsl clickhouse local' };
     } catch {}
 
     return null;
@@ -111,14 +112,23 @@ class DataLens {
     if (chInfo.type === 'local' || chInfo.type === 'wsl_local') {
       const query = `DESCRIBE file('${normalizedPath}') FORMAT PrettyCompact`;
       const output = execSync(`${chInfo.cmd} -q "${query}"`, { encoding: 'utf-8', timeout: 4000 });
+      if (!output || output.includes('DB::Exception') || output.includes('Code: ')) {
+        throw new Error('ClickHouse Local query error');
+      }
       return `[DATA CONTRACT: ${path.basename(filePath)} (Powered by ClickHouse Local)]
 • Engine: ClickHouse Columnar Local Engine (${chInfo.type})
 • Schema Structure:
 ${output.trim().split('\n').slice(0, 10).join('\n')}
 • Recommendations: Apply native ClickHouse functions (quantilesExactWeighted, exponentialMovingAverage, asof join). Zero raw rows deserialized.`;
     } else if (chInfo.type === 'http') {
+      const user = process.env.CLICKHOUSE_USER || '';
+      const password = process.env.CLICKHOUSE_PASSWORD || '';
+      const authParams = user ? `&user=${encodeURIComponent(user)}&password=${encodeURIComponent(password)}` : '';
       const query = encodeURIComponent(`DESCRIBE TABLE file('${normalizedPath}') FORMAT TabSeparated`);
-      const output = execSync(`curl -s "${chInfo.url}/?query=${query}"`, { encoding: 'utf-8', timeout: 3000 });
+      const output = execSync(`curl.exe -s "${chInfo.url}/?query=${query}${authParams}"`, { encoding: 'utf-8', timeout: 3000 });
+      if (!output || output.includes('DB::Exception') || output.includes('Authentication failed') || output.startsWith('Code: ')) {
+        throw new Error('ClickHouse HTTP query failed or requires auth: ' + (output ? output.slice(0, 60) : 'empty'));
+      }
       return `[DATA CONTRACT: ${path.basename(filePath)} (Powered by ClickHouse Server :8123)]
 • Engine: ClickHouse HTTP High-Performance Server
 • Columns & Types:
