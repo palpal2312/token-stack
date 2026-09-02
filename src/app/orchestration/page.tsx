@@ -94,12 +94,15 @@ const fmtFull = (time?: string): string => {
 function TabCard({
   sub,
   notes,
+  laneName,
   pinned,
   declared,
   onTogglePin,
 }: {
   sub: LiveSubLane;
   notes: MasterNote[];
+  /** Owning lane name — run/next notes are addressed to the lane. */
+  laneName: string;
   /** Manual pin (user) or auto main (server) — sticky first on the row. */
   pinned: "manual" | "auto" | null;
   /** The master agent named this tab's terminal handle in a note. */
@@ -222,9 +225,10 @@ function TabCard({
       )}
 
       {LANE_NOTE_FIELDS.map((field) => {
+        // Lane agents address notes to the lane name; a tab title also works.
         const note = [...notes]
           .reverse()
-          .find((n) => n.lane === sub.title && n.field === field.key);
+          .find((n) => (n.lane === laneName || n.lane === sub.title) && n.field === field.key);
         return (
           <div
             key={field.key}
@@ -279,7 +283,7 @@ export default function OrchestrationPage() {
       return next;
     });
   };
-  const rowSubs = (laneKey: string, subs: LiveSubLane[]) => {
+  const rowSubs = (laneKey: string, laneName: string, subs: LiveSubLane[]) => {
     const manualId = pins[laneKey];
     const pinOf = (s: LiveSubLane): "manual" | "auto" | null =>
       manualId ? (s.id === manualId ? "manual" : null) : s.main ? "auto" : null;
@@ -290,6 +294,7 @@ export default function OrchestrationPage() {
           key={sub.id}
           sub={sub}
           notes={notes}
+          laneName={laneName}
           pinned={pinOf(sub)}
           declared={sub.id === declaredHandle}
           onTogglePin={() => togglePin(laneKey, sub.id)}
@@ -492,7 +497,7 @@ export default function OrchestrationPage() {
               <div className="flex flex-col gap-2">
                 <div className="text-xs font-semibold text-[var(--gold-soft)]">TABS:</div>
                 <div className="flex gap-4 overflow-x-auto pb-2">
-                  {rowSubs("__primary__", live.primary.subLanes)}
+                  {rowSubs("__primary__", live.primary.name, live.primary.subLanes)}
                 </div>
               </div>
             )}
@@ -531,7 +536,7 @@ export default function OrchestrationPage() {
                 <p className="text-xs italic text-[var(--cream-mute)]">no open tabs</p>
               ) : (
                 <div className="flex gap-4 overflow-x-auto pb-2 pl-6 border-l-2 border-[var(--line)]">
-                  {rowSubs(lane.worktreeId, lane.subLanes)}
+                  {rowSubs(lane.worktreeId, lane.name, lane.subLanes)}
                 </div>
               )}
             </div>
