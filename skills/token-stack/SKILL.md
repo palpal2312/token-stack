@@ -22,7 +22,7 @@ Provides unified access to the **14-Layer Master Token & Context Engine**:
 - **Layer 10**: Context Database Platform (`OpenViking`, `Obsidian Vault` - L0/L1/L2 storage)
 
 ## Sub-Skills
-- `token-stack:benchmark` -> Run isolated and cumulative token savings benchmarks across 10 standardized scenarios (14 layers).
+- `token-stack:benchmark` -> Run isolated and cumulative token savings benchmarks across 12 standardized scenarios (14 layers).
 - `token-stack:health` -> Run live health probes across all 14 layers.
 - `token-stack:setup` -> Configure and install components into profiles.
 - `token-stack:report` -> Generate token savings analytics.

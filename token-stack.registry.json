@@ -1,14 +1,19 @@
 {
-  "version": "3.1.0",
+  "version": "3.2.0",
   "sub2api_upstream": "http://127.0.0.1:9284",
   "waterfall_tiers": ["kimicode", "sub2api-01", "sub2api-02", "alibaba-01"],
   "features": {
     "semantic_cache": true,
-    "turn_folding": true,
-    "loop_breaker": true,
-    "cot_governor": true,
     "model_router": true,
-    "data_lens": true
+    "skill_router": true,
+    "code_topology": true,
+    "data_lens": true,
+    "turn_folding": true,
+    "cot_governor": true,
+    "loop_breaker": true,
+    "headroom_proxy": true,
+    "knowledge_harvester": true,
+    "context_database": true
   },
   "profiles": {
     "default": {
