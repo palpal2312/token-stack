@@ -119,10 +119,12 @@ if (-not $baseUrl) {
 }
 $headroom = Get-HeadroomStats $baseUrl
 
-# --- Check 13-Layer Master Features ---
-$semDb = Join-Path $HOME '.token-stack\semantic_cache.db'
+# --- Check 14-Layer Master Features ---
+$semDb = Join-Path $HOME '.token-stack\cache.db'
 $semDbExists = Test-Path -LiteralPath $semDb -PathType Leaf
 $semStats = if ($semDbExists) { 'active (sqlite-ngram cache ready)' } else { 'ready (0 queries cached)' }
+$skillsCache = Join-Path $HOME '.token-stack\skills-cache.json'
+$skillRouterStatus = if (Test-Path -LiteralPath $skillsCache -PathType Leaf) { 'active (dual-scope index cached)' } else { 'active (on-demand index ready)' }
 
 $report = [pscustomobject]@{
     profile = $ProfileDirectory
@@ -130,6 +132,7 @@ $report = [pscustomobject]@{
     headroom = $headroom
     claude_usage = [pscustomobject]@{ observed = $usage.Available; totals = $usage.Totals }
     ponytail_caveman = [pscustomobject]@{ observed = 'A/B baseline required'; savings = 'UNKNOWN' }
+    skill_router = [pscustomobject]@{ status = $skillRouterStatus; theory = 'arXiv:2603.22455' }
     data_lens = [pscustomobject]@{ engine = 'ClickHouse / DuckDB'; status = 'active' }
     semantic_cache = [pscustomobject]@{ status = $semStats }
     turn_folding = [pscustomobject]@{ status = '5-turn epoch freeze active' }

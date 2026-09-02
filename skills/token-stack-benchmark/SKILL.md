@@ -1,17 +1,17 @@
 ---
 name: token-stack-benchmark
-description: 3-Step Interactive Benchmark Suite for the 13-Layer Token Stack (L-1 Semantic Cache, L0 Router, L1 Topology, L1.5 Data Lens, L2 Ponytail, L3 Caveman, L4 RTK, L5 Turn Folding, L6 CoT Governor, L7 Loop Breaker, L8 Headroom, L9 MemoraX, L10 OpenViking). Features dataset presentation, layer toggles, N-run mean calculation, Dual Rubric evaluation, and Leave-One-Out Ablation Study across 10 public GitHub scenarios.
+description: 3-Step Interactive Benchmark Suite for the 14-Layer Token Stack (L-1 Semantic Cache, L0 Model Router, L0.5 Skill Router, L1 Topology, L1.5 Data Lens, L2 Ponytail, L3 Caveman, L4 RTK, L5 Turn Folding, L6 CoT Governor, L7 Loop Breaker, L8 Headroom, L9 MemoraX, L10 OpenViking). Features dataset presentation, layer toggles, N-run mean calculation, Dual Rubric evaluation, and Leave-One-Out Ablation Study across 12 public GitHub scenarios.
 user-invocable: true
 ---
 
 # Token Stack Benchmark Suite (3-Step Interactive Workflow)
 
-Standardized benchmark suite to evaluate token compression ratio, pure logical answer accuracy, and CEI (Context Efficiency Index) across **10 Public Open-Source GitHub Datasets** and **13 Modular Token Stack Layers (L-1 ➔ L10)**:
+Standardized benchmark suite to evaluate token compression ratio, pure logical answer accuracy, and CEI (Context Efficiency Index) across **12 Public Open-Source GitHub Datasets** and **14 Modular Token Stack Layers (L-1 ➔ L10)**:
 
 ## 🔄 3-Step Standardized Workflow
 
 ### 📋 Step 1: Public Datasets & Workspace Setup
-- Presents 10 standardized public GitHub benchmark scenarios:
+- Presents 12 standardized public GitHub benchmark scenarios:
   1. `Scenario 1: Comprehensive Repository Architecture & Data Flow Survey` ([hagopj13/node-express-boilerplate](https://github.com/hagopj13/node-express-boilerplate))
   2. `Scenario 2: Database Connection Pool Leak Bugfix` ([gothinkster/node-express-realworld-example-app](https://github.com/gothinkster/node-express-realworld-example-app))
   3. `Scenario 3: Cross-Session Architecture Standard Recall` ([THUIR/MemoryBench](https://github.com/THUIR/MemoryBench-LeaderBoard))

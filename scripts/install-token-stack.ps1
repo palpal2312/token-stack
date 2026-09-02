@@ -209,13 +209,13 @@ if (-not $Apply) {
     $planned | ForEach-Object { Write-Output "skill=$($_.Name) state=$($_.State)" }
     Write-Output "settings=$($settingsExists.ToString().ToLowerInvariant()) plugin_config=will_update_if_apply"
     Write-Output "headroom_port=$headroomPort upstream=$headroomUpstream env_file=$envFilePath"
-    Write-Output "layer0_topology=$CodeTopology layer5_harvester=$Harvester layer6_context_db=$ContextDatabase"
+    Write-Output "layer1_topology=$CodeTopology layer9_harvester=$Harvester layer10_context_db=$ContextDatabase"
     Write-Output 'apply=false; no changes made'
     exit 0
 }
 
 if (-not $settingsExists) { throw 'settings.json not found; start Claude Code or Codex once before applying' }
-if (-not $PSCmdlet.ShouldProcess($profile, 'install token-stack 7-layer master engine')) { exit 0 }
+if (-not $PSCmdlet.ShouldProcess($profile, 'install token-stack 14-layer master engine')) { exit 0 }
 
 $runId = [Guid]::NewGuid().ToString('N')
 $stagingRoot = Join-Path $skillsDirectory ".token-stack-install-$runId"
