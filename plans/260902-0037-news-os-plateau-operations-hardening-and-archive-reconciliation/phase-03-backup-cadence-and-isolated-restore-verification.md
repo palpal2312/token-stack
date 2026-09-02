@@ -21,20 +21,22 @@ Create a separate approved backup cadence task; it never alters the S18 installe
 - Canonical path containment rejects reparse points/symlinks/junctions and TOCTOU escape; all create/delete paths must remain children of canonical approved root.
 - Per-cycle exclusive lock, stale-lock recovery rule, collision-resistant cycle IDs, no cleanup of pre-existing partials, and retention excluding active/current cycles.
 - Restore uses unique isolated store, daemon port, and PID proof; it never targets live scheduled store.
-- Change Go only after a direct defect-reproduction test proves an API defect; otherwise implement orchestration only.
+- Owner-approved exception: add one local-only Go backup/restore CLI that invokes the existing product backup contract. It must not add an HTTP endpoint, alter the core backup contract, or affect S17/S18 task ownership.
 
 ## Related Code Files
 
 - Create: `scripts/run-newsos-plateau-backup-cadence.ps1`, `scripts/tests/newsos-plateau-backup-cadence.Tests.ps1`
 - Modify: `docs/backup-restore-cadence.md`
 - Read: `scripts/install-s18-tasks.ps1`, `go/internal/localdb/core/backup.go`, `go/internal/localdb/core/backup_test.go`, `go/internal/localdb/product/database_test.go`
-- Modify only with defect test: `go/cmd/sen-plane/...`, `go/internal/localdb/core/backup.go`
+- Create: `go/cmd/newsos-backup/main.go`, focused CLI tests
+- Do not modify: `go/internal/localdb/core/backup.go`, `go/cmd/sen-plane/...`
 - Create: `plans/reports/news-os-backup-restore-drill-<date>.md`
 
 ## Implementation Steps
 
 1. Validate approval; inspect exact task identity and abort if `NEWSOS-Plateau-Backup-Cadence` already exists rather than replacing it.
-2. Resolve canonical root and validate each path component against reparse/symlink/junction traversal before open/create/delete; revalidate handles/parents immediately before mutation.
+2. Add the owner-approved local-only CLI around `product.Backup`/`product.Restore`; reject missing arguments and emit no backup bytes, secrets, or endpoint behavior.
+3. Resolve canonical root and validate each path component against reparse/symlink/junction traversal before open/create/delete; revalidate handles/parents immediately before mutation.
 3. Acquire exclusive per-cycle lock; recover only an objectively stale lock under approved rule and use collision-resistant IDs/staging that never deletes a pre-existing partial.
 4. Create encrypted/ACL-compliant external cycle, authenticated provenance/manifest, verify from manifest root, then atomically promote.
 5. Restore to a new isolated root, start isolated daemon on unique port, record PID/port/store proof, validate approved endpoint, terminate PID, and remove only that isolated root.
