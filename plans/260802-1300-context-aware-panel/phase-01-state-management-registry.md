@@ -35,8 +35,8 @@ Dự án hiện tại không dùng thư viện quản trị state bên thứ 3 (
 4. Import và wrap `SenPanelProvider` vào `RootLayout` hoặc `Shell`.
 
 ## Success Criteria
-- [ ] Context hoạt động trơn tru không lỗi.
-- [ ] Hook `useAukerPanel` có thể được gọi từ bất kỳ component con nào để kiểm tra state hiện tại.
+- [ ] Context hoạt động trơn tru không lỗi. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Hook `useAukerPanel` có thể được gọi từ bất kỳ component con nào để kiểm tra state hiện tại. (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 - Rủi ro: Wrap Context quá cao (như RootLayout) có thể gây re-render diện rộng.

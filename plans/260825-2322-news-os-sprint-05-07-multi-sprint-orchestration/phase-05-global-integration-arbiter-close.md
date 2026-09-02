@@ -51,14 +51,14 @@ global arbiter is independent from producers and controller.
 
 ## Todo
 
-- [ ] Sprint 05/06/07 independent verdicts are GO.
-- [ ] Shared-file integration has one writer and zero unresolved conflicts.
-- [ ] Current-byte hashes and completion markers verify.
-- [ ] Cross-sprint privacy, recovery and Orca boundaries pass.
-- [ ] OLC retrospective and session aggregate privacy gate pass.
-- [ ] Global arbiter returns GO.
-- [ ] Lease released; detector disabled; post-release gate GO.
-- [ ] Phase 21 still blocked.
+- [ ] Sprint 05/06/07 independent verdicts are GO. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Shared-file integration has one writer and zero unresolved conflicts. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Current-byte hashes and completion markers verify. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Cross-sprint privacy, recovery and Orca boundaries pass. (OPEN: historical plan dir; see roadmap track record)
+- [ ] OLC retrospective and session aggregate privacy gate pass. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Global arbiter returns GO. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Lease released; detector disabled; post-release gate GO. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Phase 21 still blocked. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success criteria
 

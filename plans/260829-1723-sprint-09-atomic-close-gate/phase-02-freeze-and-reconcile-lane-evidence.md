@@ -16,11 +16,11 @@ candidates and isolate all unowned drift before integration begins.
 
 ## Requirements
 
-- [ ] Inventory dirty master state without mutating it.
-- [ ] Compute destination preimages for the C2 and C3 path sets.
-- [ ] Confirm only `palpal2312/admin` will write master.
-- [ ] Treat `src/lib/llmops/contracts.ts` as an explicit hold-point.
-- [ ] Produce a read-only field-by-field DTO-delta comparison and a user decision packet; no lane edits it.
+- [ ] Inventory dirty master state without mutating it. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Compute destination preimages for the C2 and C3 path sets. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Confirm only `palpal2312/admin` will write master. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Treat `src/lib/llmops/contracts.ts` as an explicit hold-point. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Produce a read-only field-by-field DTO-delta comparison and a user decision packet; no lane edits it. (OPEN: historical plan dir; see roadmap track record)
 
 ## Implementation Steps
 
@@ -31,10 +31,10 @@ candidates and isolate all unowned drift before integration begins.
 
 ## Todo
 
-- [ ] C2 destination preimages match or I4 stops without forced merge.
-- [ ] C3 destination preimages match after I4 or I5 stops without forced merge.
-- [ ] The contracts.ts decision is recorded as unresolved rather than silently absorbed.
-- [ ] Any user decision becomes a named, separately scoped task; without it the final arbiter must return NO-GO.
+- [ ] C2 destination preimages match or I4 stops without forced merge. (OPEN: historical plan dir; see roadmap track record)
+- [ ] C3 destination preimages match after I4 or I5 stops without forced merge. (OPEN: historical plan dir; see roadmap track record)
+- [ ] The contracts.ts decision is recorded as unresolved rather than silently absorbed. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Any user decision becomes a named, separately scoped task; without it the final arbiter must return NO-GO. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success Criteria
 

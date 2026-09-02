@@ -16,10 +16,10 @@ state transition and continuation boundary without widening scope.
 
 ## Requirements
 
-- [ ] Accept only a current-byte final arbiter GO and verified manifest.
-- [ ] Run the one allowed Sprint 09 CloseGate transition through Orca.
-- [ ] Update the run manifest, handoff, and plan status from durable evidence.
-- [ ] Keep legacy writer disabled and Phase 21 blocked.
+- [ ] Accept only a current-byte final arbiter GO and verified manifest. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Run the one allowed Sprint 09 CloseGate transition through Orca. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Update the run manifest, handoff, and plan status from durable evidence. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Keep legacy writer disabled and Phase 21 blocked. (OPEN: historical plan dir; see roadmap track record)
 
 ## Implementation Steps
 
@@ -29,11 +29,11 @@ state transition and continuation boundary without widening scope.
 
 ## Todo
 
-- [ ] CloseGate is never invoked after an arbiter NO-GO, unavailable check, or unresolved drift.
-- [ ] All three lanes are settled with durable receipts.
-- [ ] Sprint 09 is marked closed exactly once; Phase 21 remains blocked.
-- [ ] Post-fence hashes and master commit/tree equal the final arbiter inputs.
-- [ ] Lease release and detector disable are verified after durable close-state confirmation.
+- [ ] CloseGate is never invoked after an arbiter NO-GO, unavailable check, or unresolved drift. (OPEN: historical plan dir; see roadmap track record)
+- [ ] All three lanes are settled with durable receipts. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Sprint 09 is marked closed exactly once; Phase 21 remains blocked. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Post-fence hashes and master commit/tree equal the final arbiter inputs. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Lease release and detector disable are verified after durable close-state confirmation. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success Criteria
 

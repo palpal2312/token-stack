@@ -60,13 +60,13 @@ generation-fenced takeover transfers the entire state atomically.
 
 ## Todo
 
-- [ ] Closed prior-run state reconciled.
-- [ ] Worker/capability matrix current.
-- [ ] Host resource snapshot, workload weights and effective worker/fallback
+- [ ] Closed prior-run state reconciled. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Worker/capability matrix current. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Host resource snapshot, workload weights and effective worker/fallback (OPEN: historical plan dir; see roadmap track record)
       capacity produce an explainable OLC decision.
-- [ ] Ownership collision count equals zero.
-- [ ] Three queues contain ACTIVE/NEXT/FALLBACK coverage.
-- [ ] Observer and lease/takeover dry runs pass.
+- [ ] Ownership collision count equals zero. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Three queues contain ACTIVE/NEXT/FALLBACK coverage. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Observer and lease/takeover dry runs pass. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success criteria
 

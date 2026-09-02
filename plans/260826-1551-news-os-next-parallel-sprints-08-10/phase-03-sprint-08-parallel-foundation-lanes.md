@@ -11,13 +11,13 @@ Add the bounded community contribution/escalation path, connect it to the contro
 
 ## Requirements
 
-- [ ] Require explicit consent, authenticated actor/workspace, size/type limits, quarantine, provenance, and reversible moderation state.
-- [ ] Accept only allowlisted Forecast Feature Records and normalized incident/evaluation facts from `community-queue.db`; reject raw project content and exact private identifiers.
-- [ ] Validate signature, schema/policy version, dedupe key, evidence quality, plausibility, and poisoning/abuse indicators before aggregation.
-- [ ] Keep upload/escalation local-first and fail closed when the canonical backend is unavailable.
-- [ ] Publish signed/versioned snapshots containing matched priors, lane-efficiency curves, known failure signatures, validated recipes, compatibility facts, and calibration tables with sample size and uncertainty.
-- [ ] Compile only approved, typed workflow graphs with bounded loops, budgets, checkpoints, cancellation, retry/fallback, and merge-queue safety.
-- [ ] Preserve parent Task authority while child Attempts remain durable and auditable.
+- [ ] Require explicit consent, authenticated actor/workspace, size/type limits, quarantine, provenance, and reversible moderation state. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Accept only allowlisted Forecast Feature Records and normalized incident/evaluation facts from `community-queue.db`; reject raw project content and exact private identifiers. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Validate signature, schema/policy version, dedupe key, evidence quality, plausibility, and poisoning/abuse indicators before aggregation. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Keep upload/escalation local-first and fail closed when the canonical backend is unavailable. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Publish signed/versioned snapshots containing matched priors, lane-efficiency curves, known failure signatures, validated recipes, compatibility facts, and calibration tables with sample size and uncertainty. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Compile only approved, typed workflow graphs with bounded loops, budgets, checkpoints, cancellation, retry/fallback, and merge-queue safety. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Preserve parent Task authority while child Attempts remain durable and auditable. (OPEN: historical plan dir; see roadmap track record)
 
 ## Architecture and ownership
 
@@ -40,14 +40,14 @@ The community lane owns intake, quarantine, validation, moderation, aggregation,
 
 ## Success Criteria
 
-- [ ] Community data never bypasses quarantine or consent.
-- [ ] Users can inspect the exact normalized payload, delivery/publication receipt, and removal state.
-- [ ] Community outage cannot block local chat, planning, orchestration, terminal attach, or Run completion.
-- [ ] Imported snapshots are signed, versioned, reversible, and disclose cohort/sample-size/uncertainty boundaries.
-- [ ] Graph execution respects WIP, approval, exclusive-resource, budget, and cancellation controls from S08-A.
-- [ ] Context Pack lineage from S08-B is cited and stale-source behavior is visible.
-- [ ] Legacy writer remains disabled and no Phase 21 command is issued.
-- [ ] Independent arbiter records GO with no unresolved provenance or merge-safety findings.
+- [ ] Community data never bypasses quarantine or consent. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Users can inspect the exact normalized payload, delivery/publication receipt, and removal state. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Community outage cannot block local chat, planning, orchestration, terminal attach, or Run completion. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Imported snapshots are signed, versioned, reversible, and disclose cohort/sample-size/uncertainty boundaries. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Graph execution respects WIP, approval, exclusive-resource, budget, and cancellation controls from S08-A. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Context Pack lineage from S08-B is cited and stale-source behavior is visible. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Legacy writer remains disabled and no Phase 21 command is issued. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Independent arbiter records GO with no unresolved provenance or merge-safety findings. (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 

@@ -16,9 +16,9 @@ promotion independently receipted before the next starts.
 
 ## Requirements
 
-- [ ] I4 product commit may touch only `src/lib/llmops/workflow.ts`, `src/lib/__tests__/workflow-graph.test.ts`, and `qa/fixtures/sprint09/graph-cases.json`; its receipt is a separate allowlisted evidence artifact.
-- [ ] I5 product commit may touch only `go/internal/localdb/community/s09_snapshot.go`, `go/internal/localdb/community/s09_snapshot_test.go`, and `qa/fixtures/sprint09/snapshot-cases.json`; its receipt is a separate allowlisted evidence artifact.
-- [ ] Each promotion uses current destination preimage checks, temporary index, one scoped commit, focused validation, and a master receipt.
+- [ ] I4 product commit may touch only `src/lib/llmops/workflow.ts`, `src/lib/__tests__/workflow-graph.test.ts`, and `qa/fixtures/sprint09/graph-cases.json`; its receipt is a separate allowlisted evidence artifact. (OPEN: historical plan dir; see roadmap track record)
+- [ ] I5 product commit may touch only `go/internal/localdb/community/s09_snapshot.go`, `go/internal/localdb/community/s09_snapshot_test.go`, and `qa/fixtures/sprint09/snapshot-cases.json`; its receipt is a separate allowlisted evidence artifact. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Each promotion uses current destination preimage checks, temporary index, one scoped commit, focused validation, and a master receipt. (OPEN: historical plan dir; see roadmap track record)
 
 ## Implementation Steps
 
@@ -29,10 +29,10 @@ promotion independently receipted before the next starts.
 
 ## Todo
 
-- [ ] I4 master receipt hashes exactly match the committed C2 source paths.
-- [ ] I5 master receipt hashes exactly match the committed C3 source paths.
-- [ ] No user index entry, migration, or shared DTO file is included without explicit scope and receipt.
-- [ ] After every product and receipt commit, staged pathname set/hash/count and unrelated status match the Phase 1 baseline.
+- [ ] I4 master receipt hashes exactly match the committed C2 source paths. (OPEN: historical plan dir; see roadmap track record)
+- [ ] I5 master receipt hashes exactly match the committed C3 source paths. (OPEN: historical plan dir; see roadmap track record)
+- [ ] No user index entry, migration, or shared DTO file is included without explicit scope and receipt. (OPEN: historical plan dir; see roadmap track record)
+- [ ] After every product and receipt commit, staged pathname set/hash/count and unrelated status match the Phase 1 baseline. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success Criteria
 

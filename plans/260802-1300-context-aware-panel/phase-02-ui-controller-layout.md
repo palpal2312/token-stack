@@ -32,8 +32,8 @@ Tiến hành chỉnh sửa giao diện chính (SenView) để "nhường đất"
 4. Đảm bảo UI Responsive, nếu màn hình quá nhỏ thì hiển thị dạng overlay.
 
 ## Success Criteria
-- [ ] Sen có thể mở được khung Kanban ở bên phải chỉ thông qua lệnh đổi State.
-- [ ] Giao diện hiển thị mượt mà không bị vỡ bố cục (layout break).
+- [ ] Sen có thể mở được khung Kanban ở bên phải chỉ thông qua lệnh đổi State. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Giao diện hiển thị mượt mà không bị vỡ bố cục (layout break). (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 - Rủi ro: Render các component nặng (như Dify Config, Memory 3D Graph) trong Right Panel làm chậm khung chat chính.

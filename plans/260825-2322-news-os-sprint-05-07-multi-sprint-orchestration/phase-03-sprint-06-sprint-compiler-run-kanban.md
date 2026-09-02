@@ -66,17 +66,17 @@ projection and Run-level readiness/review gates.
 
 ## Todo
 
-- [ ] S06 logical lanes prepared with ACTIVE/NEXT/FALLBACK.
-- [ ] Approval-before-materialization gate passes.
-- [ ] OLC proposal and recalculation fixtures cover idle, heavy-load,
+- [ ] S06 logical lanes prepared with ACTIVE/NEXT/FALLBACK. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Approval-before-materialization gate passes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] OLC proposal and recalculation fixtures cover idle, heavy-load, (OPEN: historical plan dir; see roadmap track record)
       host-pressure, shared-quota, exhausted-primary and no-fallback cases.
-- [ ] Session telemetry is corroborated by Orca/evidence and excludes project
+- [ ] Session telemetry is corroborated by Orca/evidence and excludes project (OPEN: historical plan dir; see roadmap track record)
       content, prompts, raw terminal output and credential material.
-- [ ] Card=Run and workflow/loop invariants pass.
-- [ ] Orca-only execution boundary passes.
-- [ ] Run-level readiness/review gate passes.
-- [ ] Sprint 05 GO consumed by hash.
-- [ ] Independent Sprint 06 arbiter returns GO.
+- [ ] Card=Run and workflow/loop invariants pass. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Orca-only execution boundary passes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Run-level readiness/review gate passes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Sprint 05 GO consumed by hash. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Independent Sprint 06 arbiter returns GO. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success criteria
 

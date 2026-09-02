@@ -11,52 +11,52 @@ This pack is a provisioning + operator checklist only. It grants no release, cut
 ## 1. Provisioning checklist
 
 ### 1a. Environment (staging prod-equivalent)
-- [ ] Provision a live staging host **distinct from any controlled evidence checkout** (contract entry condition 1). Type: one Windows Server-class VM, 2 vCPU / 4 GB RAM minimum, 40 GB SSD OS+data.
+- [ ] Provision a live staging host **distinct from any controlled evidence checkout** (contract entry condition 1). Type: one Windows Server-class VM, 2 vCPU / 4 GB RAM minimum, 40 GB SSD OS+data. (OPEN: historical plan dir; see roadmap track record)
   - `ponytail:` single host — this is a one-node local-first system (SQLite + daemon + Next.js UI); a staging cluster is speculative until the live SLO probes prove it needed.
-- [ ] Fresh user + service account (non-admin where possible) for the SEN daemon; no reuse of any evidence-checkout profile.
-- [ ] Install prerequisites: Node (project-pinned), Go toolchain (module path fix per runbook preflight), Git for Windows.
-- [ ] Clone only the release byte-set from the pinned branch (runbook step 1); `git status --porcelain` must be empty at every step.
-- [ ] Env vars to set (names only — values go in the local secret store, never the repo): `AGENTIC_OS_HOME`, `SEN_DAEMON_ADDR`, `SEN_DAEMON_URL`, `SEN_GO_BUILDER_EXEC_AUTHORITY`, `DATABASE_URL`.
-- [ ] Verify `scripts/controller-failover.ps1` present and the scheduled-task watchdog installed + enabled (`scripts/install-controller-failover-task.ps1`), matching master `88c1dc3`.
-- [ ] Create `%LOCALAPPDATA%\NEWSOS` on the staging host and confirm state/incident JSON writes succeed (probe with a throwaway runId, not the real config).
+- [ ] Fresh user + service account (non-admin where possible) for the SEN daemon; no reuse of any evidence-checkout profile. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Install prerequisites: Node (project-pinned), Go toolchain (module path fix per runbook preflight), Git for Windows. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Clone only the release byte-set from the pinned branch (runbook step 1); `git status --porcelain` must be empty at every step. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Env vars to set (names only — values go in the local secret store, never the repo): `AGENTIC_OS_HOME`, `SEN_DAEMON_ADDR`, `SEN_DAEMON_URL`, `SEN_GO_BUILDER_EXEC_AUTHORITY`, `DATABASE_URL`. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Verify `scripts/controller-failover.ps1` present and the scheduled-task watchdog installed + enabled (`scripts/install-controller-failover-task.ps1`), matching master `88c1dc3`. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Create `%LOCALAPPDATA%\NEWSOS` on the staging host and confirm state/incident JSON writes succeed (probe with a throwaway runId, not the real config). (OPEN: historical plan dir; see roadmap track record)
 
 ### 1b. DNS / certs
-- [ ] Acquire staging DNS name (e.g. `staging.<domain>`); do **not** point an apex/production record at it.
-- [ ] TLS: dev/self-signed acceptable for internal canary; if the live canary must be reachable externally, use a public-free cert (e.g. Let's Encrypt) on the staging FQDN only. No private keys in the repo, CI, or any artifact.
-- [ ] Confirm the daemon's `SEN_DAEMON_ADDR` bind is loopback or firewall-scoped; no public port exposure during canary.
+- [ ] Acquire staging DNS name (e.g. `staging.<domain>`); do **not** point an apex/production record at it. (OPEN: historical plan dir; see roadmap track record)
+- [ ] TLS: dev/self-signed acceptable for internal canary; if the live canary must be reachable externally, use a public-free cert (e.g. Let's Encrypt) on the staging FQDN only. No private keys in the repo, CI, or any artifact. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Confirm the daemon's `SEN_DAEMON_ADDR` bind is loopback or firewall-scoped; no public port exposure during canary. (OPEN: historical plan dir; see roadmap track record)
 
 ### 1c. DB / Postgres resources (per runbook bootstrap — the runbook's preflight + live env imply the durable store)
 The runbook bootstrap currently targets **local SQLite** (`sen-product.db` + `community-queue.db`), not managed Postgres. Provision against both so the choice isn't made in the window:
-- [ ] Local path: reserve 2× DB dirs (product + community-queue) with known free space; defaults live under `AGENTIC_OS_HOME`. Confirm `DATABASE_URL` resolves **without** credentials in env (file path only) in this layout.
-- [ ] If managed Postgres is selected instead (only if a separate DB plan gets owner approval — contract non-goal "DTO/schema migration needs its own plan"): provision the smallest single-zone instance (see §2), one database, one least-privilege app role, TLS enforced. Keep local SQLite as the immediate fallback.
-- [ ] Either way: run the migration/checksum ledger check from the S02 evidence methodology (integrity check before any copy; quarantine-on-corrupt) as part of bootstrap verification.
+- [ ] Local path: reserve 2× DB dirs (product + community-queue) with known free space; defaults live under `AGENTIC_OS_HOME`. Confirm `DATABASE_URL` resolves **without** credentials in env (file path only) in this layout. (OPEN: historical plan dir; see roadmap track record)
+- [ ] If managed Postgres is selected instead (only if a separate DB plan gets owner approval — contract non-goal "DTO/schema migration needs its own plan"): provision the smallest single-zone instance (see §2), one database, one least-privilege app role, TLS enforced. Keep local SQLite as the immediate fallback. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Either way: run the migration/checksum ledger check from the S02 evidence methodology (integrity check before any copy; quarantine-on-corrupt) as part of bootstrap verification. (OPEN: historical plan dir; see roadmap track record)
 
 ### 1d. Monitoring / metrics (SLO probes)
-- [ ] At least one **live, externally verifiable probe** per SLO — no loopback or simulated evidence (contract evidence requirement + runbook invariant).
-- [ ] SLO probes to stand up (see runbook step 3 "live canary ... with real SLO/RPO/RTO instrumentation"):
+- [ ] At least one **live, externally verifiable probe** per SLO — no loopback or simulated evidence (contract evidence requirement + runbook invariant). (OPEN: historical plan dir; see roadmap track record)
+- [ ] SLO probes to stand up (see runbook step 3 "live canary ... with real SLO/RPO/RTO instrumentation"): (OPEN: historical plan dir; see roadmap track record)
   - Availability: HTTP/daemon health check every 30s, alert on 2 consecutive failures.
   - RPO: age of newest durable write vs wall clock; alert at threshold (start 5 min).
   - RTO: time from failure signal to restored service; alert at threshold (start 15 min).
   - Write-verification: post-atomic-flip probe proving new adapter canonical and legacy inert (runbook step 4).
-- [ ] Metrics sink: append-only local log + one dashboard. No third-party ingest required yet; store metric series in `%LOCALAPPDATA%\NEWSOS\s12-metrics\`.
-- [ ] Alert thresholds must be **set and armed before the canary starts**, not discovered during it (§3, gate G4).
+- [ ] Metrics sink: append-only local log + one dashboard. No third-party ingest required yet; store metric series in `%LOCALAPPDATA%\NEWSOS\s12-metrics\`. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Alert thresholds must be **set and armed before the canary starts**, not discovered during it (§3, gate G4). (OPEN: historical plan dir; see roadmap track record)
 
 ### 1e. Backup / restore
-- [ ] Pre-cutover full backup of `sen-product.db` and `community-queue.db` (or managed-PG snapshot), copied to a second volume/object store.
-- [ ] Test restore from that backup on the staging box (offline, using the S2 approach: read-only verify before copy, fail-closed on mismatch). Record a restore receipt with the pinned SHA-256.
-- [ ] Backup cadence through the window: nightly + pre-flip + post-flip. Retention: see §2 (start 7 days).
-- [ ] Rollback uses the atomic branch (runbook step 5) to restore the prior canonical-write pointer — keep the backup separate from the code rollback so a byte-corruption and a flag-flip are independently recoverable.
+- [ ] Pre-cutover full backup of `sen-product.db` and `community-queue.db` (or managed-PG snapshot), copied to a second volume/object store. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Test restore from that backup on the staging box (offline, using the S2 approach: read-only verify before copy, fail-closed on mismatch). Record a restore receipt with the pinned SHA-256. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Backup cadence through the window: nightly + pre-flip + post-flip. Retention: see §2 (start 7 days). (OPEN: historical plan dir; see roadmap track record)
+- [ ] Rollback uses the atomic branch (runbook step 5) to restore the prior canonical-write pointer — keep the backup separate from the code rollback so a byte-corruption and a flag-flip are independently recoverable. (OPEN: historical plan dir; see roadmap track record)
 
 ### 1f. Access review — who can flip `legacy_writer`
-- [ ] Maintain an explicit list (kept out-of-band, not in repo): which named humans/roles can (a) write the controller state JSON under `%LOCALAPPDATA%\NEWSOS`, (b) run `scripts/controller-failover.ps1` / scheduled watchdog, (c) push to the release branch.
-- [ ] Rule: **owner-only** may flip `legacy_writer`. No script, CI pipeline, or scheduled task may flip it autonomously — the flip is a manual, supervised, single atomic command (contract invariant: `disabled` stays true until the final step).
-- [ ] Separate the arbiter: the independent Phase 12 arbiter (runbook step 8) has **read-only** access to state and bytes and no write path to `legacy_writer`. Confirm no shared credential between operator and arbiter.
-- [ ] Disable/remove any earlier broad write grants (e.g., automated failover run-as accounts) on the staging host before the window.
+- [ ] Maintain an explicit list (kept out-of-band, not in repo): which named humans/roles can (a) write the controller state JSON under `%LOCALAPPDATA%\NEWSOS`, (b) run `scripts/controller-failover.ps1` / scheduled watchdog, (c) push to the release branch. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Rule: **owner-only** may flip `legacy_writer`. No script, CI pipeline, or scheduled task may flip it autonomously — the flip is a manual, supervised, single atomic command (contract invariant: `disabled` stays true until the final step). (OPEN: historical plan dir; see roadmap track record)
+- [ ] Separate the arbiter: the independent Phase 12 arbiter (runbook step 8) has **read-only** access to state and bytes and no write path to `legacy_writer`. Confirm no shared credential between operator and arbiter. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Disable/remove any earlier broad write grants (e.g., automated failover run-as accounts) on the staging host before the window. (OPEN: historical plan dir; see roadmap track record)
 
 ### 1g. No secrets in CI logs
-- [ ] Add a redaction scrub step to any CI/scheduled job invoked in the window (and to the local canary runner): strip `SEN_GO_BUILDER_EXEC_AUTHORITY`, `DATABASE_URL`, and any token-like values from logs before they are written or pushed.
-- [ ] Env vars are injected at runtime only; no `<env>` blocks with values in workflow files; `echo`/debug printers must not dump environment.
-- [ ] Post-run sweep: grep receipts under `plans/reports/s12/` for long-token patterns and `password`/`secret`/`key=` literals before the security/privacy review receipt is written (contract: "no secrets or private content in artifacts").
+- [ ] Add a redaction scrub step to any CI/scheduled job invoked in the window (and to the local canary runner): strip `SEN_GO_BUILDER_EXEC_AUTHORITY`, `DATABASE_URL`, and any token-like values from logs before they are written or pushed. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Env vars are injected at runtime only; no `<env>` blocks with values in workflow files; `echo`/debug printers must not dump environment. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Post-run sweep: grep receipts under `plans/reports/s12/` for long-token patterns and `password`/`secret`/`key=` literals before the security/privacy review receipt is written (contract: "no secrets or private content in artifacts"). (OPEN: historical plan dir; see roadmap track record)
 
 ---
 

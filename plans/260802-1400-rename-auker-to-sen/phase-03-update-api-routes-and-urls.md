@@ -16,8 +16,8 @@ Update all network requests (`fetch`) and API endpoints to match the new `/sen` 
 3. Ensure dynamic segments like `[id]` still work.
 
 ## Success Criteria
-- [ ] No `404 Not Found` errors when fetching agent sessions or chat endpoints.
-- [ ] The web UI properly connects to the new API routes.
+- [ ] No `404 Not Found` errors when fetching agent sessions or chat endpoints. (OPEN: historical plan dir; see roadmap track record)
+- [ ] The web UI properly connects to the new API routes. (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 - Hardcoded URLs in legacy integration components (like `HermesTalk`) might be missed. Ensure global grep for `/api/sen`.

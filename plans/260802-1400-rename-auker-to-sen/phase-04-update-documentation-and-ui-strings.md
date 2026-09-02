@@ -16,8 +16,8 @@ Update all plain-text occurrences of "Sen" in UI labels, documentation files, an
 3. Update `.css` classes from `sen-panel` to `sen-panel` if any.
 
 ## Success Criteria
-- [ ] Visual inspection confirms the navigation menu says "Sen".
-- [ ] No placeholder text reading "Sen" appears in the UI.
+- [ ] Visual inspection confirms the navigation menu says "Sen". (OPEN: historical plan dir; see roadmap track record)
+- [ ] No placeholder text reading "Sen" appears in the UI. (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 - Low risk. Only affects visual representation and documentation accuracy.

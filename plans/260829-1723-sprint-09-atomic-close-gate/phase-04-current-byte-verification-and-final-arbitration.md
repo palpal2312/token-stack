@@ -16,16 +16,16 @@ independent Pi arbiter re-execute—not merely inspect—the close gates.
 
 ## Requirements
 
-- [ ] Lane B uses a fresh clean detached verification worktree at recorded master HEAD/tree; it runs C1/C3 tests plus C2 workflow graph suite and `tsc --noEmit`.
-- [ ] Snapshot checks cover canonical-serialization mutation, allowlisted/unknown key, signature, schema/policy, provenance, expiry, monotonic version, rollback reference, and before/after state equality on every rejection.
-- [ ] Lane A promotes the existing contract-arbiter `current-byte-manifest.json` to its named canonical master contract path without material regeneration, then records source/destination hashes, base/HEAD/tree, semantic validation, and a separately scoped manifest receipt commit.
-- [ ] Lane C uses a distinct Orca task, terminal, and clean verifier worktree that did not author C5/audit/manifest; it derives hashes itself and independently re-runs every close gate.
-- [ ] Scan every manifest/receipt before arbitration for forbidden fields, secret/private-key material, raw paths/logs/prompts, and private identifiers; fail closed on a hit.
+- [ ] Lane B uses a fresh clean detached verification worktree at recorded master HEAD/tree; it runs C1/C3 tests plus C2 workflow graph suite and `tsc --noEmit`. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Snapshot checks cover canonical-serialization mutation, allowlisted/unknown key, signature, schema/policy, provenance, expiry, monotonic version, rollback reference, and before/after state equality on every rejection. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Lane A promotes the existing contract-arbiter `current-byte-manifest.json` to its named canonical master contract path without material regeneration, then records source/destination hashes, base/HEAD/tree, semantic validation, and a separately scoped manifest receipt commit. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Lane C uses a distinct Orca task, terminal, and clean verifier worktree that did not author C5/audit/manifest; it derives hashes itself and independently re-runs every close gate. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Scan every manifest/receipt before arbitration for forbidden fields, secret/private-key material, raw paths/logs/prompts, and private identifiers; fail closed on a hit. (OPEN: historical plan dir; see roadmap track record)
 
-- [ ] Lane B executes read-only focused tests against promoted master bytes for C1/C3, signature/expiry/rollback, and reports command/output/hashes.
-- [ ] Lane A writes the canonical current-byte manifest only after both promotion receipts and tests settle.
-- [ ] Lane C independently re-runs graph, snapshot, consent/quarantine/forbidden-field/dedupe, and manifest checks against master bytes.
-- [ ] Final arbitration fails closed when tooling is unavailable or `contracts.ts` remains unresolved.
+- [ ] Lane B executes read-only focused tests against promoted master bytes for C1/C3, signature/expiry/rollback, and reports command/output/hashes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Lane A writes the canonical current-byte manifest only after both promotion receipts and tests settle. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Lane C independently re-runs graph, snapshot, consent/quarantine/forbidden-field/dedupe, and manifest checks against master bytes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Final arbitration fails closed when tooling is unavailable or `contracts.ts` remains unresolved. (OPEN: historical plan dir; see roadmap track record)
 
 ## Implementation Steps
 
@@ -40,12 +40,12 @@ independent Pi arbiter re-execute—not merely inspect—the close gates.
 
 ## Todo
 
-- [ ] Manifest and receipt commits name exact paths, base/HEAD/tree hashes, and no untracked or dirty overlay is in the verification subject.
-- [ ] Privacy scan passes for the manifest plus every referenced receipt.
+- [ ] Manifest and receipt commits name exact paths, base/HEAD/tree hashes, and no untracked or dirty overlay is in the verification subject. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Privacy scan passes for the manifest plus every referenced receipt. (OPEN: historical plan dir; see roadmap track record)
 
-- [ ] No source-worktree receipt is used as a substitute for a master-byte test.
-- [ ] Manifest hashes validate against the exact bytes the arbiter tested.
-- [ ] Arbiter report identifies commands, pass/fail/unavailable status, and a clear GO/NO-GO.
+- [ ] No source-worktree receipt is used as a substitute for a master-byte test. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Manifest hashes validate against the exact bytes the arbiter tested. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Arbiter report identifies commands, pass/fail/unavailable status, and a clear GO/NO-GO. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success Criteria
 

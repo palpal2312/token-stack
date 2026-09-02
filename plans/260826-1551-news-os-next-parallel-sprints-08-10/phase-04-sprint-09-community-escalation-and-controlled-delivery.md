@@ -11,13 +11,13 @@ Evaluate integrated Sprint 08-09 behavior, calibrate SEN estimation and coordina
 
 ## Requirements
 
-- [ ] Persist signal, candidate, evidence, evaluation-suite/run, canary, promotion, rollback, and supersession records.
-- [ ] Evaluate duration/effort estimation, critical-path/parallelism planning, OLC/lane allocation, and builder/workflow selection against frozen local Run Learning Records.
-- [ ] Combine live state, stronger owner-local history, and only then matched community priors; never send private project queries to obtain forecasts.
-- [ ] Measure elapsed/sequential-work error, prediction-interval coverage, lane-utilization error, retry/rework miss rate, acceptance calibration, and allocation regret.
-- [ ] Require baselines, security/replay gates, approval, canary monitoring, and no-op/rejection outcomes.
-- [ ] Add redacted metrics, alerts, runbooks, restore/replay evidence, and bounded SLO/RPO/RTO baselines.
-- [ ] Keep release cutover and legacy retirement out of scope until the separate Phase 12 gate.
+- [ ] Persist signal, candidate, evidence, evaluation-suite/run, canary, promotion, rollback, and supersession records. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Evaluate duration/effort estimation, critical-path/parallelism planning, OLC/lane allocation, and builder/workflow selection against frozen local Run Learning Records. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Combine live state, stronger owner-local history, and only then matched community priors; never send private project queries to obtain forecasts. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Measure elapsed/sequential-work error, prediction-interval coverage, lane-utilization error, retry/rework miss rate, acceptance calibration, and allocation regret. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Require baselines, security/replay gates, approval, canary monitoring, and no-op/rejection outcomes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Add redacted metrics, alerts, runbooks, restore/replay evidence, and bounded SLO/RPO/RTO baselines. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Keep release cutover and legacy retirement out of scope until the separate Phase 12 gate. (OPEN: historical plan dir; see roadmap track record)
 
 ## Architecture and ownership
 
@@ -40,13 +40,13 @@ S10 owns estimator/calibration and evaluation registries, offline replay, shadow
 
 ## Success Criteria
 
-- [ ] No candidate reaches promotion without approval and canary evidence.
-- [ ] Forecasts expose assumptions, interval/confidence, critical path, useful lanes, and estimate-versus-actual; sparse cohorts fail honestly as low-confidence/out-of-distribution.
-- [ ] Adding AI capacity is recommended only when measured marginal benefit shortens the critical path or reduces a named capacity risk.
-- [ ] Learned policies remain advisory and cannot lower approval, privacy, review, capability, or budget gates.
-- [ ] Rollback is proven without reactivating legacy canonical writes.
-- [ ] Close report links every required receipt and names remaining risks.
-- [ ] Independent arbiter accepts evaluation, operations, and recovery evidence.
+- [ ] No candidate reaches promotion without approval and canary evidence. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Forecasts expose assumptions, interval/confidence, critical path, useful lanes, and estimate-versus-actual; sparse cohorts fail honestly as low-confidence/out-of-distribution. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Adding AI capacity is recommended only when measured marginal benefit shortens the critical path or reduces a named capacity risk. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Learned policies remain advisory and cannot lower approval, privacy, review, capability, or budget gates. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Rollback is proven without reactivating legacy canonical writes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Close report links every required receipt and names remaining risks. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Independent arbiter accepts evaluation, operations, and recovery evidence. (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 

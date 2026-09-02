@@ -16,12 +16,12 @@ Produce a coherent evidence baseline before any new promotion work.
 
 ## Requirements
 
-- [ ] Inspect exact assigned Orca terminals and bounded file deltas before any retry.
-- [ ] Accept C2 only from its committed source receipt and receipt verifier.
-- [ ] Accept C3 only after its three-file commit, current source hashes, and receipt verifier agree.
-- [ ] Reconcile C1 promotion receipt and its three master path hashes as manifest inputs.
-- [ ] Accept C5 only as a candidate; it cannot claim master current-byte coverage.
-- [ ] Preserve Contract v1 hashes and the contract-only arbiter report as immutable inputs.
+- [ ] Inspect exact assigned Orca terminals and bounded file deltas before any retry. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Accept C2 only from its committed source receipt and receipt verifier. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Accept C3 only after its three-file commit, current source hashes, and receipt verifier agree. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Reconcile C1 promotion receipt and its three master path hashes as manifest inputs. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Accept C5 only as a candidate; it cannot claim master current-byte coverage. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Preserve Contract v1 hashes and the contract-only arbiter report as immutable inputs. (OPEN: historical plan dir; see roadmap track record)
 
 ## Implementation Steps
 
@@ -33,11 +33,11 @@ Produce a coherent evidence baseline before any new promotion work.
 
 ## Todo
 
-- [ ] C2 source candidate is immutable and independently hash-verified.
-- [ ] C3 source candidate is immutable and independently hash-verified.
-- [ ] C5 candidate does not contain a synthetic PASS or stale master hashes.
-- [ ] C1/I3 master evidence and the dirty-index baseline are preserved for later comparison.
-- [ ] Each lane has a prepared next assignment and fallback.
+- [ ] C2 source candidate is immutable and independently hash-verified. (OPEN: historical plan dir; see roadmap track record)
+- [ ] C3 source candidate is immutable and independently hash-verified. (OPEN: historical plan dir; see roadmap track record)
+- [ ] C5 candidate does not contain a synthetic PASS or stale master hashes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] C1/I3 master evidence and the dirty-index baseline are preserved for later comparison. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Each lane has a prepared next assignment and fallback. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success Criteria
 

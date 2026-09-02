@@ -41,13 +41,13 @@ The repository and Orca remain authoritative. MemoraX is advisory only. No worke
 
 ## Success criteria
 
-- [ ] Shared gate freezes interfaces, forbidden fields, ownership, dependency ledger, and rollback boundaries.
-- [ ] All three Sprint 08 lanes pass focused tests and produce reproducible receipts.
-- [ ] Every terminal Run produces one immutable local learning record and one reproducible, content-free forecast feature record.
-- [ ] Sprint 09 proves consent, quarantine, provenance, bounded graph execution, merge safety, and signed knowledge-snapshot return.
-- [ ] Sprint 10 proves forecast calibration, out-of-distribution handling, shadow/canary, rollback, operational readiness, and independent arbitration.
-- [ ] SEN presents sequential work, critical path, useful lanes, elapsed-time interval, resources/cost, confidence, and actual-versus-estimated results without promising linear speedup.
-- [ ] Plan closes only with all required evidence recorded; no partial state is treated as complete.
+- [ ] Shared gate freezes interfaces, forbidden fields, ownership, dependency ledger, and rollback boundaries. (OPEN: historical plan dir; see roadmap track record)
+- [ ] All three Sprint 08 lanes pass focused tests and produce reproducible receipts. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Every terminal Run produces one immutable local learning record and one reproducible, content-free forecast feature record. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Sprint 09 proves consent, quarantine, provenance, bounded graph execution, merge safety, and signed knowledge-snapshot return. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Sprint 10 proves forecast calibration, out-of-distribution handling, shadow/canary, rollback, operational readiness, and independent arbitration. (OPEN: historical plan dir; see roadmap track record)
+- [ ] SEN presents sequential work, critical path, useful lanes, elapsed-time interval, resources/cost, confidence, and actual-versus-estimated results without promising linear speedup. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Plan closes only with all required evidence recorded; no partial state is treated as complete. (OPEN: historical plan dir; see roadmap track record)
 
 ## Execution topology
 

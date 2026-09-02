@@ -31,9 +31,9 @@ Phase này hoàn thiện khả năng "Zero-UI" của hệ thống. Sen (thông q
 4. Cập nhật System Prompt (hoặc Tool) cho Sen để hướng dẫn nó sử dụng các lệnh này tùy thuộc vào cuộc trò chuyện.
 
 ## Success Criteria
-- [ ] Khi chat "Mở bảng Kanban lên", Sen hiểu và gửi kèm tín hiệu ẩn.
-- [ ] Giao diện tự động bắt tín hiệu ẩn đó và trượt mở Kanban bên phải.
-- [ ] Người dùng không cần đụng chuột.
+- [ ] Khi chat "Mở bảng Kanban lên", Sen hiểu và gửi kèm tín hiệu ẩn. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Giao diện tự động bắt tín hiệu ẩn đó và trượt mở Kanban bên phải. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Người dùng không cần đụng chuột. (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 - Rủi ro: LLM bị ảo giác (hallucination) gọi sai tên mode hoặc liên tục gọi mở màn hình gây nhiễu UI.

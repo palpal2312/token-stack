@@ -48,13 +48,13 @@ digest envelope and session binding before dependent sprint dispatch.
 
 ## Todo
 
-- [ ] S05-L1 ACTIVE/NEXT/FALLBACK accepted.
-- [ ] S05-L2 ACTIVE/NEXT/FALLBACK accepted.
-- [ ] S05-L3 ACTIVE/NEXT/FALLBACK accepted.
-- [ ] `S05-G1` hash-pinned and independently verified.
-- [ ] Home digest privacy and exactly-one Project SEN gates pass.
-- [ ] Restart/session replacement recovery passes.
-- [ ] Independent Sprint 05 arbiter returns GO.
+- [ ] S05-L1 ACTIVE/NEXT/FALLBACK accepted. (OPEN: historical plan dir; see roadmap track record)
+- [ ] S05-L2 ACTIVE/NEXT/FALLBACK accepted. (OPEN: historical plan dir; see roadmap track record)
+- [ ] S05-L3 ACTIVE/NEXT/FALLBACK accepted. (OPEN: historical plan dir; see roadmap track record)
+- [ ] `S05-G1` hash-pinned and independently verified. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Home digest privacy and exactly-one Project SEN gates pass. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Restart/session replacement recovery passes. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Independent Sprint 05 arbiter returns GO. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success criteria
 

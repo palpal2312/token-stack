@@ -53,13 +53,13 @@ verification/rollback, poisoning defense and failure injection.
 
 ## Todo
 
-- [ ] S07 logical lanes prepared with ACTIVE/NEXT/FALLBACK.
-- [ ] Inventory and deterministic fingerprint gates pass.
-- [ ] Risk-envelope approval and checkpoint gates pass.
-- [ ] Failed or unverifiable repair rolls back.
-- [ ] Poisoned/untrusted recipe is rejected.
-- [ ] No community upload or Phase 21 artifact exists.
-- [ ] Independent Sprint 07 arbiter returns GO.
+- [ ] S07 logical lanes prepared with ACTIVE/NEXT/FALLBACK. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Inventory and deterministic fingerprint gates pass. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Risk-envelope approval and checkpoint gates pass. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Failed or unverifiable repair rolls back. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Poisoned/untrusted recipe is rejected. (OPEN: historical plan dir; see roadmap track record)
+- [ ] No community upload or Phase 21 artifact exists. (OPEN: historical plan dir; see roadmap track record)
+- [ ] Independent Sprint 07 arbiter returns GO. (OPEN: historical plan dir; see roadmap track record)
 
 ## Success criteria
 

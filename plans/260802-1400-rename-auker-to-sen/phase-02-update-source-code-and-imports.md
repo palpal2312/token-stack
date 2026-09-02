@@ -18,7 +18,7 @@ Search and replace all references of `Sen` -> `Sen` inside the TypeScript code t
 5. Target Variable Names: `senSession`, `AUKER_DIR`, etc.
 
 ## Success Criteria
-- [ ] TypeScript compilation `npx tsc --noEmit` passes without `Cannot find module` or `Cannot find name` errors related to Sen.
+- [ ] TypeScript compilation `npx tsc --noEmit` passes without `Cannot find module` or `Cannot find name` errors related to Sen. (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 - Case sensitivity: `Sen` vs `sen` vs `SEN`. Replacement script must handle casing correctly to prevent malformed variables.

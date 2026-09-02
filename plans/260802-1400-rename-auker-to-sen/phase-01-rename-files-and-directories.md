@@ -18,8 +18,8 @@ Perform `mv` commands to rename all files and folders containing `sen` (case-ins
 5. Rename preset files: `src/lib/agentRuntime/presets/sen.ts` -> `sen.ts` and `sen-meta.ts` -> `sen-meta.ts`.
 
 ## Success Criteria
-- [ ] No files named `sen` remain in the codebase.
-- [ ] File structure remains intact.
+- [ ] No files named `sen` remain in the codebase. (OPEN: historical plan dir; see roadmap track record)
+- [ ] File structure remains intact. (OPEN: historical plan dir; see roadmap track record)
 
 ## Risk Assessment
 - Renaming files breaks imports until Phase 2 completes. Tests will temporarily fail.
