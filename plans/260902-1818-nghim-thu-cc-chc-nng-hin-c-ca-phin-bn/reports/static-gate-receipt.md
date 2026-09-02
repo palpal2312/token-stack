@@ -20,13 +20,17 @@
 
 First `npm run build` while `next dev` was running failed: corrupted `.next/dev/types/routes.d.ts` (`Unterminated regular expression literal`). **Recheck:** always stop dev before release build. Retry after cleanup: **PASS**.
 
-## Skipped live steps (not counted as PASS)
+## Live overlay (G5)
 
-| Step | Status | Reason |
+Final run: **9 PASS / 0 SKIP** — receipt `plans/reports/total-e2e-test-2026-09-03T053945.json`.
+
+| Step | Status | Detail |
 |------|--------|--------|
-| live container healthz | SKIP | `-SkipLive` |
-| live canary write+readback | SKIP | `-SkipLive` |
-| live legacy surfaces inert | SKIP | `-SkipLive` |
+| live container healthz | PASS | healthz 200 on 3737 |
+| live canary write+readback | PASS | canonical turn durable |
+| live legacy surfaces inert | PASS | PATCH=501 DELETE=501 firstmate=410 |
+
+Ops: recreate with `scripts/publish-s22-prod.ps1` (host port + shared `~/.agentic-os/api-token`).
 
 ## Supplementary QA (tsx, Phase 3/4 overlap)
 

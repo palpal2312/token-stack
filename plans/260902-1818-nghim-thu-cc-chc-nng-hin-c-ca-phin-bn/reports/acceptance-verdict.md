@@ -75,7 +75,7 @@ P1 FAILs **G1/G2/G6 closed**. **G5 closed** (live overlay 9/9). Remaining: **G3*
 - `reports/static-gate-receipt.md`
 - `reports/surface-acceptance.md`
 - `reports/workflow-durability-receipt.md`
-- `plans/reports/total-e2e-test-2026-09-02T230116.json`
+- `plans/reports/total-e2e-test-2026-09-03T053945.json`
 
 ---
 
