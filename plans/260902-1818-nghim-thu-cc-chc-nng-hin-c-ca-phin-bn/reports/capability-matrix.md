@@ -19,7 +19,7 @@ Legend: **PASS** | **FAIL** | **BLOCKED** | **SKIP** | **NOT-IN-SCOPE** | **NOT-
 | C10 | Backup / recovery / S22 | Go + local fixtures | S22 rehearsal script | `S22-LOCAL-REHEARSAL-PASS` | **PASS** |
 | C11 | Static gates | Committed bytes | npm/go/tsc/pester/protected | `reports/static-gate-receipt.md` | **PASS** |
 | C12 | Production build | Clean `.next/dev` | `npm run build` | build log 2026-09-02 (pass after dev cleanup) | **PASS** |
-| C13 | Live container E2E | Docker stack running + **host port 3737 published** | total-tests live steps | `plans/reports/total-e2e-test-2026-09-02T230116.json` — SKIP: container up, no host publish | **SKIP** |
+| C13 | Live container E2E | `newsos-s22-prod` on `127.0.0.1:3737` + shared host token | total-tests live steps | `total-e2e-test-2026-09-03T053945.json` — 3/3 PASS | **PASS** |
 | C15 | QA fixture routes (4) | Dev server | `/qa-fixtures/*` in build manifest | build route list | **NOT-IN-SCOPE** (test fixtures) |
 | C16 | Agent list `/agents` | Dynamic routes only | `/agents` → 404; `/agents/new` → 200 | surface smoke | **PASS** (no index route by design) |
 
@@ -38,4 +38,4 @@ Legend: **PASS** | **FAIL** | **BLOCKED** | **SKIP** | **NOT-IN-SCOPE** | **NOT-
 | C06 `/journal` shipped | Product — done 2026-09-02 | Recheck page+API smoke |
 | C14 goals GET guard | Security — done 2026-09-02 | Unauthenticated GET must stay 401 |
 | C08 Dify E2E | Integrations — run with token + connection | Credentials available |
-| C13 Live E2E | Ops — rerun total harness without `-SkipLive` | Docker stack up |
+| C13 Live E2E | Ops — done 2026-09-02; use `scripts/publish-s22-prod.ps1` after recreate | Container loses host publish or token drift |

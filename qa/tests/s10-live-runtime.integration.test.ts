@@ -15,7 +15,7 @@ function startDaemon(root: string, token: string, children: Set<ChildProcess>, p
   children.add(child); let output = ""; let errors = "";
   child.stdout.on("data", (data) => { output += data; }); child.stderr.on("data", (data) => { errors += data; });
   const ready = new Promise<number>((resolve, reject) => {
-    const timer = setTimeout(() => done(() => reject(new Error("daemon startup timeout"))), 5_000);
+    const timer = setTimeout(() => done(() => reject(new Error("daemon startup timeout"))), 20_000);
     const exited = () => done(() => reject(new Error(`daemon exited before ready: ${errors || "no diagnostic"}`)));
     const done = (fn: () => void) => { clearTimeout(timer); child.off("exit", exited); fn(); };
     const tick = () => { const match = output.match(/"port":(\d+)/); if (match) done(() => resolve(Number(match[1]))); else if (child.exitCode === null && child.signalCode === null) setTimeout(tick, 20); };

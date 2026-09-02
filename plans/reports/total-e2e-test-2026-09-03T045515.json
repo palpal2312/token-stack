@@ -1,0 +1,65 @@
+﻿{
+    "kind":  "total-e2e-test",
+    "runAt":  "2026-09-03T04:55:16.4176578+07:00",
+    "commit":  "28f8690",
+    "steps":  [
+                  {
+                      "step":  "npm test",
+                      "status":  "FAIL",
+                      "seconds":  42.37,
+                      "detail":  "npm test exit=1\n\u003e agentic-os@0.1.0 test\r\n\u003e tsx --test src/shell/view-session-store.test.ts src/shell/intent-prefetch.test.ts src/shell/desktop-shell-flag.test.ts src/shell/panel-layout-store.test.ts src/shell/panel-resize-controller.test.ts src/shell/sen-surface-store.test.ts src/shell/desktop-module-registry.test.ts src/lib/agentRuntime/orca-slot-client.test.ts src/lib/sen/canonical-chat-adapter.test.ts qa/tests/s10-*.test.ts\r\n\r\n✔ B3 performs a bounded local registry/canary/recovery operation without publication (600.1814ms)\r\n✔ S10 candidate requires explicit approval before its bounded canary (13.1173ms)\r\n✔ S10 rejection is a valid no-op and does not start a canary (2.1192ms)\r\n✔ S10 canary is monitored, bounded, and alert rollback is reversible to its pinned baseline (0.929ms)\r\n✔ S10 supersession discards inherited approval and starts the replacement pending (5.9683ms)\r\n✔ S10 Lane A measures the seven frozen redacted metrics deterministically (67.3408ms)\r\n✔ S10 Lane A local history is required and private or unavailable inputs fail closed (1.1283ms)\r\n✔ S10 Lane A makes only advisory critical-path and useful-lane recommendations (4.0209ms)\r\n✔ Lane C models daemon crash and restore as hash-pinned replay only (12.5939ms)\r\n✔ Lane C suppresses duplicate outbox publication and fails closed on stale leases (0.9623ms)\r\n✔ Lane C makes unavailable backends and invalid snapshots non-executable (1.4439ms)\r\n✔ Lane C drill remains a pure local model with no command, network, or write APIs (10.8589ms)\r\n✖ S10 loopback daemon executes controlled live-runtime drills (5869.2914ms)\r\n✔ S10 controller drill runner writes only an explicit temporary report path (16711.6164ms)\r\n✔ S10 controller drill runner refuses an existing receipt and unapproved report roots (3476.4214ms)\r\n✔ S10 cleanup refuses a pre-existing forged runtime root (2422.6249ms)\r\n✔ S10 recovery distinguishes partial output from a complete replay and resumes from the frozen hash (3.3113ms)\r\n✔ S10 recovery suppresses duplicate completion publication after deterministic replay (2.0779ms)\r\n✔ S10 unavailable or forbidden inputs fail closed without a publication (1.1324ms)\r\n✔ S10 recovery evaluator is local read-only and has no command or network surface (46.2121ms)\r\n✔ calibration replays baseline and candidate over the same local frozen cohort (30.7738ms)\r\n✔ sparse, private, and unavailable replay fails closed without a publication key (1.6395ms)\r\n✔ critical path and useful lanes remain advisory and deterministic (11.3377ms)\r\n✔ Phase 4 passes only an explicitly approved, bounded simulated canary (8.8313ms)\r\n✔ Phase 4 records valid rejection/no-op and threshold rollback without a promotion (0.6705ms)\r\n✔ Phase 4 recovery simulations remain bounded and fail closed as appropriate (16.0487ms)\r\n✔ Phase 4 module is a pure simulation with no live execution surface (2.4409ms)\r\n✔ S10 canary computes all seven redacted replay metrics deterministically (7.2462ms)\r\n✔ S10 unavailable input is an inert deterministic no-op (3.2902ms)\r\n✔ S10 replay recovery produces one stable publication key without side effects (0.5859ms)\r\n✔ S10 registry redacts local fields, chains records, and retries idempotently (15.7202ms)\r\n✔ S10 registry rejects idempotency conflicts and promotion without approval (4.5082ms)\r\n✔ approval is explicit, promotion is append-only, and persistence reload verifies the chain (2.0816ms)\r\n✔ parseRuntimeSlots accepts a valid payload (safe fields only) (7.008ms)\r\n✔ parseRuntimeSlots rejects a slot missing required in_flight (0.7187ms)\r\n✔ parseRuntimeSlots accepts an empty slots list (0.7062ms)\r\n✔ maps canonical snake_case receipt to the consumer shape with real PKs (3.5485ms)\r\n✔ maps a second turn incrementally (0.5514ms)\r\n✔ findModuleByRoute resolves owned routes and nothing else (12.1213ms)\r\n✔ visibleModules gates on host capabilities (0.5246ms)\r\n✔ visibleModules filters by permission and returns navigation order (3.7907ms)\r\n✔ desktop shell v2 is OFF by default (3.6454ms)\r\n✔ desktop shell v2 enables only on exact 1/true (0.3832ms)\r\n✔ same-key dedupe loads work once (8.7296ms)\r\n✔ intent change cancels previous prefetch (late resolve dropped) (0.6362ms)\r\n✔ commit cancels in-flight and marks done (0.3476ms)\r\n✔ mutators notify subscribers and clamp sizes (92.8874ms)\r\n✔ memory storage round-trips persisted state; setSize stays ephemeral (4.4555ms)\r\n✔ applyPanelIntent drives the phase machine and keeps logicalOpen in step (2.7173ms)\r\n✔ clamps drag geometry and batches many pointer moves into one flush (4.8961ms)\r\n✔ guards: moves before drag, resize mid-drag, and resize-during-write are all no-ops (2.5223ms)\r\n✔ keyboardStep clamps and commits; container resize re-clamps a stale applied size (8.8351ms)\r\n✔ every mutator updates state and notifies subscribers (4.4889ms)\r\n✔ surface switch preserves per-session continuity state (0.5549ms)\r\n✔ state round-trips through the memory storage (0.9044ms)\r\n✔ composerOwnerFor derives surface ownership (0.2423ms)\r\n✔ mutators notify subscribers (emit regression) (6.786ms)\r\n✔ memory storage round-trips persisted view-state (1.088ms)\r\nℹ tests 58\r\nℹ suites 0\r\nℹ pass 57\r\nℹ fail 1\r\nℹ cancelled 0\r\nℹ skipped 0\r\nℹ todo 0\r\nℹ duration_ms 33251.0831\r\n\r\n✖ failing tests:\r\n\r\ntest at qa\\tests\\s10-live-runtime.integration.test.ts:2:3451\r\n✖ S10 loopback daemon executes controlled live-runtime drills (5869.2914ms)\r\n  Error: daemon startup timeout\r\n      at \u003canonymous\u003e (C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\qa\\tests\\s10-live-runtime.integration.test.ts:18:54)\r\n      at done (C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\qa\\tests\\s10-live-runtime.integration.test.ts:20:88)\r\n      at Timeout.\u003canonymous\u003e (C:\\Users\\ADMIN\\Documents\\Agent OS\\source\\qa\\tests\\s10-live-runtime.integration.test.ts:18:36)\r\n      at listOnTimeout (node:internal/timers:608:17)\r\n      at process.processTimers (node:internal/timers:543:7)"
+                  },
+                  {
+                      "step":  "go:check",
+                      "status":  "PASS",
+                      "seconds":  28.72,
+                      "detail":  "go vet + test OK"
+                  },
+                  {
+                      "step":  "tsc --noEmit",
+                      "status":  "PASS",
+                      "seconds":  39.74,
+                      "detail":  " tsc: 0 errors"
+                  },
+                  {
+                      "step":  "protected:check",
+                      "status":  "PASS",
+                      "seconds":  20.61,
+                      "detail":  "\u003e powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-protected-controls.ps1\r; PROTECTED-CONTROLS-OK (phase_21: closed_g0, canonical writer live, legacy rollback not pre-enabled)"
+                  },
+                  {
+                      "step":  "pester (S17 harness)",
+                      "status":  "PASS",
+                      "seconds":  33.59,
+                      "detail":  "\u003e agentic-os@0.1.0 pester:runner\r\n\u003e powershell -NoProfile -ExecutionPolicy Bypass -Command \"Invoke-Pester -Script scripts/tests/run-s17.Tests.ps1 -Quiet\" pester OK"
+                  },
+                  {
+                      "step":  "S22 local rehearsal",
+                      "status":  "PASS",
+                      "seconds":  54.56,
+                      "detail":  "S22-LOCAL-REHEARSAL-PASS port=3984 initial_turns=1 restart_turns=1 restore_turns=1 snapshot_valid=true isolated=true"
+                  },
+                  {
+                      "step":  "live container healthz",
+                      "status":  "PASS",
+                      "seconds":  0.53,
+                      "detail":  "healthz 200 on 3737"
+                  },
+                  {
+                      "step":  "live canary write+readback",
+                      "status":  "PASS",
+                      "seconds":  1.71,
+                      "detail":  "turn e2e-total-20260903045513 durable (canonical=True, turns=1)"
+                  },
+                  {
+                      "step":  "live legacy surfaces inert",
+                      "status":  "PASS",
+                      "seconds":  0.41,
+                      "detail":  "PATCH=501 DELETE=501 firstmate=410"
+                  }
+              ],
+    "pass":  8,
+    "skip":  0,
+    "fail":  1,
+    "verdict":  "FAILED"
+}

@@ -10,7 +10,7 @@
 
 # ACCEPTED_WITH_BLOCKERS
 
-P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3–G5), not silent failures. Still not a clean **ACCEPTED** until live E2E (G5) and/or Dify UAT (G4) land, or product accepts them as residual SKIP/BLOCKED.
+P1 FAILs **G1/G2/G6 closed**. **G5 closed** (live overlay 9/9). Remaining: **G3** (settings preview), **G4** (Dify E2E blocked).
 
 ---
 
@@ -22,7 +22,7 @@ P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3
 | **G2** | `GET /api/goals` local guard | P1 | **PASS** (closed) | Unauthenticated → **401**; authed → 200 |
 | **G3** | Settings preview-only | P2 | **NOT-PRODUCTION** (documented) | README + `src/app/settings/page.tsx` |
 | **G4** | Dify E2E not proven | P2 | **BLOCKED** | no Dify connection credentials in local config |
-| **G5** | Live container E2E | P2 | **SKIP** | `newsos-s22-prod` up but **does not publish 3737/tcp to host** — receipt `total-e2e-test-2026-09-02T230116.json` |
+| **G5** | Live container E2E | P2 | **PASS** (closed) | `total-e2e-test-2026-09-03T053945.json` — healthz + canary + legacy inert all PASS |
 | **G6** | README journal mismatch | P2 | **PASS** (closed) | Route + nav + API ship; README claim matches |
 
 ---
@@ -54,9 +54,8 @@ P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3
 
 ## Residual risks
 
-1. **Live ops unverified (G5)** — `newsos-s22-prod` healthy but host port 3737 not published; publish mapping then rerun total harness.
-2. **Dify bridge (G4)** — no end-to-end run/handoff with credentials.
-3. **Settings (G3)** — preview UI documented; durable edits stay in `~/.agentic-os/config.json`.
+1. **Dify bridge (G4)** — no end-to-end run/handoff with credentials.
+2. **Settings (G3)** — preview UI documented; durable edits stay in `~/.agentic-os/config.json`.
 
 ---
 
@@ -64,7 +63,6 @@ P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3
 
 | Priority | Action | Owner |
 |----------|--------|-------|
-| P2 | Publish `3737/tcp` for `newsos-s22-prod` (or recreate with `-p 127.0.0.1:3737:3737`) then rerun `scripts/run-total-tests.ps1` | Ops |
 | P2 | Dify UAT with token + connection | Integrations |
 | P3 | Ship Go settings write path; until then keep `/settings` preview-only | Product |
 
@@ -89,4 +87,4 @@ P1 FAILs **G1/G2/G6 closed**. Remaining are environment/product-preview gaps (G3
 | Static + S22 receipts | **Yes** |
 | Surfaces incl. journal concluded | **Yes** — journal **PASS** |
 | Security negatives | **Yes** — G2 closed |
-| Verdict without hidden FAIL | **Yes** — **ACCEPTED_WITH_BLOCKERS** (G3–G5 only) |
+| Verdict without hidden FAIL | **Yes** — **ACCEPTED_WITH_BLOCKERS** (G3–G4 only) |
