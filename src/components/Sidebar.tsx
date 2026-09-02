@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Brain, BookOpen, TrendingUp, Columns3, NotebookText, Film, Building2, Workflow, MessagesSquare, Image as ImageIcon, Gamepad2, Music2, Network, Clapperboard, Repeat, Cpu, LayoutDashboard, Palette, GripVertical, Eye, EyeOff, SlidersHorizontal, Check, SquareTerminal, Route, Scissors, FlaskConical, Swords, Bot, Plus, Boxes, Waypoints, CalendarClock, ChevronDown, Target } from "lucide-react";
+import { Brain, BookOpen, TrendingUp, Columns3, NotebookText, Film, Building2, Workflow, MessagesSquare, Image as ImageIcon, Gamepad2, Music2, Network, Clapperboard, Repeat, Cpu, LayoutDashboard, Palette, GripVertical, Eye, EyeOff, SlidersHorizontal, Check, SquareTerminal, Route, Scissors, FlaskConical, Swords, Bot, Plus, Boxes, Waypoints, CalendarClock, ChevronDown, Target, GitBranch } from "lucide-react";
 import { useState, useEffect, type ReactNode } from "react";
 import AgentAvatar from "./AgentAvatar";
 import {
@@ -48,6 +48,7 @@ const NAV: NavItem[] = [
   { href: "/local",       label: "Local",       icon: <Cpu size={18} />,                             accent: "#5eead4", dim: "rgba(94,234,212,0.16)" },
   { href: "/sen",       label: "Sen",        icon: <span className="sen-nav-icon" aria-hidden="true" />, accent: "#7dd3fc", dim: "rgba(125,211,252,0.16)" },
   { href: "/agent-kanban", label: "Agent Kanban", icon: <LayoutDashboard size={18} />,                accent: "#7dd3fc", dim: "rgba(125,211,252,0.16)" },
+  { href: "/orchestration", label: "Orca lanes", icon: <GitBranch size={17} />,                       accent: "#d4a574", dim: "rgba(212,165,116,0.16)" },
   { href: "/code-space",  label: "Code Space",  icon: <SquareTerminal size={17} />,                  accent: "#818cf8", dim: "rgba(129,140,248,0.16)" },
   { href: "/memory",      label: "Memory",      icon: <Brain size={16} />,                           accent: "#22d3ee", dim: "rgba(34,211,238,0.16)" },
   { href: "/builders",    label: "CLI Config",  icon: <SlidersHorizontal size={17} />,               accent: "#22d3ee", dim: "rgba(34,211,238,0.16)" },
@@ -87,7 +88,7 @@ const LS_COLLAPSED = "agentos.sidebar.collapsed";
 // Paperclip + AI Agent Mastermind + Pipeline + Arena get their own "Agent Orchestration" group;
 // created agents + nested Agent Skins under "Agents"; everything else under "Apps".
 const WORKSPACE_ORDER = [
-  "/sen", "/agent-kanban", "/code-space", "/memory", "/builders", "/routers",
+  "/sen", "/agent-kanban", "/orchestration", "/code-space", "/memory", "/builders", "/routers",
   "/integrations", "/goals", "/journal", "/automations", "/loop",
 ];
 const WORKSPACE_ROUTES = new Set([...WORKSPACE_ORDER, "/firstmate"]);
