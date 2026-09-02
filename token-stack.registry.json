@@ -1,0 +1,55 @@
+{
+  "version": "3.1.0",
+  "sub2api_upstream": "http://127.0.0.1:9284",
+  "waterfall_tiers": ["kimicode", "sub2api-01", "sub2api-02", "alibaba-01"],
+  "features": {
+    "semantic_cache": true,
+    "turn_folding": true,
+    "loop_breaker": true,
+    "cot_governor": true,
+    "model_router": true,
+    "data_lens": true
+  },
+  "profiles": {
+    "default": {
+      "type": "claude",
+      "config_dir": "C:\\Users\\ADMIN\\.claude",
+      "headroom_port": 8787,
+      "upstream": "https://api.anthropic.com",
+      "db_path": null,
+      "model": "claude-sonnet-4-5"
+    },
+    "kimicode": {
+      "type": "claude",
+      "config_dir": "C:\\Users\\ADMIN\\.claude-kimicode",
+      "headroom_port": 8788,
+      "upstream": "https://api.kimi.com/coding",
+      "db_path": "C:\\Users\\ADMIN\\.claude-kimicode\\headroom-data\\headroom.db",
+      "model": "kimi-k3"
+    },
+    "sub2api-01": {
+      "type": "claude",
+      "config_dir": "C:\\Users\\ADMIN\\.claude-sub2api",
+      "headroom_port": 8790,
+      "upstream": "http://127.0.0.1:9284",
+      "db_path": "C:\\Users\\ADMIN\\.claude-sub2api\\headroom-data\\headroom.db",
+      "model": "claude-sonnet-4-5-thinking"
+    },
+    "sub2api-02": {
+      "type": "claude",
+      "config_dir": "C:\\Users\\ADMIN\\.claude-sub2api-02",
+      "headroom_port": 8807,
+      "upstream": "http://127.0.0.1:9284",
+      "db_path": "C:\\Users\\ADMIN\\.claude-sub2api-02\\headroom-data\\headroom.db",
+      "model": "claude-sonnet-4-5-thinking"
+    },
+    "alibaba-01": {
+      "type": "claude",
+      "config_dir": "C:\\Users\\ADMIN\\.claude-alibaba-01",
+      "headroom_port": 8808,
+      "upstream": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic",
+      "db_path": "C:\\Users\\ADMIN\\.claude-alibaba-01\\headroom-data\\headroom.db",
+      "model": "qwen3.8-max"
+    }
+  }
+}
