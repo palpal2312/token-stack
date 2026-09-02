@@ -1,0 +1,65 @@
+﻿{
+    "kind":  "total-e2e-test",
+    "runAt":  "2026-09-02T17:44:40.7907129+07:00",
+    "commit":  "5835f27",
+    "steps":  [
+                  {
+                      "step":  "npm test",
+                      "status":  "PASS",
+                      "seconds":  18,
+                      "detail":  "ℹ tests 58\r; ℹ pass 58\r; ℹ fail 0\r"
+                  },
+                  {
+                      "step":  "go:check",
+                      "status":  "PASS",
+                      "seconds":  8.55,
+                      "detail":  "go vet + test OK"
+                  },
+                  {
+                      "step":  "tsc --noEmit",
+                      "status":  "PASS",
+                      "seconds":  20.15,
+                      "detail":  " tsc: 0 errors"
+                  },
+                  {
+                      "step":  "protected:check",
+                      "status":  "PASS",
+                      "seconds":  8.81,
+                      "detail":  "\u003e powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-protected-controls.ps1\r; PROTECTED-CONTROLS-OK (phase_21: closed_g0, canonical writer live, legacy rollback not pre-enabled)"
+                  },
+                  {
+                      "step":  "pester (S17 harness)",
+                      "status":  "PASS",
+                      "seconds":  14.43,
+                      "detail":  "\u003e agentic-os@0.1.0 pester:runner\r\n\u003e powershell -NoProfile -ExecutionPolicy Bypass -Command \"Invoke-Pester -Script scripts/tests/run-s17.Tests.ps1 -Quiet\" pester OK"
+                  },
+                  {
+                      "step":  "S22 local rehearsal",
+                      "status":  "FAIL",
+                      "seconds":  52.33,
+                      "detail":  "isolated daemon health check failed"
+                  },
+                  {
+                      "step":  "live container healthz",
+                      "status":  "SKIP",
+                      "seconds":  0,
+                      "detail":  "Docker is unavailable for the live overlay"
+                  },
+                  {
+                      "step":  "live canary write+readback",
+                      "status":  "SKIP",
+                      "seconds":  0,
+                      "detail":  "Docker is unavailable for the live overlay"
+                  },
+                  {
+                      "step":  "live legacy surfaces inert",
+                      "status":  "SKIP",
+                      "seconds":  0,
+                      "detail":  "Docker is unavailable for the live overlay"
+                  }
+              ],
+    "pass":  5,
+    "skip":  3,
+    "fail":  1,
+    "verdict":  "FAILED"
+}

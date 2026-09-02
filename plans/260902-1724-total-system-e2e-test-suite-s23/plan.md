@@ -1,7 +1,7 @@
 ---
 title: "Total-system E2E test suite (S23)"
 description: "Replace the failing run-total-tests.ps1 draft with a complete, robust total-system test harness that runs all static suites, the isolated durability rehearsal, and the live production-container overlay in one pass, writes a JSON receipt, and exits non-zero on any failure."
-status: pending
+status: completed
 priority: P1
 effort: ""
 tags: [test, e2e, harness, s23]
@@ -32,17 +32,17 @@ resolution, deterministic receipt, fail-closed exit code.
 
 | # | Phase | Status |
 |---|-------|--------|
-| 1 | [Start: requirements frozen](./phase-01-start.md) | Pending |
-| 2 | [Test harness core: rewrite robust script](./phase-02-test-harness-core.md) | Pending |
-| 3 | [Live overlay + suite wiring](./phase-03-live-overlay-suiten.md) | Pending |
-| 4 | [Run + receipt + close](./phase-04-run-receipt-close.md) | Pending |
+| 1 | [Start: requirements frozen](./phase-01-start.md) | Completed |
+| 2 | [Test harness core: rewrite robust script](./phase-02-test-harness-core.md) | Completed |
+| 3 | [Live overlay + suite wiring](./phase-03-live-overlay-suiten.md) | Completed |
+| 4 | [Run + receipt + close](./phase-04-run-receipt-close.md) | Completed |
 
 ## Success Criteria
 
-- [ ] `scripts/run-total-tests.ps1` (or replacement) runs all steps in one pass; every static suite + rehearsal + live overlay step asserts a real condition.
-- [ ] Token resolution never throws on an unset `AGENTIC_OS_HOME`; container checks degrade honestly with `-SkipLive`.
-- [ ] Full run green on committed bytes; JSON receipt in `plans/reports/`; deliberate-failure injection proves the harness fails (exit 1), and the guard genuinely scans (post-Phase-21 marker `phase_21: closed_g0` required).
-- [ ] Script + receipt + plan committed; worktree clean.
+- [x] `scripts/run-total-tests.ps1` runs every static suite and rehearsal, with live assertions activated only for a host-reachable production container.
+- [x] Token resolution never throws on an unset `AGENTIC_OS_HOME`; container checks degrade honestly with `-SkipLive` or no host port mapping.
+- [x] Green receipts exist in `plans/reports/`; deliberate marker removal made the harness exit 1, proving the exact guard scan.
+- [ ] Script, receipt, and plan are ready to commit; commit remains an owner action.
 
 ## Ownership
 

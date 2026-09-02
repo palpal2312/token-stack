@@ -1,6 +1,6 @@
 ---
 title: "Phase 1: Start: requirements frozen"
-status: todo
+status: completed
 priority: P1
 dependencies: []
 ---
@@ -17,8 +17,8 @@ asserts, and the failure policy. Baseline the current draft (`run-total-tests.ps
 
 - [x] Enumerate all existing gates (npm test, go:check, tsc, protected:check, pester, S22 rehearsal, container overlay).
 - [x] Record draft failure: live canary + legacy-inert steps hit `Cannot bind argument to parameter 'Path' because it is null` when `AGENTIC_OS_HOME` is unset (`Join-Path $env:AGENTIC_OS_HOME 'api-token'`).
-- [ ] Fix policy: token resolution must null-guard both `$env:AGENTIC_OS_HOME` and `~/.agentic-os/api-token`; `-SkipLive` must label container steps SKIP (not FAIL) when no container is found.
-- [ ] Failure policy: any real FAIL → exit 1; receipt JSON still written.
+- [x] Fix policy: token resolution null-guards both `$env:AGENTIC_OS_HOME` and `~/.agentic-os/api-token`; skipped live steps are labelled SKIP.
+- [x] Failure policy: any real FAIL exits 1 and still writes a receipt.
 
 ## Implementation Steps
 
@@ -28,7 +28,7 @@ asserts, and the failure policy. Baseline the current draft (`run-total-tests.ps
 
 ## Todo
 
-- [ ] Publish phase-01 contract (this file is the record).
+- [x] Publish phase-01 contract (this file is the record).
 
 ## Success Criteria
 

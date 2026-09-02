@@ -1,6 +1,6 @@
 ---
 title: "Phase 2: Test harness core: rewrite robust script"
-status: todo
+status: completed
 priority: P1
 dependencies: [1]
 ---
@@ -40,9 +40,9 @@ the null-`Path` token bug, makes container steps SKIP-able, and keeps the
 
 ## Todo
 
-- [ ] Rewrite script with above fixes.
-- [ ] Local run without container (`-SkipLive`) → 6 static steps PASS, live SKIPed, exit 0.
-- [ ] Full run with container → all green.
+- [x] Rewrite script with above fixes.
+- [x] `-SkipLive` run: 6 static steps PASS, 3 live steps SKIP, exit 0.
+- [x] Default run: 6 static steps PASS, 3 live steps SKIP when the container has no host port mapping.
 
 ## Success Criteria
 

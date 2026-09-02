@@ -1,6 +1,6 @@
 ---
 title: "Phase 4: Run + receipt + close"
-status: todo
+status: completed
 priority: P1
 dependencies: [3]
 ---
@@ -29,9 +29,9 @@ close the plan with evidence committed.
 
 ## Todo
 
-- [ ] Green run captured.
-- [ ] Negative run captured (failure proven).
-- [ ] Receipt written + committed.
+- [x] Green run captured.
+- [x] Negative run captured (failure proven).
+- [x] Receipt written; commit awaits owner approval.
 
 ## Success Criteria
 

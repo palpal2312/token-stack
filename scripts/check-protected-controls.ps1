@@ -15,7 +15,7 @@ $root = Split-Path $PSScriptRoot -Parent
 $srcFiles = @(Get-ChildItem -Path (Join-Path $root 'src'), (Join-Path $root 'go') -Recurse -File -Include *.ts,*.tsx,*.js,*.go -ErrorAction SilentlyContinue)
 
 # 1. The post-gate marker must exist: `phase_21: closed_g0`.
-$markers = @($srcFiles | Select-String -Pattern 'phase_21:\s*closed_g0' -ErrorAction SilentlyContinue)
+$markers = @($srcFiles | Select-String -Pattern 'phase_21:\s*closed_g0\b' -ErrorAction SilentlyContinue)
 if ($markers.Count -eq 0) {
   Write-Error 'PROTECTED-CONTROL VIOLATION: phase_21: closed_g0 marker missing (Phase-21 gate not transitioned or regressed)'
   exit 1

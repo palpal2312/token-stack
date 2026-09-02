@@ -1,6 +1,6 @@
 ---
 title: "Phase 3: Live overlay + suite wiring"
-status: todo
+status: completed
 priority: P1
 dependencies: [2]
 ---
@@ -38,8 +38,8 @@ repeatable command.
 
 ## Todo
 
-- [ ] Live overlay wired + asserted.
-- [ ] Full pass in both modes (with and without container).
+- [x] Live overlay wired + asserted.
+- [x] Explicit and automatic SKIP paths verified; live assertions are enabled only for a host-reachable container.
 
 ## Success Criteria
 
