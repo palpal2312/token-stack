@@ -4,7 +4,7 @@ param(
     [string]$DbPath = $env:HEADROOM_DB_PATH
 )
 
-if (-not $Upstream) { $Upstream = "http://127.0.0.1:5173" }
+if (-not $Upstream) { $Upstream = "http://127.0.0.1:9284" }
 if (-not $DbPath) { $DbPath = "C:\Users\ADMIN\.codex\headroom-data\headroom.db" }
 
 $headroom = "$HOME\.local\bin\headroom.exe"
