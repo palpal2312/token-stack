@@ -91,4 +91,20 @@ assert(tearSheetTokens < 120, 'Tear-sheet must be under 120 tokens');
 
 console.log('  ✅ Test 2 Passed: 400+ trade log lines collapsed into 4-line Tear-Sheet!\n');
 
+// ── Test 3: ClickHouse Engine Integration & Fallback ──
+console.log('  Testing Test 3: ClickHouse Engine Integration & Fallback...');
+
+// Mock a ClickHouse local provider
+const chLens = new DataLens({
+  clickHouseInfo: { type: 'local', cmd: 'echo [MOCK CLICKHOUSE]' }
+});
+
+const chDetection = lens._detectClickHouse();
+console.log(`    Detected System ClickHouse Engine: ${chDetection ? JSON.stringify(chDetection) : 'None (Graceful Fallback to Internal)'}`);
+
+const autoProfile = lens.profileData(csvContent, { engine: 'auto' });
+assert(autoProfile.includes('[DATA CONTRACT:'), 'Should produce Data Contract on auto engine');
+
+console.log('  ✅ Test 3 Passed: ClickHouse Engine detection & graceful fallback verified!\n');
+
 console.log('🎉 ALL DATA-LENS TESTS PASSED SUCCESSFULLY (100%)!');

@@ -19,6 +19,7 @@ class DataLens {
   constructor(options = {}) {
     this.maxSampleSize = options.maxSampleSize || 2000;
     this.duckDbPath = options.duckDbPath || this._detectDuckDb();
+    this.clickHouseInfo = options.clickHouseInfo || this._detectClickHouse();
   }
 
   _detectDuckDb() {
@@ -30,12 +31,38 @@ class DataLens {
     }
   }
 
+  _detectClickHouse() {
+    // 1. Check local native clickhouse binary
+    try {
+      execSync('clickhouse local --version', { stdio: 'ignore' });
+      return { type: 'local', cmd: 'clickhouse local' };
+    } catch {}
+
+    // 2. Check ClickHouse HTTP server on default port 8123
+    try {
+      const ping = execSync('curl -s -m 1 http://127.0.0.1:8123/ping', { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
+      if (ping && ping.trim() === 'Ok.') {
+        return { type: 'http', url: 'http://127.0.0.1:8123' };
+      }
+    } catch {}
+
+    // 3. Check WSL clickhouse binary
+    try {
+      execSync('wsl clickhouse local --version', { stdio: 'ignore' });
+      return { type: 'wsl_local', cmd: 'wsl clickhouse local' };
+    } catch {}
+
+    return null;
+  }
+
   /**
    * Profile a CSV/TSV text content or file path into a compact Data Contract.
    * @param {string} input - File path or raw CSV string
+   * @param {object} options - Options (engine: 'auto' | 'clickhouse' | 'duckdb' | 'internal')
    * @returns {string} Compact Markdown Data Contract (<120 tokens)
    */
-  profileData(input) {
+  profileData(input, options = {}) {
+    const requestedEngine = options.engine || 'auto';
     let rawContent = '';
     let filePath = null;
 
@@ -53,8 +80,18 @@ class DataLens {
       rawContent = input;
     }
 
-    // Try DuckDB CLI if file exists on disk and duckdb is available
-    if (filePath && this.duckDbPath) {
+    // 1. Try ClickHouse if requested or auto-detected on disk files
+    if (filePath && (requestedEngine === 'clickhouse' || requestedEngine === 'auto') && this.clickHouseInfo) {
+      try {
+        const chResult = this._profileWithClickHouse(filePath, this.clickHouseInfo);
+        if (chResult) return chResult;
+      } catch (err) {
+        // Fallback to DuckDB or internal
+      }
+    }
+
+    // 2. Try DuckDB CLI if requested or available
+    if (filePath && (requestedEngine === 'duckdb' || requestedEngine === 'auto') && this.duckDbPath) {
       try {
         const duckOutput = execSync(
           `${this.duckDbPath} -csv -c "SUMMARIZE SELECT * FROM '${filePath.replace(/\\/g, '/')}' LIMIT 10000;"`,
@@ -67,6 +104,28 @@ class DataLens {
     }
 
     return this._internalProfile(filePath || 'memory_dataset.csv', rawContent);
+  }
+
+  _profileWithClickHouse(filePath, chInfo) {
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    if (chInfo.type === 'local' || chInfo.type === 'wsl_local') {
+      const query = `DESCRIBE file('${normalizedPath}') FORMAT PrettyCompact`;
+      const output = execSync(`${chInfo.cmd} -q "${query}"`, { encoding: 'utf-8', timeout: 4000 });
+      return `[DATA CONTRACT: ${path.basename(filePath)} (Powered by ClickHouse Local)]
+• Engine: ClickHouse Columnar Local Engine (${chInfo.type})
+• Schema Structure:
+${output.trim().split('\n').slice(0, 10).join('\n')}
+• Recommendations: Apply native ClickHouse functions (quantilesExactWeighted, exponentialMovingAverage, asof join). Zero raw rows deserialized.`;
+    } else if (chInfo.type === 'http') {
+      const query = encodeURIComponent(`DESCRIBE TABLE file('${normalizedPath}') FORMAT TabSeparated`);
+      const output = execSync(`curl -s "${chInfo.url}/?query=${query}"`, { encoding: 'utf-8', timeout: 3000 });
+      return `[DATA CONTRACT: ${path.basename(filePath)} (Powered by ClickHouse Server :8123)]
+• Engine: ClickHouse HTTP High-Performance Server
+• Columns & Types:
+${output.trim().split('\n').slice(0, 8).map(l => '  - ' + l.replace('\t', ': ')).join('\n')}
+• Recommendations: Query via ClickHouse HTTP endpoint without row-level overhead.`;
+    }
+    return null;
   }
 
   _internalProfile(fileName, content) {
