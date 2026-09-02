@@ -135,36 +135,6 @@ function TabCard({
         <div className="text-sm font-semibold text-[var(--cream-soft)] truncate flex-1" title={sub.title}>
           {sub.kind === "browser" ? "🌐 " : "⌨ "}
           {sub.title}
-          {pinned && (
-            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
-              📌 {pinned === "manual" ? "pinned" : "main"}
-            </span>
-          )}
-          {sub.coordinator && (
-            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
-              coordinator
-            </span>
-          )}
-          {sub.focused && (
-            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--emerald)] border border-[var(--emerald)] rounded px-1">
-              ▶ focus
-            </span>
-          )}
-          {declared && (
-            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--plum)] border border-[var(--plum)] rounded px-1">
-              ★ declared
-            </span>
-          )}
-          {sub.task && (sub.task.status === "running" || sub.task.status === "ready") && (
-            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
-              ⚙ worker
-            </span>
-          )}
-          {sub.live && (
-            <span className="ml-2 text-[10px] uppercase tracking-wide text-[var(--emerald)] border border-[var(--emerald)] rounded px-1">
-              ● live
-            </span>
-          )}
         </div>
         <button
           type="button"
@@ -179,6 +149,42 @@ function TabCard({
           📌
         </button>
       </div>
+      {/* Badges get their own row so they never squeeze the title. */}
+      {(pinned || sub.coordinator || sub.focused || declared || sub.live ||
+        (sub.task && (sub.task.status === "running" || sub.task.status === "ready"))) && (
+        <div className="flex flex-wrap gap-1 -mt-1">
+          {pinned && (
+            <span className="text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
+              📌 {pinned === "manual" ? "pinned" : "main"}
+            </span>
+          )}
+          {sub.coordinator && (
+            <span className="text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
+              coordinator
+            </span>
+          )}
+          {sub.focused && (
+            <span className="text-[10px] uppercase tracking-wide text-[var(--emerald)] border border-[var(--emerald)] rounded px-1">
+              ▶ focus
+            </span>
+          )}
+          {declared && (
+            <span className="text-[10px] uppercase tracking-wide text-[var(--plum)] border border-[var(--plum)] rounded px-1">
+              ★ declared
+            </span>
+          )}
+          {sub.task && (sub.task.status === "running" || sub.task.status === "ready") && (
+            <span className="text-[10px] uppercase tracking-wide text-[var(--gold)] border border-[var(--gold)] rounded px-1">
+              ⚙ worker
+            </span>
+          )}
+          {sub.live && (
+            <span className="text-[10px] uppercase tracking-wide text-[var(--emerald)] border border-[var(--emerald)] rounded px-1">
+              ● live
+            </span>
+          )}
+        </div>
+      )}
       <div className={`text-2xl font-bold ${LANE_STATUS_STYLE[status] ?? "text-[var(--cream)]"}`}>
         {status}
       </div>
