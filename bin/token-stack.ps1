@@ -47,6 +47,7 @@ Usage:
 
 Commands:
   status                   Display live table of all profiles, ports, upstream & health
+  setup [-Apply]           Run automated 14-layer setup and component configuration
   doctor                   Run full 14-layer health inspection and diagnostic probes
   up [<name>|--all]        Start Headroom proxy daemon for profile(s)
   down [<name>|--all]      Stop Headroom proxy daemon for profile(s)
@@ -342,9 +343,39 @@ function Invoke-Skill {
     & node -e $nodeCode
 }
 
+function Invoke-Setup {
+    param([string[]]$SubArgs)
+    $setupScript = Join-Path $RepoRoot "skills\token-stack-setup\scripts\token-stack-setup.ps1"
+    if (-not (Test-Path -LiteralPath $setupScript)) {
+        Write-Host "Setup script not found at $setupScript" -ForegroundColor Red
+        return
+    }
+    $apply = $false
+    $profileDir = ""
+    if ($SubArgs) {
+        foreach ($arg in $SubArgs) {
+            if ($arg -eq "-Apply" -or $arg -eq "--apply") { 
+                $apply = $true 
+            } elseif (-not $arg.StartsWith("-")) { 
+                $profileDir = $arg 
+            }
+        }
+    }
+    if ($apply -and $profileDir) {
+        & $setupScript -ProfileDirectory $profileDir -Apply
+    } elseif ($apply) {
+        & $setupScript -Apply
+    } elseif ($profileDir) {
+        & $setupScript -ProfileDirectory $profileDir
+    } else {
+        & $setupScript
+    }
+}
+
 # Router
 switch ($Command.ToLower()) {
     "status"   { Invoke-Status }
+    "setup"    { Invoke-Setup -SubArgs $CommandArgs }
     "up"       { Invoke-Up -Target ($CommandArgs -join " ") }
     "down"     { Invoke-Down -Target ($CommandArgs -join " ") }
     "doctor"   { Invoke-Doctor }

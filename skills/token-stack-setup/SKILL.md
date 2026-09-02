@@ -1,44 +1,42 @@
 ---
 name: token-stack:setup
-description: Install and configure ponytail, caveman, RTK, and Headroom for a Claude profile. Use only when setup or repair is requested.
+description: Automated setup, configuration, and provisioning engine across all 14 layers of the Token & Context Engine. Use for initial setup, component repair, and global CLI registration.
 user-invocable: true
 ---
 
-# Token Stack Setup
+# Token Stack Setup Engine (14-Layer Automated Setup)
 
-This setup installs/configures only three layers in-session: RTK, caveman, and ponytail. Do **not** install Headroom in this session; another agent must handle it. Headroom setup can crash a live session when base URL, upstream, or startup hook is wrong.
+The setup engine inspects, provisions, configures, and verifies all required components across the **14-Layer Master Token & Context Engine**:
 
-Run dry-run first:
+## 📋 Configured Layers & Components
 
+1. **Layer -1: Semantic Cache**: Provisions SQLite database at `~/.token-stack/cache.db` with indexed schema.
+2. **Layer 0: Model Router**: Provisions `~/.token-stack/router-config.json` with multi-tier model cascading (`cheap: kimi-k3`, `standard: claude-3-5-sonnet`, `flagship: claude-3-7-sonnet`).
+3. **Layer 0.5: Dynamic Skill Router**: Pre-indexes all 240+ skills into `~/.token-stack/skills-cache.json` and enables Dual-Scope (Internal vs Harness) routing.
+4. **Layer 1: Code Topology Engine**: Validates AST graph extractor & Graphify integration.
+5. **Layer 1.5: Data Lens & Columnar Engine**: Probes ClickHouse HTTP port 8123 and provisions DuckDB / Zero-Row Stream Shield fallback.
+6. **Layer 2 & 3: Ponytail & Caveman**: Safely enables `caveman@caveman` and `ponytail@ponytail` plugins in profile `settings.json`.
+7. **Layer 4: RTK CLI Output Filter**: Validates RTK binary or provisions terminal log filter shim.
+8. **Layer 5-7: In-Flight Governors**: Validates Turn Folding (5-turn Epoch Freezing), CoT Governor, and Loop Breaker circuit breaker.
+9. **Layer 8: Headroom Context Proxy**: Checks daemon executables, upstream mappings (9284), and profile ports (8787+).
+10. **Layer 9 & 10: MemoraX & OpenViking**: Creates episodic memory workspace `~/.token-stack/memory/` and context DB directories.
+11. **Global CLI**: Registers global `token-stack` command and CMD wrapper in PATH.
+
+## 🚀 Usage
+
+### Step 1: Preview Actions (Dry-Run)
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME/.claude/skills/token-stack-setup/scripts/token-stack-setup.ps1"
+token-stack setup
 ```
 
-Apply only after explicit confirmation:
-
+### Step 2: Apply Configuration
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME/.claude/skills/token-stack-setup/scripts/token-stack-setup.ps1" -Apply
+token-stack setup -Apply
 ```
 
-Pass `-ProfileDirectory` for another profile. Script installs/enables caveman and ponytail, checks RTK, and never installs, starts, stops, or configures Headroom.
-
-If Headroom is intentionally configured later, edit `.env` or profile settings **by hand**, after backing up and closing Claude Code:
-
-```dotenv
-ANTHROPIC_BASE_URL=http://127.0.0.1:8787
+### Step 3: Verify Probes
+```powershell
+token-stack doctor
 ```
 
-Then have the dedicated Headroom agent configure the proxy upstream and startup hook. Do not add upstream URLs, API keys, or credentials to this skill or chat.
-
-**Multi-instance warning**: When running multiple Claude profiles, each needs its own Headroom port AND its own `--memory-db-path`. Without separate DB paths, the second `headroom.exe` instance crashes silently due to SQLite lock conflicts. Set `HEADROOM_DB_PATH` in `.env.<profile>` to `~/.<profile>/headroom-data/headroom.db`. See `docs/setup-guide.md` § 4 for the full procedure.
-
-**Operational Guidelines**:
-1. **Sub2API Port Migration**: Sub2API runs on native port **9284** (not 5173). Ensure `HEADROOM_UPSTREAM` points to `http://127.0.0.1:9284`.
-2. **Model Naming Rules**:
-   - For Kimi Coding API, use official model `kimi-k3` (never append `[1m]`).
-   - For Sub2API / Antigravity, ensure model aliases (`claude-opus-4-5` -> `claude-opus-4-6-thinking`) are mapped in gateway constants to prevent `400 Invalid request`.
-3. **Pre-flight Wrapper Pattern**: In launcher scripts (`claude-<profile>.ps1`), probe `/readyz` before calling `claude` CLI to eliminate startup race conditions.
-4. **Mandatory 3-Stage Verification**: Always verify `/readyz`, direct upstream streaming, and proxy streaming before declaring setup or repairs complete.
-
-Scope: three-layer setup only. Does NOT report savings or silently mutate settings. Back up `settings.json` before writing. Never expose keys, credentials, prompts, transcripts, or raw config.
-
+Pass `-ProfileDirectory <path>` to target a custom Claude/Codex profile directory.
