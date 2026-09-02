@@ -3,13 +3,23 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      run_self_hosted:
+        description: "Run the isolated self-hosted Docker smoke job"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
 
 jobs:
   test:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: npm
@@ -22,8 +32,8 @@ jobs:
       run:
         working-directory: go
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: "1.26"
       - run: go vet ./...
@@ -32,8 +42,8 @@ jobs:
   tsc:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: npm
@@ -42,12 +52,12 @@ jobs:
   canonical-smoke:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: "1.26"
       - run: npm ci
@@ -67,18 +77,66 @@ jobs:
             Write-Host "canonical-smoke-ok turn=$($r.turn_seq) attempt=$($r.chat_attempt_id)"
           } finally { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue }
 
-  container-smoke:
+  container-smoke-github-hosted:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/master')
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Build image
         run: docker build -t agent-os-s17 .
       - name: Container smoke
         run: |
-          docker run -d --name s17 -p 3737:3737 agent-os-s17
-          sleep 15
-          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3737/api/orchestration/state || true)
-          docker logs s17 2>&1 | tail -5 || true
-          docker rm -f s17 >/dev/null 2>&1 || true
-          if [ "$code" != "200" ]; then echo "container-smoke status=$code"; exit 1; fi
-          echo "container-smoke-ok"
+          set -euo pipefail
+          container_id=""
+          body_file="$(mktemp)"
+          cleanup() {
+            rm -f "$body_file"
+            if [ -n "$container_id" ]; then docker rm -f "$container_id" >/dev/null 2>&1 || true; fi
+          }
+          trap cleanup EXIT
+          container_id="$(docker run -d -p 127.0.0.1::3737 agent-os-s17)"
+          port="$(docker port "$container_id" 3737/tcp | awk -F: 'NR == 1 { print $NF }')"
+          test -n "$port"
+          for _ in $(seq 1 30); do
+            status="$(curl -s --connect-timeout 2 --max-time 5 -o "$body_file" -w '%{http_code}' "http://127.0.0.1:${port}/api/orchestration/state?compact=state" || true)"
+            if [ "$status" = "200" ] && node -e 'const fs=require("fs"); const v=JSON.parse(fs.readFileSync(process.argv[1], "utf8")); if(v.schemaVersion!==1 || v.error!==null || !v.result || !Array.isArray(v.result.cards)) process.exit(1)' "$body_file"; then
+              echo "container-smoke-ok runner=github-hosted container=$container_id port=$port"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "container-smoke-failed status=$status container=$container_id port=$port"
+          exit 1
+
+  container-smoke-self-hosted:
+    runs-on: [self-hosted, newsos-docker-isolated]
+    if: github.event_name == 'workflow_dispatch' && inputs.run_self_hosted == true
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build image
+        run: docker build -t agent-os-s17 .
+      - name: Container smoke
+        run: |
+          set -euo pipefail
+          container_id=""
+          body_file="$(mktemp)"
+          cleanup() {
+            rm -f "$body_file"
+            if [ -n "$container_id" ]; then docker rm -f "$container_id" >/dev/null 2>&1 || true; fi
+          }
+          trap cleanup EXIT
+          container_id="$(docker run -d -p 127.0.0.1::3737 agent-os-s17)"
+          port="$(docker port "$container_id" 3737/tcp | awk -F: 'NR == 1 { print $NF }')"
+          test -n "$port"
+          for _ in $(seq 1 30); do
+            status="$(curl -s --connect-timeout 2 --max-time 5 -o "$body_file" -w '%{http_code}' "http://127.0.0.1:${port}/api/orchestration/state?compact=state" || true)"
+            if [ "$status" = "200" ] && node -e 'const fs=require("fs"); const v=JSON.parse(fs.readFileSync(process.argv[1], "utf8")); if(v.schemaVersion!==1 || v.error!==null || !v.result || !Array.isArray(v.result.cards)) process.exit(1)' "$body_file"; then
+              echo "container-smoke-ok runner=self-hosted container=$container_id port=$port"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "container-smoke-failed status=$status container=$container_id port=$port"
+          exit 1

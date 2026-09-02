@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "plan": "260902-0037-news-os-plateau-operations-hardening-and-archive-reconciliation",
+  "issuedAt": "2026-09-02T00:00:00+07:00",
+  "expiresAt": "2026-09-09T23:59:59+07:00",
+  "authority": "repository owner via chat authorization",
+  "evidenceReference": "interactive chat authorization recorded on 2026-09-02",
+  "approvals": [
+    {
+      "id": "PLATEAU-CI-260902-01",
+      "status": "approved",
+      "ownerIdentity": "repository owner via chat authorization",
+      "mutation": "harden and execute the container-smoke workflow",
+      "evidenceReference": "interactive chat authorization recorded on 2026-09-02",
+      "runnerTopologies": [
+        "github-hosted",
+        "self-hosted"
+      ],
+      "selfHostedLabel": "newsos-docker-isolated",
+      "trustedRefsAndEvents": "master push and workflow_dispatch only; never pull_request",
+      "constraints": [
+        "no release, cutover, or flip",
+        "legacy writer remains disabled",
+        "Phase 21 remains blocked"
+      ]
+    },
+    {
+      "id": "PLATEAU-BACKUP-260902-02",
+      "status": "conditional",
+      "ownerIdentity": "repository owner via chat authorization",
+      "mutation": "create a separate backup cadence task and perform an isolated restore drill",
+      "evidenceReference": "interactive chat authorization recorded on 2026-09-02",
+      "targetRootSha256": "c81d0e0d135bcd89bf8f4525ed235f1f83d428731cee16c90c078f9d0cfacd4f",
+      "independenceClass": "same-volume exception explicitly accepted by owner; not independent from the live C: store",
+      "retentionDays": 30,
+      "principal": "current-user Interactive, Limited",
+      "taskPath": "\\NEWSOS\\",
+      "taskName": "NEWSOS-Plateau-Backup-Cadence",
+      "taskAction": "not approved until the backup-cadence script and exact invocation are reviewed",
+      "taskTrigger": "not approved until the cadence schedule is explicitly selected",
+      "requiredBeforeMutation": [
+        "administrative verification that C: encryption is enabled",
+        "target root must already exist and pass non-mutating ACL verification",
+        "exact task identity, action, trigger, and principal validation"
+      ],
+      "constraints": [
+        "no replacement of an existing Scheduled Task",
+        "never restore over the live store",
+        "no production access, release, cutover, or flip",
+        "legacy writer remains disabled",
+        "Phase 21 remains blocked"
+      ]
+    },
+    {
+      "id": "PLATEAU-HISTORY-260902-03",
+      "status": "approved",
+      "ownerIdentity": "repository owner via chat authorization",
+      "mutation": "reconcile historical S08 and S09 plan evidence",
+      "evidenceReference": "interactive chat authorization recorded on 2026-09-02",
+      "disposition": "retain-pending",
+      "constraints": [
+        "S10 CLOSED_GO is evidence for S10 only",
+        "do not claim the S08-S10 umbrella plan is complete without distinct S08/S09 evidence"
+      ]
+    }
+  ]
+}
