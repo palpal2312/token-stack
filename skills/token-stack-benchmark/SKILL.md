@@ -22,13 +22,16 @@ Standardized benchmark suite to evaluate token compression ratio, pure logical a
   8. `Scenario 8: 1-Line Typo Fix with CoT Budget Throttling (Extended Thinking)` ([anthropics/anthropic-sdk-typescript](https://github.com/anthropics/anthropic-sdk-typescript))
   9. `Scenario 9: Multi-Agent Parallel Duplicate Query Resolution (0-Token Cache)` ([zilliztech/GPTCache](https://github.com/zilliztech/GPTCache))
   10. `Scenario 10: High-Frequency Routine Task Cascading & Frugal Routing` ([lmsys/RouteLLM](https://github.com/lmsys/RouteLLM))
+  11. `Scenario 11: Scale-Out Agent Skill Routing & Anti-Skill-Shadowing` ([zhengyanzhao1997/SkillRouter](https://github.com/zhengyanzhao1997/SkillRouter) & [benchflow-ai/skillsbench](https://github.com/benchflow-ai/skillsbench))
+  12. `Scenario 12: High-Frequency Algorithmic Orderbook & Tick Stream Ingestion` ([nautechsystems/nautilus_trader](https://github.com/nautechsystems/nautilus_trader) & [tardis-dev/tardis-node](https://github.com/tardis-dev/tardis-node))
 - Initializes and cleans the `benchmark-outputs/` workspace.
 
-### 🎛️ Step 2: Layer Toggle Configuration (L-1 ➔ L10)
+### 🎛️ Step 2: Layer Toggle Configuration (L-1 ➔ L10, 14 Layers)
 - **`L-1: Semantic Cache`** — `[✔ ON]` SQLite N-Gram Cosine similarity (0 tokens, <12ms)
 - **`L0: Model Router`** — `[✔ ON]` RouteLLM & Frugal Classifier (-85% routine cost)
+- **`L0.5: Skill Router`** — `[✔ ON]` Dual-Scope (Internal & Harness) Anti-Skill-Shadowing (-99.4% prompt bloat)
 - **`L1: Code Topology`** — `[✔ ON]` AST CodeGraph pruning (-91.5% discovery tokens)
-- **`L1.5: Data Lens`** — `[✔ ON]` DuckDB / ClickHouse Data Contracts & Tear-Sheets (-98.2% data tokens)
+- **`L1.5: Data Lens`** — `[✔ ON]` DuckDB / ClickHouse Data Contracts & Tear-Sheets (-99.5% data tokens)
 - **`L2: Ponytail`** — `[✔ ON]` Anti-boilerplate & clean standard library enforcement
 - **`L3: Caveman`** — `[✔ ON]` Minimal Git Patch Diff generation (-69.5% diff tokens)
 - **`L4: RTK`** — `[✔ ON]` CLI Token Killer (filters passing test logs & order execution noise)

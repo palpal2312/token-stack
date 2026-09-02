@@ -113,6 +113,10 @@ class SkillRouter {
     const metaVector = this._vectorize(`${name} ${description}`);
     const bodyVector = this._vectorize(`${body} ${scripts.join(' ')}`);
 
+    const isInternal = folderName.startsWith('token-stack') || 
+                       name.startsWith('token-stack') || 
+                       skillDir.toLowerCase().includes('token-stack');
+
     return {
       name,
       folderName,
@@ -120,6 +124,7 @@ class SkillRouter {
       path: skillDir,
       commands: Array.from(new Set(commands)).slice(0, 15),
       scripts,
+      isInternal,
       metaVector,
       bodyVector
     };
@@ -163,13 +168,13 @@ class SkillRouter {
   }
 
   /**
-   * Two-Stage Retrieve-and-Rerank Pipeline:
-   * Stage 1: Fast candidate retrieval using lexical & metadata vector similarity.
-   * Stage 2: Deep capability reranker matching against implementation body cues (commands, tools, scripts),
-   * resolving Skill Shadowing (arXiv:2605.24050) and Harmful Sibling risks (arXiv:2606.10388).
+   * Two-Stage Retrieve-and-Rerank Pipeline with Dual-Scope Routing:
+   *  - Scope 'internal' / 'token-stack': Routes strictly within Token-Stack sub-skills (benchmark, health, report, setup, datalens, cache).
+   *  - Scope 'harness' / 'global': Routes across all 240+ multi-domain skills in the Agent Harness (~/.claude/skills, ~/.gemini/config/skills).
+   *  - Scope 'auto': Auto-detects whether the intent is Token-Stack specific or general Harness task.
    * 
    * @param {string} query - User prompt or intent
-   * @param {Object} options - Custom routing options
+   * @param {Object} options - Custom routing options ({ scope: 'auto'|'internal'|'harness', topK: 3 })
    * @returns {Array} Top-K relevant skills with confidence scores and reasoning
    */
   route(query, options = {}) {
@@ -177,14 +182,32 @@ class SkillRouter {
       return [];
     }
 
+    const scope = (options.scope || 'auto').toLowerCase();
     const topK = options.topK || this.topK;
     const topM = options.topM || this.topM;
     const threshold = options.threshold !== undefined ? options.threshold : this.threshold;
     const queryVec = this._vectorize(query);
     const lowerQuery = query.toLowerCase();
 
+    // 1. Select Candidate Pool based on Scope
+    let candidatePool = this.skillsIndex;
+    if (scope === 'internal' || scope === 'token-stack') {
+      const internalSkills = this.skillsIndex.filter(s => s.isInternal);
+      if (internalSkills.length > 0) candidatePool = internalSkills;
+    } else if (scope === 'harness' || scope === 'global') {
+      const harnessSkills = this.skillsIndex.filter(s => !s.isInternal);
+      if (harnessSkills.length > 0) candidatePool = harnessSkills;
+    } else if (scope === 'auto') {
+      // Auto-detect if query is explicitly about token-stack internal mechanics
+      const isTokenStackIntent = /token[-_ ]*stack|headroom|ablation|context[-_ ]*engine|doctor\s*probe|layer\s*\d|turn[-_ ]*folding|cot[-_ ]*governor/i.test(lowerQuery);
+      if (isTokenStackIntent) {
+        const internalSkills = this.skillsIndex.filter(s => s.isInternal);
+        if (internalSkills.length > 0) candidatePool = internalSkills;
+      }
+    }
+
     // ── STAGE 1: Fast Candidate Retrieval (Top-M) ──
-    const stage1Candidates = this.skillsIndex.map(skill => {
+    const stage1Candidates = candidatePool.map(skill => {
       let lexicalScore = 0;
       // Direct keyword hit on skill name or folder
       if (lowerQuery.includes(skill.name.toLowerCase()) || lowerQuery.includes(skill.folderName.toLowerCase())) {
@@ -239,6 +262,7 @@ class SkillRouter {
         name: skill.name,
         description: skill.description,
         path: skill.path,
+        isInternal: skill.isInternal,
         score: parseFloat(finalScore.toFixed(3)),
         matchedCommands: skill.commands.filter(cmd => lowerQuery.includes(cmd)),
         scriptsCount: skill.scripts.length
@@ -251,23 +275,35 @@ class SkillRouter {
     return reranked;
   }
 
+  routeInternal(query, options = {}) {
+    return this.route(query, { ...options, scope: 'internal' });
+  }
+
+  routeHarness(query, options = {}) {
+    return this.route(query, { ...options, scope: 'harness' });
+  }
+
   /**
    * Generates a token-efficient Active Skill Injection block (<300 tokens)
    * replacing the massive 15,000-token full library dump.
    */
-  generateActiveSkillContext(routedSkills) {
+  generateActiveSkillContext(routedSkills, options = {}) {
     if (!routedSkills || routedSkills.length === 0) {
       return '';
     }
 
+    const scope = options.scope || 'auto';
+    const scopeLabel = scope === 'internal' ? 'TOKEN-STACK SUB-SKILL' : (scope === 'harness' ? 'GLOBAL HARNESS' : 'DUAL-SCOPE');
+
     const lines = [
-      `[TOKEN-STACK L0.5: ACTIVE SKILL ROUTER - TOP-${routedSkills.length} SKILLS ACTIVATED]`,
+      `[TOKEN-STACK L0.5: ACTIVE SKILL ROUTER (${scopeLabel}) - TOP-${routedSkills.length} SKILLS ACTIVATED]`,
       `• Notice: Filtered from ${this.skillsIndex.length} skills (Anti-Skill-Shadowing & Zero-Bloat Guard).`
     ];
 
     routedSkills.forEach((s, idx) => {
       const cmds = s.matchedCommands && s.matchedCommands.length > 0 ? ` (Commands: ${s.matchedCommands.join(', ')})` : '';
-      lines.push(`  ${idx + 1}. [${s.name}] (Confidence: ${(s.score * 100).toFixed(1)}%) - ${s.description}${cmds}`);
+      const tag = s.isInternal ? '[INTERNAL]' : '[HARNESS]';
+      lines.push(`  ${idx + 1}. ${tag} [${s.name}] (Confidence: ${(s.score * 100).toFixed(1)}%) - ${s.description}${cmds}`);
     });
 
     lines.push(`• Instructions: Call only the activated skills. Avoid unrouted tool hallucinations.`);

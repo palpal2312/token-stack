@@ -312,14 +312,33 @@ function Invoke-Cache {
 
 function Invoke-Skill {
     param([string[]]$SubArgs)
-    $query = if ($SubArgs -and $SubArgs.Length -gt 1) { ($SubArgs[1..($SubArgs.Length - 1)]) -join " " } elseif ($SubArgs -and $SubArgs.Length -eq 1) { $SubArgs[0] } else { "" }
+    $scope = "auto"
+    $topK = 3
+    $cleanWords = @()
+    if ($SubArgs) {
+        for ($i = 0; $i -lt $SubArgs.Length; $i++) {
+            $arg = $SubArgs[$i]
+            if ($arg -eq "--scope" -and ($i + 1) -lt $SubArgs.Length) {
+                $scope = $SubArgs[$i + 1]
+                $i++
+            } elseif ($arg -eq "--top" -and ($i + 1) -lt $SubArgs.Length) {
+                $topK = [int]$SubArgs[$i + 1]
+                $i++
+            } elseif ($arg.ToLower() -eq "route" -and $i -eq 0) {
+                # skip 'route' verb
+            } else {
+                $cleanWords += $arg
+            }
+        }
+    }
+    $query = $cleanWords -join " "
     if (-not $query) {
-        Write-Host "Usage: token-stack skill route <prompt>" -ForegroundColor Yellow
+        Write-Host "Usage: token-stack skill route <prompt> [--scope auto|internal|harness] [--top <k>]" -ForegroundColor Yellow
         return
     }
     $routerScript = Join-Path $RepoRoot "core\skill-router.cjs"
     $escaped = $query.Replace("'", "\'").Replace('"', '\"')
-    $nodeCode = "const { SkillRouter } = require('$($routerScript.Replace('\', '/'))'); const router = new SkillRouter(); const res = router.route('$escaped'); console.log(router.generateActiveSkillContext(res));"
+    $nodeCode = "const { SkillRouter } = require('$($routerScript.Replace('\', '/'))'); const router = new SkillRouter(); const res = router.route('$escaped', { scope: '$scope', topK: $topK }); console.log(router.generateActiveSkillContext(res, { scope: '$scope' }));"
     & node -e $nodeCode
 }
 

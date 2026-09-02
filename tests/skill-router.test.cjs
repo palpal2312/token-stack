@@ -49,6 +49,22 @@ console.log(`    System Prompt Reduction: -${(((rawBloatTokens - activeTokens) /
 
 assert(activeTokens < 350, 'Active skill block must be under 350 tokens');
 assert(activeBlock.includes('[TOKEN-STACK L0.5: ACTIVE SKILL ROUTER'), 'Must contain router header');
-console.log('  ✅ Test 3 Passed: Prompt bloat reduced by >97% with zero skill shadowing.\n');
+// ── Test 4: Dual-Scope Internal Routing (Token-Stack Sub-Skills) ──
+console.log('  Testing Test 4: Dual-Scope Internal Routing...');
+const internalRoute = router.routeInternal("token health check and daemon inspection", { topK: 1 });
+console.log(`    Selected Internal Skill: ${internalRoute.map(s => `${s.name} (${(s.score * 100).toFixed(1)}%)`).join(', ')}`);
+assert(internalRoute.length > 0, 'Internal route must return a skill');
+assert(internalRoute[0].isInternal === true, 'Internal route must only return internal token-stack skills');
+assert(internalRoute[0].name.includes('health'), 'Internal route should match health skill');
+console.log('  ✅ Test 4 Passed: Internal Token-Stack sub-skill correctly isolated.\n');
+
+// ── Test 5: Dual-Scope Global Harness Routing ──
+console.log('  Testing Test 5: Dual-Scope Global Harness Routing...');
+const harnessRoute = router.routeHarness("style frontend dashboard with tailwind css", { topK: 2 });
+console.log(`    Selected Harness Skills: ${harnessRoute.map(s => `${s.name} (${(s.score * 100).toFixed(1)}%)`).join(', ')}`);
+assert(harnessRoute.length > 0, 'Harness route must return skills');
+assert(harnessRoute.every(s => s.isInternal === false), 'Harness route must only return harness skills');
+assert(harnessRoute.some(s => s.name.includes('ui-styling') || s.name.includes('style')), 'Harness route should match UI styling skill');
+console.log('  ✅ Test 5 Passed: Global Harness skills routed without internal pollution.\n');
 
 console.log('🎉 ALL SKILL-ROUTER TESTS PASSED SUCCESSFULLY (100%)!');
