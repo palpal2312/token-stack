@@ -44,13 +44,12 @@ Ownership changes only through the project lease script. Never edit its state JS
 ## After a successful claim
 
 - Declare the takeover on the orchestration dashboard so observers never guess
-  which tab is Master: append one note carrying the exact terminal handle and
-  rename the Orca tab. The dashboard reads both; the handle in the note pins a
-  DECLARED badge onto the exact tab card.
+  which tab is Master: append one situation note carrying the exact terminal
+  handle and rename the Orca tab. The dashboard reads both; the handle in the
+  note pins a DECLARED badge onto the exact tab card.
 
   ```powershell
-  $note = @{ time = (Get-Date).ToUniversalTime().ToString("o"); field = "situation"; writer = "newos-master"; text = "Master takeover active at tab $Terminal ($Owner), generation $Generation" } | ConvertTo-Json -Compress
-  Add-Content -Path "$HOME/.agentic-os/orchestration-notes.jsonl" -Value $note
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/orchestration-note.ps1 -Field situation -Text "Master takeover active at tab $Terminal ($Owner), generation $Generation"
   orca terminal rename --terminal $Terminal --title "👑 MASTER takeover — NEWS OS gen $Generation"
   ```
 
@@ -77,6 +76,20 @@ Ownership changes only through the project lease script. Never edit its state JS
   ```powershell
   powershell -NoProfile -ExecutionPolicy Bypass -File .claude/skills/newos-master/scripts/newos-master.ps1 -Mode Heartbeat
   ```
+
+- Fill the dashboard boxes with the same cadence — one situation note per
+  heartbeat; lane run/next notes when a lane run settles or blocks. The
+  writer script appends to the notes journal (the dashboard API is read-only):
+
+  ```powershell
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/orchestration-note.ps1 -Field situation -Text "<redacted one-liner: sprint state, active lanes, next gate>"
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/orchestration-note.ps1 -Field run -Lane "<lane name>" -Text "<what just finished, receipt id>"
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/orchestration-note.ps1 -Field next -Lane "<lane name>" -Text "<next action or blocker code>"
+  ```
+
+  Redacted one-liners only (≤200 chars, no prompts/transcripts/credentials).
+  Lane notes address the lane by its Orca worktree display name (e.g.
+  "ORCHESTATION PAGE"); a tab title also matches.
 
 - Release the lease only when the run is genuinely closed or intentionally paused. The wrapper derives the current owner and generation from state.
 
