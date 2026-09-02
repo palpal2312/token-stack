@@ -145,11 +145,22 @@ ${output.trim().split('\n').slice(0, 8).map(l => '  - ' + l.replace('\t', ': '))
       return `[DATA CONTRACT: ${path.basename(fileName)}] Empty dataset (0 rows).`;
     }
 
-    // Detect delimiter (, or \t or ;)
+    // Robust delimiter sniffing (, or \t or ; or |)
     const firstLine = lines[0];
+    const counts = {
+      ',': (firstLine.match(/,/g) || []).length,
+      ';': (firstLine.match(/;/g) || []).length,
+      '\t': (firstLine.match(/\t/g) || []).length,
+      '|': (firstLine.match(/\|/g) || []).length
+    };
     let delimiter = ',';
-    if (firstLine.includes('\t')) delimiter = '\t';
-    else if (firstLine.includes(';') && !firstLine.includes(',')) delimiter = ';';
+    let maxCount = counts[','];
+    for (const [delim, count] of Object.entries(counts)) {
+      if (count > maxCount) {
+        maxCount = count;
+        delimiter = delim;
+      }
+    }
 
     const headers = firstLine.split(delimiter).map(h => h.trim().replace(/^["']|["']$/g, ''));
     const rows = [];
@@ -170,10 +181,15 @@ ${output.trim().split('\n').slice(0, 8).map(l => '  - ' + l.replace('\t', ': '))
       const values = [];
 
       for (let r = 0; r < rows.length; r++) {
-        const val = rows[r][colIdx];
+        let val = rows[r][colIdx];
         if (val === undefined || val === '' || val.toLowerCase() === 'null' || val.toLowerCase() === 'nan') {
           nullCount++;
           continue;
+        }
+
+        // Support European decimal notation when delimiter is semicolon
+        if (delimiter === ';' && typeof val === 'string' && val.includes(',')) {
+          val = val.replace(',', '.');
         }
 
         const num = Number(val);
@@ -193,7 +209,7 @@ ${output.trim().split('\n').slice(0, 8).map(l => '  - ' + l.replace('\t', ': '))
         return {
           header,
           type: 'TIMESTAMP',
-          nullPct: ((nullCount / rows.length) * 100).toFixed(1),
+          nullPct: ((nullCount / Math.max(1, rows.length)) * 100).toFixed(1),
           min: firstDate,
           max: lastDate,
           isDate: true
@@ -262,13 +278,13 @@ ${lines.slice(0, 8).join('\n')}
 
     // Common financial regex patterns
     const patterns = {
-      netReturn: /(?:Return|Net Profit|Total Return)\s*\[%\]?[:=]?\s*([+-]?\d+(?:\.\d+)?%?)/i,
+      netReturn: /(?:Return|Net Profit|Total Return|CAGR)\s*(?:\[%\])?\s*[:=]?\s*([+-]?\d+(?:\.\d+)?%?)/i,
       sharpeRatio: /(?:Sharpe Ratio|Sharpe)[:=]?\s*([+-]?\d+(?:\.\d+)?)/i,
       sortinoRatio: /(?:Sortino Ratio|Sortino)[:=]?\s*([+-]?\d+(?:\.\d+)?)/i,
-      maxDrawdown: /(?:Max\.?\s*Drawdown|Max Drawdown|MDD)\s*\[%\]?[:=]?\s*([+-]?\d+(?:\.\d+)?%?)/i,
-      winRate: /(?:Win Rate|Winrate)\s*\[%\]?[:=]?\s*([+-]?\d+(?:\.\d+)?%?)/i,
-      tradesCount: /(?:#?\s*Trades|Total Trades)[:=]?\s*(\d+)/i,
-      profitFactor: /(?:Profit Factor|PF)[:=]?\s*(\d+(?:\.\d+)?)/i
+      maxDrawdown: /(?:Max\.?\s*Drawdown|Max Drawdown|MDD|Max DD)\s*(?:\[%\])?\s*[:=]?\s*([+-]?\d+(?:\.\d+)?%?)/i,
+      winRate: /(?:Win Rate|Winrate|Win\s*%|Winning Trades\s*%)\s*(?:\[%\])?\s*[:=]?\s*(\d+(?:\.\d+)?%?)/i,
+      tradesCount: /(?:#?\s*Trades|Total Trades|Number of Trades)[:=]?\s*(\d+)/i,
+      profitFactor: /(?:Profit Factor|PF|Profit\/Loss Ratio)[:=]?\s*(\d+(?:\.\d+)?)/i
     };
 
     for (const [key, regex] of Object.entries(patterns)) {

@@ -58,6 +58,7 @@ Commands:
   bench [args]             Launch interactive 13-layer Benchmark TUI
   data profile <file>      Profile CSV/TSV into a compact Data Contract (<100 tokens)
   quant tearsheet <file>   Collapse thousands of trade log lines into Quant Tear-Sheet
+  cache [stats|clear]      Inspect or clear Layer -1 Zero-Token Semantic Cache
   help                     Show this help message
 "@
 }
@@ -295,6 +296,19 @@ function Invoke-Quant {
     & node -e $nodeCode
 }
 
+function Invoke-Cache {
+    param([string[]]$SubArgs)
+    $action = if ($SubArgs -and $SubArgs.Length -gt 0) { $SubArgs[0].ToLower() } else { "stats" }
+    $cacheScript = Join-Path $RepoRoot "core\semantic-cache.cjs"
+    if ($action -eq "clear") {
+        $nodeCode = "const { SemanticCache } = require('$($cacheScript.Replace('\', '/'))'); const cache = new SemanticCache(); cache.clear(); console.log('Semantic cache cleared successfully.');"
+        & node -e $nodeCode
+    } else {
+        $nodeCode = "const { SemanticCache } = require('$($cacheScript.Replace('\', '/'))'); const cache = new SemanticCache(); console.log(JSON.stringify(cache.stats(), null, 2));"
+        & node -e $nodeCode
+    }
+}
+
 # Router
 switch ($Command.ToLower()) {
     "status"   { Invoke-Status }
@@ -307,6 +321,7 @@ switch ($Command.ToLower()) {
     "bench"    { Invoke-Bench -SubArgs $CommandArgs }
     "data"     { Invoke-Data -SubArgs $CommandArgs }
     "quant"    { Invoke-Quant -SubArgs $CommandArgs }
+    "cache"    { Invoke-Cache -SubArgs $CommandArgs }
     "help"     { Show-Help }
     "--help"   { Show-Help }
     "-h"       { Show-Help }

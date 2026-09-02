@@ -1390,19 +1390,25 @@ class InteractiveBenchmarkApp {
   runAblationStudy() {
     console.clear();
     console.log(`${c.brightCyan}╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗${c.reset}`);
-    console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   🔬 ABLATION STUDY: MEASURING EMPIRICAL SENSITIVITY VIA LEAVE-ONE-OUT (L0 ➔ L6)                                 ${c.brightCyan}║${c.reset}`);
-    console.log(`${c.brightCyan}║${c.gray}   Evaluates impact when disabling each layer individually across all 5 public GitHub scenarios                    ${c.brightCyan}║${c.reset}`);
+    console.log(`${c.brightCyan}║${c.bold}${c.brightWhite}   🔬 ABLATION STUDY: MEASURING EMPIRICAL SENSITIVITY VIA LEAVE-ONE-OUT (L-1 ➔ L10)                                ${c.brightCyan}║${c.reset}`);
+    console.log(`${c.brightCyan}║${c.gray}   Evaluates impact when disabling each layer individually across all 10 public GitHub scenarios                   ${c.brightCyan}║${c.reset}`);
     console.log(`${c.brightCyan}╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝${c.reset}\n`);
 
     const ablationConfigurations = [
-      { id: 'full', name: '★ FULL 7-LAYER STACK (All Layers ON)', disabledLayerId: null, role: 'Optimal baseline reference' },
-      { id: 'no_l0', name: '❌ Without L0: Graphify (No AST Pruning)', disabledLayerId: 'l0', role: 'Fails to prune 95% of irrelevant source files' },
-      { id: 'no_l1', name: '❌ Without L1: Ponytail (No Anti-Boilerplate)', disabledLayerId: 'l1', role: 'Permits repetitive boilerplate & code debt' },
-      { id: 'no_l2', name: '❌ Without L2: Caveman (No Git Patch Diff)', disabledLayerId: 'l2', role: 'Outputs verbose full-file rewrites' },
-      { id: 'no_l3', name: '❌ Without L3: RTK (No Test Log Filter)', disabledLayerId: 'l3', role: 'Leaves verbose test & execution noise in context' },
-      { id: 'no_l4', name: '❌ Without L4: Headroom (No Prompt Cache)', disabledLayerId: 'l4', role: 'Loses 90% prompt cache breakpoints on long history' },
-      { id: 'no_l5', name: '❌ Without L5: MemoraX (No Memory Recall)', disabledLayerId: 'l5', role: 'Fails instant recall for cross-session architecture' },
-      { id: 'no_l6', name: '❌ Without L6: OpenViking (No Distillation)', disabledLayerId: 'l6', role: 'Loses 8-turn multi-round debug condensation' }
+      { id: 'full', name: '★ FULL 13-LAYER STACK (All Layers ON)', disabledLayerId: null, role: 'Optimal baseline reference' },
+      { id: 'no_semcache', name: '❌ Without L-1: Semantic Cache (No 0-Token Cache)', disabledLayerId: 'l_semcache', role: 'Repeats duplicate queries with 100% full token re-burn' },
+      { id: 'no_router', name: '❌ Without L0: Model Router (No Model Cascading)', disabledLayerId: 'l_router', role: 'Burns expensive flagship model on routine commit & CSS tasks' },
+      { id: 'no_l0', name: '❌ Without L1: Graphify (No AST Pruning)', disabledLayerId: 'l0', role: 'Fails to prune 95% of irrelevant source files' },
+      { id: 'no_datalens', name: '❌ Without L1.5: Data Lens (No Zero-Row Profile)', disabledLayerId: 'l_datalens', role: 'Dumps 50,000 raw CSV rows & trade logs directly into context' },
+      { id: 'no_l1', name: '❌ Without L2: Ponytail (No Anti-Boilerplate)', disabledLayerId: 'l1', role: 'Permits repetitive boilerplate & code debt' },
+      { id: 'no_l2', name: '❌ Without L3: Caveman (No Git Patch Diff)', disabledLayerId: 'l2', role: 'Outputs verbose full-file rewrites' },
+      { id: 'no_l3', name: '❌ Without L4: RTK (No Test Log Filter)', disabledLayerId: 'l3', role: 'Leaves verbose test & execution noise in context' },
+      { id: 'no_turnfolding', name: '❌ Without L5: Turn Folding (No Epoch Freeze)', disabledLayerId: 'l_turnfolding', role: 'Exhausts context limit on 20+ turn multi-step tasks' },
+      { id: 'no_cot', name: '❌ Without L6: CoT Governor (No Thinking Throttler)', disabledLayerId: 'l_cot', role: 'Burns 8,000 hidden reasoning tokens on simple 1-line typo fixes' },
+      { id: 'no_guardrail', name: '❌ Without L7: Loop Breaker (No Circuit Breaker)', disabledLayerId: 'l_guardrail', role: 'Enters 12-turn circular test failure loop until 429 quota exhaustion' },
+      { id: 'no_l4', name: '❌ Without L8: Headroom (No Prompt Cache)', disabledLayerId: 'l4', role: 'Loses 90% prompt cache breakpoints on long history' },
+      { id: 'no_l5', name: '❌ Without L9: MemoraX (No Memory Recall)', disabledLayerId: 'l5', role: 'Fails instant recall for cross-session architecture' },
+      { id: 'no_l6', name: '❌ Without L10: OpenViking (No Distillation)', disabledLayerId: 'l6', role: 'Loses 8-turn multi-round debug condensation' }
     ];
 
     const grandRaw = this.questions.reduce((a, q) => a + q.publicSource.rawTokens, 0);
@@ -1496,7 +1502,7 @@ class InteractiveBenchmarkApp {
 
     // OVERALL ABLATION SUMMARY TABLE
     console.log(`${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════════════════════════${c.reset}`);
-    console.log(`${c.bold}${c.brightWhite}📊 OVERALL ABLATION MATRIX: TOTAL SYSTEM IMPACT ACROSS ALL 5 SCENARIOS${c.reset}`);
+    console.log(`${c.bold}${c.brightWhite}📊 OVERALL ABLATION MATRIX: TOTAL SYSTEM IMPACT ACROSS ALL 10 SCENARIOS (13 LAYERS)${c.reset}`);
     console.log(`${c.bold}${c.brightYellow}════════════════════════════════════════════════════════════════════════════════════════════════════════════════${c.reset}\n`);
 
     console.log(`${c.gray}┌──────────────────────────────────────────────────┬──────────────┬──────────────┬─────────────┬─────────────┬──────────────┬──────────────────────────────────┐${c.reset}`);

@@ -149,6 +149,18 @@ class SemanticCache {
     this.entries = [];
     this.save();
   }
+
+  stats() {
+    const totalHits = this.entries.reduce((sum, e) => sum + (e.hitCount || 0), 0);
+    const sizeBytes = fs.existsSync(this.dbPath) ? fs.statSync(this.dbPath).size : 0;
+    return {
+      entriesCount: this.entries.length,
+      totalHits,
+      dbPath: this.dbPath,
+      sizeBytes,
+      threshold: this.threshold
+    };
+  }
 }
 
 module.exports = {

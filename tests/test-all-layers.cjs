@@ -15,7 +15,8 @@ const suites = [
   'semantic-cache.test.cjs',
   'model-router.test.cjs',
   'data-lens.test.cjs',
-  'cli-e2e.test.cjs'
+  'cli-e2e.test.cjs',
+  'stress-edge-cases.test.cjs'
 ];
 
 console.log("===============================================================================");

@@ -16,6 +16,8 @@ $actions = @(
     'install marketplace plugins: caveman, ponytail'
     'enable caveman@caveman and ponytail@ponytail in settings.json'
     'verify RTK shim and binary; install manually if missing'
+    'verify Layer 1.5 Data Lens engine: ClickHouse (http://127.0.0.1:8123) or DuckDB'
+    'verify Layer -1 Semantic Cache directory: ~/.token-stack/'
     'Headroom: skipped; use a dedicated agent'
 )
 if (-not (Get-Command rtk -ErrorAction SilentlyContinue)) {
