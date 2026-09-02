@@ -32,20 +32,46 @@
    - Never caches user messages containing credentials, tokens, or environment secrets.
    - Cache entries auto-expire after 7 days (TTL).
 
-## Architecture
+## Architecture & Zero-Dependency Vector Similarity Math
 ```text
-[Incoming User Prompt] ──> [Semantic Cache Evaluator]
-                                    │
-               ┌────────────────────┴────────────────────┐
-               ▼ (Similarity >= 0.90: Cache Hit)         ▼ (Similarity < 0.90: Cache Miss)
-         [Return Local SSE Stream]               [Forward to Upstream LLM]
-           (0 Tokens, <15ms Latency)                         │
-                                                 [Store to Cache Asynchronously]
+[User Prompt] ──> [Word & Character 3-Gram Tokenizer] ──> [Vector Hash Frequency]
+                                                                  │
+                ┌─────────────────────────────────────────────────┴─────────────────────────────────┐
+                ▼ (Evaluate Cosine Similarity against SQLite Cache)                                  ▼ (No match > 0.88)
+         [Similarity >= 0.88]                                                                 [Forward to LLM API]
+                  │                                                                                    │
+         [Stream Instant SSE (<15ms)]                                                          [Save to Cache DB]
+         - Return 0-token synthetic stream                                                     - Store for future hits
 ```
 
-## Related Code Files
-- `C:\Users\ADMIN\Documents\token-stack\core\semantic-cache.cjs`
-- `C:\Users\ADMIN\Documents\token-stack\bin\token-stack.ps1`
+### N-Gram Cosine Similarity Algorithm (Pure Node.js, Zero Dependencies)
+1. **N-Gram Generation**:
+   - Tokenize prompt into normalized word tokens + char 3-grams.
+   - Example: `"explain TS2307 error"` -> `['explain', 'ts2307', 'error', 'exp', 'xpl', 'pla', 'lai', 'ain', 'ts2', 's23', '230', '307', 'err', 'rro', 'ror']`.
+2. **Cosine Vector Dot Product**:
+   - Compute frequency vector: $V(w) = \text{count}(w)$.
+   - Similarity: $\text{Cosine}(A, B) = \frac{A \cdot B}{\|A\| \|B\|} = \frac{\sum A_i B_i}{\sqrt{\sum A_i^2} \sqrt{\sum B_i^2}}$.
+3. **SQLite Schema (`~/.token-stack/semantic_cache.db`)**:
+   ```sql
+   CREATE TABLE IF NOT EXISTS semantic_cache (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     prompt_hash TEXT UNIQUE,
+     raw_prompt TEXT,
+     tokens_json TEXT,
+     response_sse TEXT,
+     hit_count INTEGER DEFAULT 0,
+     created_at INTEGER,
+     expires_at INTEGER
+   );
+   CREATE INDEX IF NOT EXISTS idx_prompt_hash ON semantic_cache(prompt_hash);
+   ```
+4. **Safety Filter**:
+   - Skip caching if prompt contains sensitive keywords: `sk-`, `password`, `secret`, `bearer`, `token`, `credential`.
+
+## Concrete Test Cases
+- **Test 1 (Exact Match Hit)**: Querying "What does HTTP status 429 mean?" a second time returns cached answer in <10ms with 0 API tokens.
+- **Test 2 (Near-Semantic Match Hit)**: Querying "What is HTTP status code 429?" achieves similarity >0.91, returning the cached explanation without calling cloud API.
+- **Test 3 (Secret Protection)**: Prompts containing `sk-kimi-...` are rejected from caching.
 
 ## Implementation Steps
 1. Create `core/semantic-cache.cjs` with lightweight embedding / hashing similarity logic.

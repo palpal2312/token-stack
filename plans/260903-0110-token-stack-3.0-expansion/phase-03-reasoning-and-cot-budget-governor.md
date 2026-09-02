@@ -30,18 +30,45 @@
          - Allows full user budget (e.g. `8192`–`16384`).
    - If user explicitly forces budget via comment or CLI flag, respects user preference.
 
-## Architecture
+## Architecture & Task-Aware Budget Modulation
 ```text
-[Outgoing Request] ──> [CoT Governor Classifier]
-                              │
-     ┌────────────────────────┼────────────────────────┐
-     ▼ (Low Complexity)       ▼ (Medium Complexity)    ▼ (High Complexity)
-[budget_tokens = 1024]   [budget_tokens = 4096]   [budget_tokens = 8192+]
+[Incoming Turn Request] ──> [Task Intent Classifier]
+                                    │
+     ┌──────────────────────────────┼──────────────────────────────┐
+     ▼ (Low Complexity)             ▼ (Medium Complexity)          ▼ (High Complexity)
+[budget_tokens = 1024]         [budget_tokens = 4096]         [budget_tokens = 8192+]
+- Commit messages              - Standard feature code        - Architectural design
+- Lint / CSS / Typo fixes      - Unit test implementation     - Multi-file refactoring
+- Formatting / Regex           - Single-module debugging      - Concurrency & race bugs
 ```
 
-## Related Code Files
-- `C:\Users\ADMIN\Documents\token-stack\core\cot-governor.cjs`
-- `C:\Users\ADMIN\Documents\token-stack\bin\token-stack.ps1`
+### Intent Classification Rules
+```javascript
+function evaluateThinkingBudget(turnText, fileCount = 1) {
+  const text = turnText.toLowerCase();
+  // High complexity triggers
+  if (/architect|refactor|memory\s*leak|concurrency|race\s*condition|redesign/i.test(text) || fileCount > 3) {
+    return 8192;
+  }
+  // Low complexity triggers
+  if (/commit|format|typo|rename|css|style|clean|license|readme/i.test(text) && fileCount <= 1) {
+    return 1024;
+  }
+  // Default medium complexity
+  return 4096;
+}
+```
+
+### Payload Injection Spec
+- If request contains `thinking: { type: "enabled" }`:
+  - Replace `budget_tokens` with calculated value.
+  - Set `max_tokens` appropriately (`budget_tokens + 4096`).
+- Ensures the model does not spend 6,000 thinking tokens on a 2-line typo fix!
+
+## Concrete Test Cases
+- **Test 1 (Low Budget Enforcement)**: Request asking "Fix typo in button label" gets `budget_tokens: 1024`; model responds in <2s instead of 10s.
+- **Test 2 (High Budget Allocation)**: Request asking "Redesign multi-thread database connection pool" gets `budget_tokens: 8192` allowing full deep reasoning.
+- **Test 3 (User Override)**: Request with explicit prompt comment `<!-- budget: 16000 -->` respects user override.
 
 ## Implementation Steps
 1. Create `core/cot-governor.cjs` with rule-based prompt classifier.

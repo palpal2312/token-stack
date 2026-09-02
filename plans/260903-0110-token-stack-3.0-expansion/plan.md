@@ -27,6 +27,12 @@ Expanding Token-Stack to achieve end-to-end token and cost optimization across 1
 - Token-Stack 2.0 CLI (`bin/token-stack.ps1`, `token-stack.registry.json`) is operational.
 - Existing profiles (`kimicode`, `sub2api-01`, `sub2api-02`) remain active and verified.
 
+## Validated Architectural Decisions
+- **Decision 1 (Turn Folding)**: Use **5-turn Epoch Freezing** to preserve Anthropic prompt cache prefixes permanently.
+- **Decision 2 (Waterfall Failover)**: Use **Transparent In-Flight Retry** (<500ms) across provider tiers upon 429/quota exhaustion.
+- **Decision 3 (Semantic Cache Engine)**: Use **SQLite N-Gram Token Cosine Similarity** (Zero External Dependencies, pure Node.js runtime).
+- **Decision 4 (CoT Budget Modulation)**: Use **Dynamic Task-Aware Budgeting** (1024 tokens for simple edits, 8192 tokens for architecture).
+
 ## Acceptance Criteria
 - [ ] Turn Folding reduces payload by ≥50% in sessions >15 turns without schema breakages.
 - [ ] Loop breaker catches 3x repeated tool calls and halts runaway token burn.
