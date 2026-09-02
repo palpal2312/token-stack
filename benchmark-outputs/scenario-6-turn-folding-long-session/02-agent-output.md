@@ -2,7 +2,7 @@
 
 > **Scenario #6:** Scenario 6: 25-Turn Full-Stack Refactoring & Cold Context Compaction  
 > **Raw Context Tokens:** 18,500 tokens  
-> **Compressed Tokens:** **500 tokens (-97.3% savings)**  
+> **Compressed Tokens:** **10 tokens (-99.9% savings)**  
 > **Answer Quality Score:** **100/100 pts**
 
 ```python

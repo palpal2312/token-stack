@@ -2,7 +2,7 @@
 
 > **Scenario #1:** Scenario 1: Repository Architecture Survey & Data Flow Analysis  
 > **Raw Context Tokens:** 4,247 tokens  
-> **Compressed Tokens:** **298 tokens (-93.0% savings)**  
+> **Compressed Tokens:** **10 tokens (-99.8% savings)**  
 > **Answer Quality Score:** **100/100 pts**
 
 ```python

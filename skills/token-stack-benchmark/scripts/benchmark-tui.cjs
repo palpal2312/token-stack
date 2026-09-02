@@ -973,7 +973,7 @@ class InteractiveBenchmarkApp {
 
   start() {
     const args = process.argv.slice(2);
-    const isNonInteractive = args.includes('--non-interactive') || args.includes('-y');
+    const isNonInteractive = args.includes('--non-interactive') || args.includes('-y') || args.includes('--all') || args.includes('--auto') || args.includes('--batch');
     const isAblation = args.includes('--ablation') || args.includes('--leave-one-out');
     const runsArgIdx = args.findIndex(a => a === '--runs' || a === '-n');
     if (runsArgIdx !== -1 && args[runsArgIdx + 1]) {

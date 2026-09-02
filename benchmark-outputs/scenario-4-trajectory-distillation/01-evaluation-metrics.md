@@ -27,12 +27,13 @@
 | **0. Raw Baseline (No Layers)** | 6,250 tokens | --- | **---** | **0.0%** | **70/100** | **--- (Raw)** | **70.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 6,250 tokens | 0 | **0.0%** | **-0.0%** | **85/100** | **+15 pts** | **85.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 5,375 tokens | Saved 875 | **-14.0%** | **-14.0%** | **85/100** | **+0 pts** | **96.9** |
-| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 5,375 tokens | 0 | **0.0%** | **-14.0%** | **90/100** | **+5 pts** | **102.6** |
-| **+ L1: Ponytail [Ponytail] ** | 5,100 tokens | Saved 275 | **-5.1%** | **-18.4%** | **90/100** | **+0 pts** | **106.6** |
-| **+ L2: Caveman [Caveman] 🏆** | 5,050 tokens | Saved 50 | **-1.0%** | **-19.2%** | **90/100** | **+0 pts** | **107.3** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 5,050 tokens | 0 | **0.0%** | **-19.2%** | **90/100** | **+0 pts** | **107.3** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 4,200 tokens | Saved 850 | **-16.8%** | **-32.8%** | **90/100** | **+0 pts** | **119.5** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 2,800 tokens | Saved 1,400 | **-33.3%** | **-55.2%** | **95/100** | **+5 pts** | **147.4** |
+| **+ L0.5: Skill Router [SkillRouter (arXiv:2603.22455)] 🏆** | 5,375 tokens | 0 | **0.0%** | **-14.0%** | **95/100** | **+10 pts** | **108.3** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 5,375 tokens | 0 | **0.0%** | **-14.0%** | **95/100** | **+0 pts** | **108.3** |
+| **+ L1: Ponytail [Ponytail] ** | 5,100 tokens | Saved 275 | **-5.1%** | **-18.4%** | **95/100** | **+0 pts** | **112.5** |
+| **+ L2: Caveman [Caveman] 🏆** | 5,050 tokens | Saved 50 | **-1.0%** | **-19.2%** | **95/100** | **+0 pts** | **113.2** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 5,050 tokens | 0 | **0.0%** | **-19.2%** | **95/100** | **+0 pts** | **113.2** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 4,200 tokens | Saved 850 | **-16.8%** | **-32.8%** | **95/100** | **+0 pts** | **126.2** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 2,800 tokens | Saved 1,400 | **-33.3%** | **-55.2%** | **95/100** | **+0 pts** | **147.4** |
 | **+ L6: Autonomous Distill [OpenViking] 🏆** | 195 tokens | Saved 2,605 | **-93.0%** | **-96.9%** | **100/100** | **+5 pts** | **196.9** |
 | **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 155 tokens | Saved 40 | **-20.5%** | **-97.5%** | **100/100** | **+0 pts** | **197.5** |
 | **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 125 tokens | Saved 30 | **-19.4%** | **-98.0%** | **100/100** | **+0 pts** | **198.0** |

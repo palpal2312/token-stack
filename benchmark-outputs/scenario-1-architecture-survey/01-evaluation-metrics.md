@@ -27,17 +27,18 @@
 | **0. Raw Baseline (No Layers)** | 4,247 tokens | --- | **---** | **0.0%** | **90/100** | **--- (Raw)** | **90.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 4,247 tokens | 0 | **0.0%** | **-0.0%** | **100/100** | **+10 pts** | **100.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 363 tokens | Saved 3,884 | **-91.5%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
-| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
-| **+ L1: Ponytail [Ponytail] ** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
-| **+ L2: Caveman [Caveman] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 398 tokens | +35 (Overhead) | **+9.6%** | **-90.6%** | **100/100** | **+0 pts** | **190.6** |
-| **+ L6: Autonomous Distill [OpenViking] 🏆** | 423 tokens | +25 (Overhead) | **+6.3%** | **-90.0%** | **100/100** | **+0 pts** | **190.0** |
-| **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 373 tokens | Saved 50 | **-11.8%** | **-91.2%** | **100/100** | **+0 pts** | **191.2** |
-| **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 373 tokens | 0 | **0.0%** | **-91.2%** | **100/100** | **+0 pts** | **191.2** |
-| **+ L9: CoT Governor [CoT Budget Governor] 🏆** | 298 tokens | Saved 75 | **-20.1%** | **-93.0%** | **100/100** | **+0 pts** | **193.0** |
-| **+ L10: Model Router [Model Cascading Router] 🏆** | 298 tokens | 0 | **0.0%** | **-93.0%** | **100/100** | **+0 pts** | **193.0** |
+| **+ L0.5: Skill Router [SkillRouter (arXiv:2603.22455)] 🏆** | 10 tokens | Saved 800 | **-220.4%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 10 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
+| **+ L1: Ponytail [Ponytail] ** | 10 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
+| **+ L2: Caveman [Caveman] 🏆** | 10 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 10 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 10 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 45 tokens | +35 (Overhead) | **+350.0%** | **-98.9%** | **100/100** | **+0 pts** | **198.9** |
+| **+ L6: Autonomous Distill [OpenViking] 🏆** | 70 tokens | +25 (Overhead) | **+55.6%** | **-98.4%** | **100/100** | **+0 pts** | **198.4** |
+| **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 20 tokens | Saved 50 | **-71.4%** | **-99.5%** | **100/100** | **+0 pts** | **199.5** |
+| **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 20 tokens | 0 | **0.0%** | **-99.5%** | **100/100** | **+0 pts** | **199.5** |
+| **+ L9: CoT Governor [CoT Budget Governor] 🏆** | 10 tokens | Saved 75 | **-375.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
+| **+ L10: Model Router [Model Cascading Router] 🏆** | 10 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
 
 ---
 
@@ -52,5 +53,5 @@
 | **Bonus** | Identified connection leak in UserService when query returns 0 rows | +10 pts | **🌟 BONUS PASSED** |
 | **Bonus** | Recommended Graceful Shutdown hook closing Pool on SIGTERM | +10 pts | **🌟 BONUS PASSED** |
 
-> **💡 Total Quality Score:** **100/100 pts** (CEI Index: **193.0 🏆**)
+> **💡 Total Quality Score:** **100/100 pts** (CEI Index: **199.8 🏆**)
 > **Assessment:** *"100% accurate architectural discovery with proactive leak detection."*

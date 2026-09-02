@@ -21,6 +21,7 @@
 | **0. Raw Baseline (No Layers)** | 8,200 tokens | --- | **---** | **0.0%** | **85/100** | **--- (Raw)** | **85.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 8,200 tokens | 0 | **0.0%** | **-0.0%** | **100/100** | **+15 pts** | **100.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 7,800 tokens | Saved 400 | **-4.9%** | **-4.9%** | **100/100** | **+0 pts** | **104.9** |
+| **+ L0.5: Skill Router [SkillRouter (arXiv:2603.22455)] 🏆** | 7,800 tokens | 0 | **0.0%** | **-4.9%** | **100/100** | **+0 pts** | **104.9** |
 | **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 7,800 tokens | 0 | **0.0%** | **-4.9%** | **100/100** | **+0 pts** | **104.9** |
 | **+ L1: Ponytail [Ponytail] ** | 7,750 tokens | Saved 50 | **-0.6%** | **-5.5%** | **100/100** | **+0 pts** | **105.5** |
 | **+ L2: Caveman [Caveman] 🏆** | 7,550 tokens | Saved 200 | **-2.6%** | **-7.9%** | **100/100** | **+0 pts** | **107.9** |

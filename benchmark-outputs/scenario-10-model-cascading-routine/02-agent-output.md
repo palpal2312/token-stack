@@ -2,7 +2,7 @@
 
 > **Scenario #10:** Scenario 10: High-Frequency Routine Task Cascading & Frugal Routing  
 > **Raw Context Tokens:** 14,000 tokens  
-> **Compressed Tokens:** **400 tokens (-97.1% savings)**  
+> **Compressed Tokens:** **10 tokens (-99.9% savings)**  
 > **Answer Quality Score:** **100/100 pts**
 
 ```python
