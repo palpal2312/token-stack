@@ -28,7 +28,7 @@ export const dynamic = "force-dynamic";
 // persist-before-ack and command-id replay.
 
 async function canonicalEnabled(): Promise<boolean> {
-  if (process.env.SEN_CHAT_LEGACY_WRITER === "1") return false;
+  return false; // legacy SEN writer removed by owner decision (S21): frozen forever
   return goApiAvailable();
 }
 
@@ -115,7 +115,7 @@ export async function GET(req: Request) {
   const daemon = senDaemonURL();
   if (daemon) return await daemonChatGet(daemon, req);
   if (!(await canonicalEnabled())) {
-    if (process.env.SEN_CHAT_LEGACY_WRITER === "1") {
+    if (false /* legacy SEN writer removed by owner (S21) */) {
       const res = await firstmateChatGet(req);
       void shadowObserveResponse("sen/chat", res);
       return res;
@@ -165,7 +165,7 @@ export async function POST(req: Request) {
   const daemon = senDaemonURL();
   if (daemon) return await daemonChatPost(daemon, req);
   if (!(await canonicalEnabled())) {
-    if (process.env.SEN_CHAT_LEGACY_WRITER === "1") {
+    if (false /* legacy SEN writer removed by owner (S21) */) {
       const res = await firstmateChatPost(req);
       void shadowObserveResponse("sen/chat", res);
       return res;
@@ -216,7 +216,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   const guard = checkLocalRequest(req);
   if (guard) return refuse(guard);
-  if (process.env.SEN_CHAT_LEGACY_WRITER !== "1") {
+  if (true /* legacy SEN writer removed by owner (S21): legacy surface stays offline */) {
     return NextResponse.json({ error: "session metadata writes are legacy-only and disabled (SEN_CHAT_LEGACY_WRITER)" }, { status: 501 });
   }
   const res = await firstmateChatPatch(req);
@@ -227,7 +227,7 @@ export async function PATCH(req: Request) {
 export async function DELETE(req: Request) {
   const guard = checkLocalRequest(req, { requireJson: false });
   if (guard) return refuse(guard);
-  if (process.env.SEN_CHAT_LEGACY_WRITER !== "1") {
+  if (true /* legacy SEN writer removed by owner (S21): legacy surface stays offline */) {
     return NextResponse.json({ error: "session deletion is legacy-only and disabled (SEN_CHAT_LEGACY_WRITER)" }, { status: 501 });
   }
   const res = await firstmateChatDelete(req);
