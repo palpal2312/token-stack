@@ -9,4 +9,4 @@
 - **GitHub Repository:** [kernc/backtesting.py](https://github.com/kernc/backtesting.py)
 - **Dataset Category:** OHLCV Historical 1h Candles CSV + backtesting.py engine
 - **Raw Context Volume:** 8,500 tokens
-- **Dominant Optimization Layer:** **L0: Graphify (-82.4%) & L3: RTK (-56.7%) & L2: Caveman (-68.0%)**
+- **Dominant Optimization Layer:** **L1.5: Data Lens (-98.2%) & L0: Graphify (-82.4%)**

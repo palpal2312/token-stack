@@ -1,11 +1,11 @@
 # token-stack
 
-The Complete **12-Layer Master Token & Context Engine** for AI coding CLIs (OpenAI Codex CLI, Claude Code, Cursor, Kimi, Antigravity).
+The Complete **13-Layer Master Token & Context Engine** for AI coding CLIs (OpenAI Codex CLI, Claude Code, Cursor, Kimi, Antigravity).
 
-[![Benchmark Status](https://img.shields.io/badge/Benchmark-97.1%25%20Token%20Reduction-brightgreen)](token-stack-benchmark-report.md)
+[![Benchmark Status](https://img.shields.io/badge/Benchmark-97.4%25%20Token%20Reduction-brightgreen)](token-stack-benchmark-report.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Vietnamese Docs](https://img.shields.io/badge/Docs-%F0%9F%87%BB%F0%9F%87%B3%20Ti%E1%BA%BFng%20Vi%E1%BB%87t-red)](README-vi.md)
-[![Real-World Case Studies](https://img.shields.io/badge/Case%20Studies-5%20Fail--Modes%20Solved-purple)](docs/examples/real-world-github-cases.md)
+[![Real-World Case Studies](https://img.shields.io/badge/Case%20Studies-6%20Fail--Modes%20Solved-purple)](docs/examples/real-world-github-cases.md)
 
 ---
 
@@ -15,15 +15,16 @@ The Complete **12-Layer Master Token & Context Engine** for AI coding CLIs (Open
 
 ---
 
-## 🏗️ The 12-Layer Master Architecture
+## 🏗️ The 13-Layer Master Architecture
 
 ```text
 +-------------------------------------------------------------------------------------------------------------+
-|                                        THE 12-LAYER MASTER CONTEXT STACK                                    |
+|                                        THE 13-LAYER MASTER CONTEXT STACK                                    |
 +-------------------------------------------------------------------------------------------------------------+
 |  ⚡ [Layer -1: Semantic Cache]     -> SQLite-VSS N-Gram Vector Cache (0 tokens, <12ms for repeated queries)     |
 |  🎯 [Layer 0: Model Router]        -> RouteLLM / Frugal Cascader (Dispatches easy tasks to cheap tier, -85% $) |
 |  📍 [Layer 1: Code Topology]       -> GRAPHIFY / AIDER REPO-MAP (AST navigation, 0 token search)                |
+|  📊 [Layer 1.5: Data & Quant Lens] -> ZERO-ROW DATA LENS (DuckDB / QSV Data Contracts & Quant Tear-Sheets)      |
 |  ✍️  [Layer 2: Code Reduction]      -> PONYTAIL (KISS, YAGNI, standard library, no boilerplate)                   |
 |  💬 [Layer 3: Word Reduction]      -> CAVEMAN (Concise technical responses, Git patch diffs, no fluff)          |
 |  ⚡ [Layer 4: CLI Output Filter]    -> RTK - Rust Token Killer (60-90% log reduction on git/build/test)           |

@@ -1,8 +1,8 @@
 # ⚡ Master Token Stack Benchmark Report: Multi-Scenario Evaluation
 
-> **Benchmark Date:** Wed, 02 Sep 2026 18:25:28 GMT
+> **Benchmark Date:** Wed, 02 Sep 2026 18:31:33 GMT
 > **Iterations:** 1 runs (Arithmetic Mean Average)
-> **Active Layer Config:** L-1: Semantic Cache [Zero-Token Semantic Cache], L0: Code Topology [Graphify], L1: Ponytail [Ponytail], L2: Caveman [Caveman], L3: RTK [RTK (Rust Token Killer)], L4: Headroom [Headroom Proxy], L5: Knowledge Memory [MemoraX Code], L6: Autonomous Distill [OpenViking], L7: Turn Folding [Dynamic Turn Folding], L8: Loop Breaker [Loop Breaker & Failover], L9: CoT Governor [CoT Budget Governor], L10: Model Router [Model Cascading Router]
+> **Active Layer Config:** L-1: Semantic Cache [Zero-Token Semantic Cache], L0: Code Topology [Graphify], L1.5: Data Lens [Zero-Row Data Lens], L1: Ponytail [Ponytail], L2: Caveman [Caveman], L3: RTK [RTK (Rust Token Killer)], L4: Headroom [Headroom Proxy], L5: Knowledge Memory [MemoraX Code], L6: Autonomous Distill [OpenViking], L7: Turn Folding [Dynamic Turn Folding], L8: Loop Breaker [Loop Breaker & Failover], L9: CoT Governor [CoT Budget Governor], L10: Model Router [Model Cascading Router]
 
 ## 📋 Master Summary Matrix (1 Runs Mean Average)
 
@@ -12,13 +12,13 @@
 | 2 | [Scenario 2: Database Connection Pool Leak Bugfix (TDD Test Suite & Git Patch Diff)](#scenario-2-scenario-2-fix-db-leak) | [gothinkster/node-express-realworld-example-app](https://github.com/gothinkster/node-express-realworld-example-app) | 4,250 | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | [`📁 scenario-2-fix-db-leak/`](benchmark-outputs/scenario-2-fix-db-leak) |
 | 3 | [Scenario 3: Cross-Session Architecture Standard Recall (Episodic Memory Task)](#scenario-3-scenario-3-cross-session-memory) | [THUIR/MemoryBench-LeaderBoard](https://github.com/THUIR/MemoryBench-LeaderBoard) | 6,250 | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | [`📁 scenario-3-cross-session-memory/`](benchmark-outputs/scenario-3-cross-session-memory) |
 | 4 | [Scenario 4: Multi-Turn Trajectory Distillation (8-Turn Failure Recovery)](#scenario-4-scenario-4-trajectory-distillation) | [THUIR/MemoryBench-LeaderBoard](https://github.com/THUIR/MemoryBench-LeaderBoard) | 6,250 | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | [`📁 scenario-4-trajectory-distillation/`](benchmark-outputs/scenario-4-trajectory-distillation) |
-| 5 | [Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data](#scenario-5-scenario-5-backtest-quant-strategy) | [kernc/backtesting.py](https://github.com/kernc/backtesting.py) | 8,500 | **250** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | [`📁 scenario-5-backtest-quant-strategy/`](benchmark-outputs/scenario-5-backtest-quant-strategy) |
+| 5 | [Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data](#scenario-5-scenario-5-backtest-quant-strategy) | [kernc/backtesting.py](https://github.com/kernc/backtesting.py) | 8,500 | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | [`📁 scenario-5-backtest-quant-strategy/`](benchmark-outputs/scenario-5-backtest-quant-strategy) |
 | 6 | [Scenario 6: 25-Turn Full-Stack Refactoring & Cold Context Compaction](#scenario-6-scenario-6-turn-folding-long-session) | [cline/cline#1042](https://github.com/cline/cline/issues/1042) | 18,500 | **500** | **-97.3%** | **100/100** | **+20 pts** | **197.3 🏆** | [`📁 scenario-6-turn-folding-long-session/`](benchmark-outputs/scenario-6-turn-folding-long-session) |
 | 7 | [Scenario 7: Test Doom Loop Interception & Sub-500ms Waterfall Failover](#scenario-7-scenario-7-loop-breaker-failover) | [princeton-nlp/SWE-bench](https://github.com/princeton-nlp/SWE-bench) | 12,500 | **345** | **-97.2%** | **100/100** | **+20 pts** | **197.2 🏆** | [`📁 scenario-7-loop-breaker-failover/`](benchmark-outputs/scenario-7-loop-breaker-failover) |
 | 8 | [Scenario 8: 1-Line Typo Fix with CoT Budget Throttling (Extended Thinking)](#scenario-8-scenario-8-cot-governor-typo) | [anthropics/anthropic-sdk-typescript](https://github.com/anthropics/anthropic-sdk-typescript) | 8,200 | **150** | **-98.2%** | **100/100** | **+15 pts** | **198.2 🏆** | [`📁 scenario-8-cot-governor-typo/`](benchmark-outputs/scenario-8-cot-governor-typo) |
 | 9 | [Scenario 9: Multi-Agent Parallel Duplicate Query Resolution (0-Token Cache)](#scenario-9-scenario-9-semantic-cache-multi-agent) | [zilliztech/GPTCache](https://github.com/zilliztech/GPTCache) | 9,000 | **20** | **-99.8%** | **100/100** | **+15 pts** | **199.8 🏆** | [`📁 scenario-9-semantic-cache-multi-agent/`](benchmark-outputs/scenario-9-semantic-cache-multi-agent) |
 | 10 | [Scenario 10: High-Frequency Routine Task Cascading & Frugal Routing](#scenario-10-scenario-10-model-cascading-routine) | [lmsys/RouteLLM](https://github.com/lmsys/RouteLLM) | 14,000 | **400** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | [`📁 scenario-10-model-cascading-routine/`](benchmark-outputs/scenario-10-model-cascading-routine) |
-| **TOTAL** | **OVERALL BENCHMARK** | **Open-Source Repositories** | **91,697** | **2,268** | **-97.5%** | **100/100** | **+19 pts (Avg)** | **197.4 🏆** | [`📁 benchmark-outputs/`](benchmark-outputs) |
+| **TOTAL** | **OVERALL BENCHMARK** | **Open-Source Repositories** | **91,697** | **2,368** | **-97.4%** | **100/100** | **+19 pts (Avg)** | **197.2 🏆** | [`📁 benchmark-outputs/`](benchmark-outputs) |
 
 ---
 
@@ -49,6 +49,7 @@
 | **0. Raw Baseline (No Layers)** | 4,247 tokens | --- | **---** | **0.0%** | **90/100** | **--- (Raw)** | **90.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 4,247 tokens | 0 | **0.0%** | **-0.0%** | **100/100** | **+10 pts** | **100.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 363 tokens | Saved 3,884 | **-91.5%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
 | **+ L1: Ponytail [Ponytail] ** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
 | **+ L2: Caveman [Caveman] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
 | **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
@@ -118,6 +119,7 @@
 | **0. Raw Baseline (No Layers)** | 4,250 tokens | --- | **---** | **0.0%** | **85/100** | **--- (Raw)** | **85.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 4,250 tokens | 0 | **0.0%** | **-0.0%** | **100/100** | **+15 pts** | **100.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 1,200 tokens | Saved 3,050 | **-71.8%** | **-71.8%** | **100/100** | **+0 pts** | **171.8** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 1,200 tokens | 0 | **0.0%** | **-71.8%** | **100/100** | **+0 pts** | **171.8** |
 | **+ L1: Ponytail [Ponytail] ** | 1,050 tokens | Saved 150 | **-12.5%** | **-75.3%** | **100/100** | **+0 pts** | **175.3** |
 | **+ L2: Caveman [Caveman] 🏆** | 320 tokens | Saved 730 | **-69.5%** | **-92.5%** | **100/100** | **+0 pts** | **192.5** |
 | **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 145 tokens | Saved 175 | **-54.7%** | **-96.6%** | **100/100** | **+0 pts** | **196.6** |
@@ -189,11 +191,12 @@
 | **0. Raw Baseline (No Layers)** | 6,250 tokens | --- | **---** | **0.0%** | **75/100** | **--- (Raw)** | **75.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 6,240 tokens | Saved 10 | **-0.2%** | **-0.2%** | **90/100** | **+15 pts** | **90.1** |
 | **+ L0: Code Topology [Graphify] 🏆** | 5,365 tokens | Saved 875 | **-14.0%** | **-14.2%** | **90/100** | **+0 pts** | **102.7** |
-| **+ L1: Ponytail [Ponytail] ** | 5,090 tokens | Saved 275 | **-5.1%** | **-18.6%** | **90/100** | **+0 pts** | **106.7** |
-| **+ L2: Caveman [Caveman] 🏆** | 5,040 tokens | Saved 50 | **-1.0%** | **-19.4%** | **90/100** | **+0 pts** | **107.4** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 5,040 tokens | 0 | **0.0%** | **-19.4%** | **90/100** | **+0 pts** | **107.4** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 865 tokens | Saved 4,175 | **-82.8%** | **-86.2%** | **90/100** | **+0 pts** | **167.5** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 35 tokens | Saved 830 | **-96.0%** | **-99.4%** | **100/100** | **+10 pts** | **199.4** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 5,365 tokens | 0 | **0.0%** | **-14.2%** | **95/100** | **+5 pts** | **108.5** |
+| **+ L1: Ponytail [Ponytail] ** | 5,090 tokens | Saved 275 | **-5.1%** | **-18.6%** | **95/100** | **+0 pts** | **112.6** |
+| **+ L2: Caveman [Caveman] 🏆** | 5,040 tokens | Saved 50 | **-1.0%** | **-19.4%** | **95/100** | **+0 pts** | **113.4** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 5,040 tokens | 0 | **0.0%** | **-19.4%** | **95/100** | **+0 pts** | **113.4** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 865 tokens | Saved 4,175 | **-82.8%** | **-86.2%** | **95/100** | **+0 pts** | **176.9** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 35 tokens | Saved 830 | **-96.0%** | **-99.4%** | **100/100** | **+5 pts** | **199.4** |
 | **+ L6: Autonomous Distill [OpenViking] 🏆** | 35 tokens | 0 | **0.0%** | **-99.4%** | **100/100** | **+0 pts** | **199.4** |
 | **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 35 tokens | 0 | **0.0%** | **-99.4%** | **100/100** | **+0 pts** | **199.4** |
 | **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 35 tokens | 0 | **0.0%** | **-99.4%** | **100/100** | **+0 pts** | **199.4** |
@@ -246,11 +249,12 @@
 | **0. Raw Baseline (No Layers)** | 6,250 tokens | --- | **---** | **0.0%** | **70/100** | **--- (Raw)** | **70.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 6,250 tokens | 0 | **0.0%** | **-0.0%** | **85/100** | **+15 pts** | **85.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 5,375 tokens | Saved 875 | **-14.0%** | **-14.0%** | **85/100** | **+0 pts** | **96.9** |
-| **+ L1: Ponytail [Ponytail] ** | 5,100 tokens | Saved 275 | **-5.1%** | **-18.4%** | **85/100** | **+0 pts** | **100.6** |
-| **+ L2: Caveman [Caveman] 🏆** | 5,050 tokens | Saved 50 | **-1.0%** | **-19.2%** | **85/100** | **+0 pts** | **101.3** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 5,050 tokens | 0 | **0.0%** | **-19.2%** | **85/100** | **+0 pts** | **101.3** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 4,200 tokens | Saved 850 | **-16.8%** | **-32.8%** | **85/100** | **+0 pts** | **112.9** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 2,800 tokens | Saved 1,400 | **-33.3%** | **-55.2%** | **95/100** | **+10 pts** | **147.4** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 5,375 tokens | 0 | **0.0%** | **-14.0%** | **90/100** | **+5 pts** | **102.6** |
+| **+ L1: Ponytail [Ponytail] ** | 5,100 tokens | Saved 275 | **-5.1%** | **-18.4%** | **90/100** | **+0 pts** | **106.6** |
+| **+ L2: Caveman [Caveman] 🏆** | 5,050 tokens | Saved 50 | **-1.0%** | **-19.2%** | **90/100** | **+0 pts** | **107.3** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 5,050 tokens | 0 | **0.0%** | **-19.2%** | **90/100** | **+0 pts** | **107.3** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 4,200 tokens | Saved 850 | **-16.8%** | **-32.8%** | **90/100** | **+0 pts** | **119.5** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 2,800 tokens | Saved 1,400 | **-33.3%** | **-55.2%** | **95/100** | **+5 pts** | **147.4** |
 | **+ L6: Autonomous Distill [OpenViking] 🏆** | 195 tokens | Saved 2,605 | **-93.0%** | **-96.9%** | **100/100** | **+5 pts** | **196.9** |
 | **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 155 tokens | Saved 40 | **-20.5%** | **-97.5%** | **100/100** | **+0 pts** | **197.5** |
 | **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 125 tokens | Saved 30 | **-19.4%** | **-98.0%** | **100/100** | **+0 pts** | **198.0** |
@@ -284,17 +288,18 @@
 > **Prompt:** *"Write Python code to load OHLCV candle data from CSV (BTCUSDT_1h.csv), configure an SMA Crossover (MA 10/20) with RSI filter (RSI < 70) strategy, run a Backtest using backtesting.py, extract key performance metrics (Return %, Sharpe Ratio, Max Drawdown %, Win Rate %), and optimize parameters."*
 > **Objective:** *Load OHLCV candle CSV dataset, implement SMA Crossover with RSI Filter strategy, execute Backtest, and run parameter optimization via backtesting.py.*
 > **Public Source:** [kernc/backtesting.py](https://github.com/kernc/backtesting.py)
-> **Dominant Layer:** **L0: Graphify (-82.4%) & L3: RTK (-56.7%) & L2: Caveman (-68.0%)**
+> **Dominant Layer:** **L1.5: Data Lens (-98.2%) & L0: Graphify (-82.4%)**
 
 ### 1️⃣ Table 1: Single Layer Isolated Efficiency
 
 | Optimization Layer | Tokens Remaining | Token Usage Delta (%) | Answer Quality | QA Quality Delta | CEI Efficiency Index | Notes |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Raw Baseline (No Layers)** | 8,500 tokens | **0.0%** | **80/100** | **0 pts (Raw)** | **80.0** | Raw baseline |
-| **L0: Code Topology** | 1,500 tokens | **-82.4%** | **90/100** | **+10 pts** | **164.1** | ★ DOMINANT (Extracts Strategy AST) |
+| **L1.5: Data Lens** | 150 tokens | **-98.2%** | **100/100** | **+20 pts** | **198.2** | ★ DOMINANT (Generates Data Contract & Tear-Sheet) |
+| **L0: Code Topology** | 1,500 tokens | **-82.4%** | **90/100** | **+10 pts** | **164.1** | Extracts Strategy AST |
 | **L1: Ponytail** | 7,100 tokens | **-16.5%** | **80/100** | **0 pts** | **93.2** | Eliminates boilerplate |
-| **L2: Caveman** | 2,720 tokens | **-68.0%** | **100/100** | **+20 pts** | **168.0** | ★ DOMINANT (Outputs concise stats) |
-| **L3: RTK** | 3,680 tokens | **-56.7%** | **100/100** | **+20 pts** | **156.7** | ★ DOMINANT (Filters 9,000 order logs) |
+| **L2: Caveman** | 2,720 tokens | **-68.0%** | **100/100** | **+20 pts** | **168.0** | Outputs concise stats |
+| **L3: RTK** | 3,680 tokens | **-56.7%** | **100/100** | **+20 pts** | **156.7** | Filters order logs |
 | **L4: Headroom** | 8,500 tokens | **0.0%** | **80/100** | **0 pts** | **80.0** | Neutral |
 | **L5: Knowledge Memory** | 8,535 tokens | **+0.4%** | **100/100** | **+20 pts** | **100.0** | ⚠️ Injects memory slot |
 | **L6: Autonomous Distill** | 8,525 tokens | **+0.3%** | **100/100** | **+20 pts** | **100.0** | ⚠️ Injects prefix summary |
@@ -305,17 +310,18 @@
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **0. Raw Baseline (No Layers)** | 8,500 tokens | --- | **---** | **0.0%** | **80/100** | **--- (Raw)** | **80.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 8,500 tokens | 0 | **0.0%** | **-0.0%** | **95/100** | **+15 pts** | **95.0** |
-| **+ L0: Code Topology [Graphify] 🏆** | 1,500 tokens | Saved 7,000 | **-82.4%** | **-82.4%** | **95/100** | **+0 pts** | **173.2** |
-| **+ L1: Ponytail [Ponytail] ** | 1,250 tokens | Saved 250 | **-16.7%** | **-85.3%** | **95/100** | **+0 pts** | **176.0** |
-| **+ L2: Caveman [Caveman] 🏆** | 650 tokens | Saved 600 | **-48.0%** | **-92.4%** | **95/100** | **+0 pts** | **182.7** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 270 tokens | Saved 380 | **-58.5%** | **-96.8%** | **95/100** | **+0 pts** | **187.0** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 270 tokens | 0 | **0.0%** | **-96.8%** | **95/100** | **+0 pts** | **187.0** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 305 tokens | +35 (Overhead) | **+13.0%** | **-96.4%** | **100/100** | **+5 pts** | **196.4** |
-| **+ L6: Autonomous Distill [OpenViking] 🏆** | 330 tokens | +25 (Overhead) | **+8.2%** | **-96.1%** | **100/100** | **+0 pts** | **196.1** |
-| **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 280 tokens | Saved 50 | **-15.2%** | **-96.7%** | **100/100** | **+0 pts** | **196.7** |
-| **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 280 tokens | 0 | **0.0%** | **-96.7%** | **100/100** | **+0 pts** | **196.7** |
-| **+ L9: CoT Governor [CoT Budget Governor] 🏆** | 250 tokens | Saved 30 | **-10.7%** | **-97.1%** | **100/100** | **+0 pts** | **197.1** |
-| **+ L10: Model Router [Model Cascading Router] 🏆** | 250 tokens | 0 | **0.0%** | **-97.1%** | **100/100** | **+0 pts** | **197.1** |
+| **+ L0: Code Topology [Graphify] 🏆** | 7,300 tokens | Saved 1,200 | **-14.1%** | **-14.1%** | **95/100** | **+0 pts** | **108.4** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 1,300 tokens | Saved 6,000 | **-82.2%** | **-84.7%** | **100/100** | **+5 pts** | **184.7** |
+| **+ L1: Ponytail [Ponytail] ** | 1,150 tokens | Saved 150 | **-11.5%** | **-86.5%** | **100/100** | **+0 pts** | **186.5** |
+| **+ L2: Caveman [Caveman] 🏆** | 750 tokens | Saved 400 | **-34.8%** | **-91.2%** | **100/100** | **+0 pts** | **191.2** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 370 tokens | Saved 380 | **-50.7%** | **-95.6%** | **100/100** | **+0 pts** | **195.6** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 370 tokens | 0 | **0.0%** | **-95.6%** | **100/100** | **+0 pts** | **195.6** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 405 tokens | +35 (Overhead) | **+9.5%** | **-95.2%** | **100/100** | **+0 pts** | **195.2** |
+| **+ L6: Autonomous Distill [OpenViking] 🏆** | 430 tokens | +25 (Overhead) | **+6.2%** | **-94.9%** | **100/100** | **+0 pts** | **194.9** |
+| **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 380 tokens | Saved 50 | **-11.6%** | **-95.5%** | **100/100** | **+0 pts** | **195.5** |
+| **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 380 tokens | 0 | **0.0%** | **-95.5%** | **100/100** | **+0 pts** | **195.5** |
+| **+ L9: CoT Governor [CoT Budget Governor] 🏆** | 350 tokens | Saved 30 | **-7.9%** | **-95.9%** | **100/100** | **+0 pts** | **195.9** |
+| **+ L10: Model Router [Model Cascading Router] 🏆** | 350 tokens | 0 | **0.0%** | **-95.9%** | **100/100** | **+0 pts** | **195.9** |
 
 ### 3️⃣ Table 3: Dual Rubric Evaluation
 
@@ -330,7 +336,7 @@
 
 > **💡 Quality Assessment:** *"Flawless strategy backtest code, filters 9,000 order execution lines, extracts Sharpe/Drawdown with 100% precision."*
 
-#### 📝 Agent Response Output (250 Tokens - -97.1% savings):
+#### 📝 Agent Response Output (350 Tokens - -95.9% savings):
 ```python
 import pandas as pd
 from backtesting import Backtest, Strategy
@@ -391,11 +397,12 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
 | **0. Raw Baseline (No Layers)** | 18,500 tokens | --- | **---** | **0.0%** | **80/100** | **--- (Raw)** | **80.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 18,500 tokens | 0 | **0.0%** | **-0.0%** | **95/100** | **+15 pts** | **95.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 14,300 tokens | Saved 4,200 | **-22.7%** | **-22.7%** | **95/100** | **+0 pts** | **116.6** |
-| **+ L1: Ponytail [Ponytail] ** | 13,950 tokens | Saved 350 | **-2.4%** | **-24.6%** | **95/100** | **+0 pts** | **118.4** |
-| **+ L2: Caveman [Caveman] 🏆** | 13,150 tokens | Saved 800 | **-5.7%** | **-28.9%** | **95/100** | **+0 pts** | **122.5** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 12,750 tokens | Saved 400 | **-3.0%** | **-31.1%** | **95/100** | **+0 pts** | **124.5** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 11,550 tokens | Saved 1,200 | **-9.4%** | **-37.6%** | **95/100** | **+0 pts** | **130.7** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 11,580 tokens | +30 (Overhead) | **+0.3%** | **-37.4%** | **100/100** | **+5 pts** | **137.4** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 14,300 tokens | 0 | **0.0%** | **-22.7%** | **100/100** | **+5 pts** | **122.7** |
+| **+ L1: Ponytail [Ponytail] ** | 13,950 tokens | Saved 350 | **-2.4%** | **-24.6%** | **100/100** | **+0 pts** | **124.6** |
+| **+ L2: Caveman [Caveman] 🏆** | 13,150 tokens | Saved 800 | **-5.7%** | **-28.9%** | **100/100** | **+0 pts** | **128.9** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 12,750 tokens | Saved 400 | **-3.0%** | **-31.1%** | **100/100** | **+0 pts** | **131.1** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 11,550 tokens | Saved 1,200 | **-9.4%** | **-37.6%** | **100/100** | **+0 pts** | **137.6** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 11,580 tokens | +30 (Overhead) | **+0.3%** | **-37.4%** | **100/100** | **+0 pts** | **137.4** |
 | **+ L6: Autonomous Distill [OpenViking] 🏆** | 11,600 tokens | +20 (Overhead) | **+0.2%** | **-37.3%** | **100/100** | **+0 pts** | **137.3** |
 | **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 800 tokens | Saved 10,800 | **-93.1%** | **-95.7%** | **100/100** | **+0 pts** | **195.7** |
 | **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 800 tokens | 0 | **0.0%** | **-95.7%** | **100/100** | **+0 pts** | **195.7** |
@@ -445,11 +452,12 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
 | **0. Raw Baseline (No Layers)** | 12,500 tokens | --- | **---** | **0.0%** | **80/100** | **--- (Raw)** | **80.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 12,500 tokens | 0 | **0.0%** | **-0.0%** | **95/100** | **+15 pts** | **95.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 11,000 tokens | Saved 1,500 | **-12.0%** | **-12.0%** | **95/100** | **+0 pts** | **106.4** |
-| **+ L1: Ponytail [Ponytail] ** | 10,800 tokens | Saved 200 | **-1.8%** | **-13.6%** | **95/100** | **+0 pts** | **107.9** |
-| **+ L2: Caveman [Caveman] 🏆** | 10,400 tokens | Saved 400 | **-3.7%** | **-16.8%** | **95/100** | **+0 pts** | **111.0** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 9,800 tokens | Saved 600 | **-5.8%** | **-21.6%** | **95/100** | **+0 pts** | **115.5** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 9,800 tokens | 0 | **0.0%** | **-21.6%** | **95/100** | **+0 pts** | **115.5** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 9,825 tokens | +25 (Overhead) | **+0.3%** | **-21.4%** | **100/100** | **+5 pts** | **121.4** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 11,000 tokens | 0 | **0.0%** | **-12.0%** | **100/100** | **+5 pts** | **112.0** |
+| **+ L1: Ponytail [Ponytail] ** | 10,800 tokens | Saved 200 | **-1.8%** | **-13.6%** | **100/100** | **+0 pts** | **113.6** |
+| **+ L2: Caveman [Caveman] 🏆** | 10,400 tokens | Saved 400 | **-3.7%** | **-16.8%** | **100/100** | **+0 pts** | **116.8** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 9,800 tokens | Saved 600 | **-5.8%** | **-21.6%** | **100/100** | **+0 pts** | **121.6** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 9,800 tokens | 0 | **0.0%** | **-21.6%** | **100/100** | **+0 pts** | **121.6** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 9,825 tokens | +25 (Overhead) | **+0.3%** | **-21.4%** | **100/100** | **+0 pts** | **121.4** |
 | **+ L6: Autonomous Distill [OpenViking] 🏆** | 9,845 tokens | +20 (Overhead) | **+0.2%** | **-21.2%** | **100/100** | **+0 pts** | **121.2** |
 | **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 9,045 tokens | Saved 800 | **-8.1%** | **-27.6%** | **100/100** | **+0 pts** | **127.6** |
 | **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 445 tokens | Saved 8,600 | **-95.1%** | **-96.4%** | **100/100** | **+0 pts** | **196.4** |
@@ -498,6 +506,7 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
 | **0. Raw Baseline (No Layers)** | 8,200 tokens | --- | **---** | **0.0%** | **85/100** | **--- (Raw)** | **85.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 8,200 tokens | 0 | **0.0%** | **-0.0%** | **100/100** | **+15 pts** | **100.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 7,800 tokens | Saved 400 | **-4.9%** | **-4.9%** | **100/100** | **+0 pts** | **104.9** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 7,800 tokens | 0 | **0.0%** | **-4.9%** | **100/100** | **+0 pts** | **104.9** |
 | **+ L1: Ponytail [Ponytail] ** | 7,750 tokens | Saved 50 | **-0.6%** | **-5.5%** | **100/100** | **+0 pts** | **105.5** |
 | **+ L2: Caveman [Caveman] 🏆** | 7,550 tokens | Saved 200 | **-2.6%** | **-7.9%** | **100/100** | **+0 pts** | **107.9** |
 | **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 7,550 tokens | 0 | **0.0%** | **-7.9%** | **100/100** | **+0 pts** | **107.9** |
@@ -555,6 +564,7 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
 | **0. Raw Baseline (No Layers)** | 9,000 tokens | --- | **---** | **0.0%** | **85/100** | **--- (Raw)** | **85.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 20 tokens | Saved 8,980 | **-99.8%** | **-99.8%** | **100/100** | **+15 pts** | **199.8** |
 | **+ L0: Code Topology [Graphify] 🏆** | 20 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 20 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
 | **+ L1: Ponytail [Ponytail] ** | 20 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
 | **+ L2: Caveman [Caveman] 🏆** | 20 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
 | **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 20 tokens | 0 | **0.0%** | **-99.8%** | **100/100** | **+0 pts** | **199.8** |
@@ -607,11 +617,12 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
 | **0. Raw Baseline (No Layers)** | 14,000 tokens | --- | **---** | **0.0%** | **80/100** | **--- (Raw)** | **80.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 14,000 tokens | 0 | **0.0%** | **-0.0%** | **95/100** | **+15 pts** | **95.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 10,000 tokens | Saved 4,000 | **-28.6%** | **-28.6%** | **95/100** | **+0 pts** | **122.1** |
-| **+ L1: Ponytail [Ponytail] ** | 9,400 tokens | Saved 600 | **-6.0%** | **-32.9%** | **95/100** | **+0 pts** | **126.2** |
-| **+ L2: Caveman [Caveman] 🏆** | 8,200 tokens | Saved 1,200 | **-12.8%** | **-41.4%** | **95/100** | **+0 pts** | **134.4** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 7,400 tokens | Saved 800 | **-9.8%** | **-47.1%** | **95/100** | **+0 pts** | **139.8** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **95/100** | **+0 pts** | **139.8** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **100/100** | **+5 pts** | **147.1** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 10,000 tokens | 0 | **0.0%** | **-28.6%** | **100/100** | **+5 pts** | **128.6** |
+| **+ L1: Ponytail [Ponytail] ** | 9,400 tokens | Saved 600 | **-6.0%** | **-32.9%** | **100/100** | **+0 pts** | **132.9** |
+| **+ L2: Caveman [Caveman] 🏆** | 8,200 tokens | Saved 1,200 | **-12.8%** | **-41.4%** | **100/100** | **+0 pts** | **141.4** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 7,400 tokens | Saved 800 | **-9.8%** | **-47.1%** | **100/100** | **+0 pts** | **147.1** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **100/100** | **+0 pts** | **147.1** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **100/100** | **+0 pts** | **147.1** |
 | **+ L6: Autonomous Distill [OpenViking] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **100/100** | **+0 pts** | **147.1** |
 | **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 6,400 tokens | Saved 1,000 | **-13.5%** | **-54.3%** | **100/100** | **+0 pts** | **154.3** |
 | **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 6,400 tokens | 0 | **0.0%** | **-54.3%** | **100/100** | **+0 pts** | **154.3** |
@@ -719,18 +730,18 @@ feat(auth): migrate session auth to stateless JWT Bearer token format
 
 ### 📌 Ablation Matrix - Scenario 5: Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data
 
-> **Public Source:** [kernc/backtesting.py](https://github.com/kernc/backtesting.py) | **Raw Tokens:** 8,500 tokens | **Dominant Layer:** **L0: Graphify (-82.4%) & L3: RTK (-56.7%) & L2: Caveman (-68.0%)**
+> **Public Source:** [kernc/backtesting.py](https://github.com/kernc/backtesting.py) | **Raw Tokens:** 8,500 tokens | **Dominant Layer:** **L1.5: Data Lens (-98.2%) & L0: Graphify (-82.4%)**
 
 | Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **★ FULL 7-LAYER STACK (All Layers ON)** | **250** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
-| **❌ Without L0: Graphify (No AST Pruning)** | **7,250** | **-14.7%** | **100/100** | **+20 pts** | **114.7 🏆** | **+7,000 tok** | *⚠️ Context bloat of +7,000 tokens* |
-| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **500** | **-94.1%** | **100/100** | **+20 pts** | **194.1 🏆** | **+250 tok** | *⚠️ Context bloat of +250 tokens* |
-| **❌ Without L2: Caveman (No Git Patch Diff)** | **850** | **-90.0%** | **100/100** | **+20 pts** | **190.0 🏆** | **+600 tok** | *⚠️ Context bloat of +600 tokens* |
-| **❌ Without L3: RTK (No Test Log Filter)** | **630** | **-92.6%** | **100/100** | **+20 pts** | **192.6 🏆** | **+380 tok** | *⚠️ Context bloat of +380 tokens* |
-| **❌ Without L4: Headroom (No Prompt Cache)** | **250** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
-| **❌ Without L5: MemoraX (No Memory Recall)** | **215** | **-97.5%** | **100/100** | **+20 pts** | **197.5 🏆** | **0 tok** | *Minimal impact on this scenario* |
-| **❌ Without L6: OpenViking (No Distillation)** | **225** | **-97.4%** | **100/100** | **+20 pts** | **197.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **★ FULL 7-LAYER STACK (All Layers ON)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L0: Graphify (No AST Pruning)** | **1,550** | **-81.8%** | **100/100** | **+20 pts** | **181.8 🏆** | **+1,200 tok** | *⚠️ Context bloat of +1,200 tokens* |
+| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **500** | **-94.1%** | **100/100** | **+20 pts** | **194.1 🏆** | **+150 tok** | *⚠️ Context bloat of +150 tokens* |
+| **❌ Without L2: Caveman (No Git Patch Diff)** | **750** | **-91.2%** | **100/100** | **+20 pts** | **191.2 🏆** | **+400 tok** | *⚠️ Context bloat of +400 tokens* |
+| **❌ Without L3: RTK (No Test Log Filter)** | **730** | **-91.4%** | **100/100** | **+20 pts** | **191.4 🏆** | **+380 tok** | *⚠️ Context bloat of +380 tokens* |
+| **❌ Without L4: Headroom (No Prompt Cache)** | **350** | **-95.9%** | **100/100** | **+20 pts** | **195.9 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: MemoraX (No Memory Recall)** | **315** | **-96.3%** | **100/100** | **+20 pts** | **196.3 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: OpenViking (No Distillation)** | **325** | **-96.2%** | **100/100** | **+20 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
 
 ---
 
@@ -823,11 +834,11 @@ feat(auth): migrate session auth to stateless JWT Bearer token format
 
 | Ablation Configuration | Tokens Remaining | Overall Savings % | Answer Quality | QA Delta | CEI Index | System Token Penalty | Empirical Finding |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **★ FULL 7-LAYER STACK (All Layers ON)** | **2,268** | **-97.5%** | **100/100** | **+20 pts** | **197.4 🏆** | **0 (Optimal)** | *Optimal baseline reference* |
-| **❌ Without L0: Graphify (No AST Pruning)** | **28,052** | **-69.4%** | **100/100** | **+20 pts** | **163.2 🏆** | **+25,784 tok** | *Fails to prune 95% of irrelevant source files* |
-| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **4,418** | **-95.2%** | **100/100** | **+20 pts** | **195.0 🏆** | **+2,150 tok** | *Permits repetitive boilerplate & code debt* |
-| **❌ Without L2: Caveman (No Git Patch Diff)** | **6,298** | **-93.1%** | **100/100** | **+20 pts** | **192.9 🏆** | **+4,030 tok** | *Outputs verbose full-file rewrites* |
-| **❌ Without L3: RTK (No Test Log Filter)** | **4,623** | **-95.0%** | **100/100** | **+20 pts** | **195.2 🏆** | **+2,355 tok** | *Leaves verbose test & execution noise in context* |
-| **❌ Without L4: Headroom (No Prompt Cache)** | **8,493** | **-90.7%** | **100/100** | **+20 pts** | **188.7 🏆** | **+6,225 tok** | *Loses 90% prompt cache breakpoints on long history* |
-| **❌ Without L5: MemoraX (No Memory Recall)** | **4,333** | **-95.3%** | **100/100** | **+20 pts** | **194.0 🏆** | **+2,065 tok** | *Fails instant recall for cross-session architecture* |
-| **❌ Without L6: OpenViking (No Distillation)** | **4,758** | **-94.8%** | **100/100** | **+20 pts** | **192.6 🏆** | **+2,490 tok** | *Loses 8-turn multi-round debug condensation* |
+| **★ FULL 7-LAYER STACK (All Layers ON)** | **2,368** | **-97.4%** | **100/100** | **+20 pts** | **197.2 🏆** | **0 (Optimal)** | *Optimal baseline reference* |
+| **❌ Without L0: Graphify (No AST Pruning)** | **22,352** | **-75.6%** | **100/100** | **+20 pts** | **169.9 🏆** | **+19,984 tok** | *Fails to prune 95% of irrelevant source files* |
+| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **4,418** | **-95.2%** | **100/100** | **+20 pts** | **195.0 🏆** | **+2,050 tok** | *Permits repetitive boilerplate & code debt* |
+| **❌ Without L2: Caveman (No Git Patch Diff)** | **6,198** | **-93.2%** | **100/100** | **+20 pts** | **193.0 🏆** | **+3,830 tok** | *Outputs verbose full-file rewrites* |
+| **❌ Without L3: RTK (No Test Log Filter)** | **4,723** | **-94.8%** | **100/100** | **+20 pts** | **195.1 🏆** | **+2,355 tok** | *Leaves verbose test & execution noise in context* |
+| **❌ Without L4: Headroom (No Prompt Cache)** | **8,593** | **-90.6%** | **100/100** | **+20 pts** | **188.6 🏆** | **+6,225 tok** | *Loses 90% prompt cache breakpoints on long history* |
+| **❌ Without L5: MemoraX (No Memory Recall)** | **4,433** | **-95.2%** | **100/100** | **+20 pts** | **193.9 🏆** | **+2,065 tok** | *Fails instant recall for cross-session architecture* |
+| **❌ Without L6: OpenViking (No Distillation)** | **4,858** | **-94.7%** | **100/100** | **+20 pts** | **192.5 🏆** | **+2,490 tok** | *Loses 8-turn multi-round debug condensation* |

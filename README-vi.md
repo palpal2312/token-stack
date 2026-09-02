@@ -1,11 +1,11 @@
 # token-stack
 
-Động cơ **Tối ưu hóa Token & Quản lý Ngữ cảnh Master 12 Tầng Hoàn Chỉnh** cho các công cụ AI Coding CLI (OpenAI Codex CLI, Claude Code, Cursor, Kimi, Antigravity).
+Động cơ **Tối ưu hóa Token & Quản lý Ngữ cảnh Master 13 Tầng Hoàn Chỉnh** cho các công cụ AI Coding CLI (OpenAI Codex CLI, Claude Code, Cursor, Kimi, Antigravity).
 
-[![Trạng Thái Benchmark](https://img.shields.io/badge/Benchmark-Gi%E1%BA%A3m%2097.1%25%20Tokens-brightgreen)](token-stack-benchmark-report.md)
+[![Trạng Thái Benchmark](https://img.shields.io/badge/Benchmark-Gi%E1%BA%A3m%2097.4%25%20Tokens-brightgreen)](token-stack-benchmark-report.md)
 [![Giấy Phép: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![English Docs](https://img.shields.io/badge/Docs-%F0%9F%87%AC%F0%9F%87%A7%20English%20Docs-blue)](README.md)
-[![Nghiên Cứu Trường Hợp](https://img.shields.io/badge/Case%20Studies-5%20T%C3%ACnh%20Hu%E1%BB%91ng%20Th%E1%BB%B1c%20T%E1%BA%BF-purple)](docs/examples/real-world-github-cases.md)
+[![Nghiên Cứu Trường Hợp](https://img.shields.io/badge/Case%20Studies-6%20T%C3%ACnh%20Hu%E1%BB%91ng%20Th%E1%BB%B1c%20T%E1%BA%BF-purple)](docs/examples/real-world-github-cases.md)
 
 ---
 
@@ -15,15 +15,16 @@
 
 ---
 
-## 🏗️ Sơ Đồ Kiến Trúc 12 Tầng Master
+## 🏗️ Sơ Đồ Kiến Trúc 13 Tầng Master
 
 ```text
 +-------------------------------------------------------------------------------------------------------------+
-|                                        THE 12-LAYER MASTER CONTEXT STACK                                    |
+|                                        THE 13-LAYER MASTER CONTEXT STACK                                    |
 +-------------------------------------------------------------------------------------------------------------+
 |  ⚡ [Tầng -1: Semantic Cache]     -> SQLite-VSS N-Gram Vector Cache (0 tokens, <12ms cho câu hỏi lặp)        |
 |  🎯 [Tầng 0: Model Router]        -> RouteLLM / Frugal Cascader (Chuyển việc dễ sang model rẻ, giảm 85% $)  |
 |  📍 [Tầng 1: Code Topology]       -> GRAPHIFY / AIDER REPO-MAP (Cấu trúc AST, tìm kiếm 0 token)             |
+|  📊 [Tầng 1.5: Data & Quant Lens] -> ZERO-ROW DATA LENS (DuckDB / QSV Data Contracts & Quant Tear-Sheets)   |
 |  ✍️  [Tầng 2: Code Reduction]      -> PONYTAIL (KISS, YAGNI, thư viện chuẩn, triệt tiêu boilerplate)          |
 |  💬 [Tầng 3: Word Reduction]      -> CAVEMAN (Phản hồi kỹ thuật súc tích, sinh Git patch diff, không thừa)   |
 |  ⚡ [Tầng 4: CLI Output Filter]    -> RTK - Rust Token Killer (Lọc 60-90% log rác git/build/test)             |

@@ -40,22 +40,24 @@ if (-not $RepoRoot) {
 
 function Show-Help {
     Write-Host @"
-Token-Stack 3.0 CLI - 12-Layer Master Token & Context Engine
+Token-Stack 3.1 CLI - 13-Layer Master Token & Context Engine
 
 Usage:
   token-stack <command> [arguments]
 
 Commands:
   status                   Display live table of all profiles, ports, upstream & health
-  doctor                   Run full 12-layer health inspection and diagnostic probes
+  doctor                   Run full 13-layer health inspection and diagnostic probes
   up [<name>|--all]        Start Headroom proxy daemon for profile(s)
   down [<name>|--all]      Stop Headroom proxy daemon for profile(s)
   profile list             List registered agent profiles
   profile add <name>       Register a new profile (auto-allocates free port and DB path)
   profile remove <name>    Unregister an existing profile
   verify [<name>]          Run automated 3-stage E2E validation pipeline
-  test                     Run all unit & integration tests across the 5 new layers
-  bench [args]             Launch interactive 12-layer Benchmark TUI
+  test                     Run all unit & integration tests across the modular layers
+  bench [args]             Launch interactive 13-layer Benchmark TUI
+  data profile <file>      Profile CSV/TSV into a compact Data Contract (<100 tokens)
+  quant tearsheet <file>   Collapse thousands of trade log lines into Quant Tear-Sheet
   help                     Show this help message
 "@
 }
@@ -269,6 +271,30 @@ function Invoke-Bench {
     & node $tuiPath @SubArgs
 }
 
+function Invoke-Data {
+    param([string[]]$SubArgs)
+    $targetFile = $SubArgs | Select-Object -Last 1
+    if (-not $targetFile -or -not (Test-Path -LiteralPath $targetFile)) {
+        Write-Host "Usage: token-stack data profile <file.csv|file.tsv>" -ForegroundColor Yellow
+        return
+    }
+    $lensScript = Join-Path $RepoRoot "core\data-lens.cjs"
+    $nodeCode = "const { DataLens } = require('$($lensScript.Replace('\', '/'))'); const lens = new DataLens(); console.log(lens.profileData('$($targetFile.Replace('\', '/'))'));"
+    & node -e $nodeCode
+}
+
+function Invoke-Quant {
+    param([string[]]$SubArgs)
+    $targetFile = $SubArgs | Select-Object -Last 1
+    if (-not $targetFile -or -not (Test-Path -LiteralPath $targetFile)) {
+        Write-Host "Usage: token-stack quant tearsheet <file.log>" -ForegroundColor Yellow
+        return
+    }
+    $lensScript = Join-Path $RepoRoot "core\data-lens.cjs"
+    $nodeCode = "const fs = require('fs'); const { DataLens } = require('$($lensScript.Replace('\', '/'))'); const lens = new DataLens(); console.log(lens.collapseTearSheet(fs.readFileSync('$($targetFile.Replace('\', '/'))', 'utf-8')));"
+    & node -e $nodeCode
+}
+
 # Router
 switch ($Command.ToLower()) {
     "status"   { Invoke-Status }
@@ -279,6 +305,8 @@ switch ($Command.ToLower()) {
     "verify"   { Invoke-Verify -Target ($CommandArgs -join " ") }
     "test"     { Invoke-Test }
     "bench"    { Invoke-Bench -SubArgs $CommandArgs }
+    "data"     { Invoke-Data -SubArgs $CommandArgs }
+    "quant"    { Invoke-Quant -SubArgs $CommandArgs }
     "help"     { Show-Help }
     "--help"   { Show-Help }
     "-h"       { Show-Help }

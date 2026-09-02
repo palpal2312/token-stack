@@ -66,6 +66,15 @@ const AVAILABLE_LAYERS = [
     ]
   },
   {
+    id: 'l_datalens',
+    key: 'L1.5: Data Lens',
+    active: true,
+    engineIndex: 0,
+    engines: [
+      { id: 'duckdb_lens', name: 'Zero-Row Data Lens', label: 'DuckDB & QSV Financial Contract Profiler', ratio: 0.015, qualityBonus: 20, star: '🏆', desc: 'Converts 50MB CSV/Parquet into 80-token Data Contract & Backtest Tear-Sheet' }
+    ]
+  },
+  {
     id: 'l1',
     key: 'L1: Ponytail',
     active: true,
@@ -404,13 +413,14 @@ const ALL_QUESTIONS = [
       datasetType: 'OHLCV Historical 1h Candles CSV + backtesting.py engine',
       rawTokens: 8500
     },
-    dominantLayer: 'L0: Graphify (-82.4%) & L3: RTK (-56.7%) & L2: Caveman (-68.0%)',
+    dominantLayer: 'L1.5: Data Lens (-98.2%) & L0: Graphify (-82.4%)',
     baselineQualityScore: 80,
     baseDeltas: {
       l_semcache: 0,
-      l0: -7000,
-      l1: -250,
-      l2: -600,
+      l0: -1200,
+      l_datalens: -6000,
+      l1: -150,
+      l2: -400,
       l3: -380,
       l4: 0,
       l5: 35,
@@ -422,10 +432,11 @@ const ALL_QUESTIONS = [
     },
     isolatedScores: {
       raw: { tok: 8500, pct: '0.0%', quality: 80, deltaQuality: '0 pts (Raw)', isOverhead: false, note: 'Raw baseline' },
-      l0: { tok: 1500, pct: '-82.4%', quality: 90, deltaQuality: '+10 pts', isOverhead: false, note: '★ DOMINANT (Extracts Strategy AST)' },
+      l_datalens: { tok: 150, pct: '-98.2%', quality: 100, deltaQuality: '+20 pts', isOverhead: false, note: '★ DOMINANT (Generates Data Contract & Tear-Sheet)' },
+      l0: { tok: 1500, pct: '-82.4%', quality: 90, deltaQuality: '+10 pts', isOverhead: false, note: 'Extracts Strategy AST' },
       l1: { tok: 7100, pct: '-16.5%', quality: 80, deltaQuality: '0 pts', isOverhead: false, note: 'Eliminates boilerplate' },
-      l2: { tok: 2720, pct: '-68.0%', quality: 100, deltaQuality: '+20 pts', isOverhead: false, note: '★ DOMINANT (Outputs concise stats)' },
-      l3: { tok: 3680, pct: '-56.7%', quality: 100, deltaQuality: '+20 pts', isOverhead: false, note: '★ DOMINANT (Filters 9,000 order logs)' },
+      l2: { tok: 2720, pct: '-68.0%', quality: 100, deltaQuality: '+20 pts', isOverhead: false, note: 'Outputs concise stats' },
+      l3: { tok: 3680, pct: '-56.7%', quality: 100, deltaQuality: '+20 pts', isOverhead: false, note: 'Filters order logs' },
       l4: { tok: 8500, pct: '0.0%', quality: 80, deltaQuality: '0 pts', isOverhead: false, note: 'Neutral' },
       l5: { tok: 8535, pct: '+0.4%', quality: 100, deltaQuality: '+20 pts', isOverhead: true, note: '⚠️ Injects memory slot' },
       l6: { tok: 8525, pct: '+0.3%', quality: 100, deltaQuality: '+20 pts', isOverhead: true, note: '⚠️ Injects prefix summary' }
@@ -760,9 +771,9 @@ function computeCumulativeSequence(question, layers) {
 
   layers.forEach(layer => {
     const selectedEngine = layer.engines[layer.engineIndex] || layer.engines[0];
-    const baseDelta = question.baseDeltas[layer.id];
+    const baseDelta = question.baseDeltas[layer.id] !== undefined ? question.baseDeltas[layer.id] : 0;
 
-    if (!layer.active || baseDelta === undefined) {
+    if (!layer.active) {
       // Layer is DISABLED
       const cumPct = (((rawTokens - currentTokens) / rawTokens) * 100);
       const cei = currentQuality * (1 + Math.max(0, cumPct) / 100);

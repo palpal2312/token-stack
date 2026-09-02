@@ -10,10 +10,11 @@
 | Optimization Layer | Tokens Remaining | Token Usage Delta (%) | Answer Quality | QA Quality Delta | CEI Efficiency Index | Notes |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Raw Baseline (No Layers)** | 8,500 tokens | **0.0%** | **80/100** | **0 pts (Raw)** | **80.0** | Raw baseline |
-| **L0: Code Topology** | 1,500 tokens | **-82.4%** | **90/100** | **+10 pts** | **164.1** | ★ DOMINANT (Extracts Strategy AST) |
+| **L1.5: Data Lens** | 150 tokens | **-98.2%** | **100/100** | **+20 pts** | **198.2** | ★ DOMINANT (Generates Data Contract & Tear-Sheet) |
+| **L0: Code Topology** | 1,500 tokens | **-82.4%** | **90/100** | **+10 pts** | **164.1** | Extracts Strategy AST |
 | **L1: Ponytail** | 7,100 tokens | **-16.5%** | **80/100** | **0 pts** | **93.2** | Eliminates boilerplate |
-| **L2: Caveman** | 2,720 tokens | **-68.0%** | **100/100** | **+20 pts** | **168.0** | ★ DOMINANT (Outputs concise stats) |
-| **L3: RTK** | 3,680 tokens | **-56.7%** | **100/100** | **+20 pts** | **156.7** | ★ DOMINANT (Filters 9,000 order logs) |
+| **L2: Caveman** | 2,720 tokens | **-68.0%** | **100/100** | **+20 pts** | **168.0** | Outputs concise stats |
+| **L3: RTK** | 3,680 tokens | **-56.7%** | **100/100** | **+20 pts** | **156.7** | Filters order logs |
 | **L4: Headroom** | 8,500 tokens | **0.0%** | **80/100** | **0 pts** | **80.0** | Neutral |
 | **L5: Knowledge Memory** | 8,535 tokens | **+0.4%** | **100/100** | **+20 pts** | **100.0** | ⚠️ Injects memory slot |
 | **L6: Autonomous Distill** | 8,525 tokens | **+0.3%** | **100/100** | **+20 pts** | **100.0** | ⚠️ Injects prefix summary |
@@ -26,17 +27,18 @@
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **0. Raw Baseline (No Layers)** | 8,500 tokens | --- | **---** | **0.0%** | **80/100** | **--- (Raw)** | **80.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 8,500 tokens | 0 | **0.0%** | **-0.0%** | **95/100** | **+15 pts** | **95.0** |
-| **+ L0: Code Topology [Graphify] 🏆** | 1,500 tokens | Saved 7,000 | **-82.4%** | **-82.4%** | **95/100** | **+0 pts** | **173.2** |
-| **+ L1: Ponytail [Ponytail] ** | 1,250 tokens | Saved 250 | **-16.7%** | **-85.3%** | **95/100** | **+0 pts** | **176.0** |
-| **+ L2: Caveman [Caveman] 🏆** | 650 tokens | Saved 600 | **-48.0%** | **-92.4%** | **95/100** | **+0 pts** | **182.7** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 270 tokens | Saved 380 | **-58.5%** | **-96.8%** | **95/100** | **+0 pts** | **187.0** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 270 tokens | 0 | **0.0%** | **-96.8%** | **95/100** | **+0 pts** | **187.0** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 305 tokens | +35 (Overhead) | **+13.0%** | **-96.4%** | **100/100** | **+5 pts** | **196.4** |
-| **+ L6: Autonomous Distill [OpenViking] 🏆** | 330 tokens | +25 (Overhead) | **+8.2%** | **-96.1%** | **100/100** | **+0 pts** | **196.1** |
-| **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 280 tokens | Saved 50 | **-15.2%** | **-96.7%** | **100/100** | **+0 pts** | **196.7** |
-| **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 280 tokens | 0 | **0.0%** | **-96.7%** | **100/100** | **+0 pts** | **196.7** |
-| **+ L9: CoT Governor [CoT Budget Governor] 🏆** | 250 tokens | Saved 30 | **-10.7%** | **-97.1%** | **100/100** | **+0 pts** | **197.1** |
-| **+ L10: Model Router [Model Cascading Router] 🏆** | 250 tokens | 0 | **0.0%** | **-97.1%** | **100/100** | **+0 pts** | **197.1** |
+| **+ L0: Code Topology [Graphify] 🏆** | 7,300 tokens | Saved 1,200 | **-14.1%** | **-14.1%** | **95/100** | **+0 pts** | **108.4** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 1,300 tokens | Saved 6,000 | **-82.2%** | **-84.7%** | **100/100** | **+5 pts** | **184.7** |
+| **+ L1: Ponytail [Ponytail] ** | 1,150 tokens | Saved 150 | **-11.5%** | **-86.5%** | **100/100** | **+0 pts** | **186.5** |
+| **+ L2: Caveman [Caveman] 🏆** | 750 tokens | Saved 400 | **-34.8%** | **-91.2%** | **100/100** | **+0 pts** | **191.2** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 370 tokens | Saved 380 | **-50.7%** | **-95.6%** | **100/100** | **+0 pts** | **195.6** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 370 tokens | 0 | **0.0%** | **-95.6%** | **100/100** | **+0 pts** | **195.6** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 405 tokens | +35 (Overhead) | **+9.5%** | **-95.2%** | **100/100** | **+0 pts** | **195.2** |
+| **+ L6: Autonomous Distill [OpenViking] 🏆** | 430 tokens | +25 (Overhead) | **+6.2%** | **-94.9%** | **100/100** | **+0 pts** | **194.9** |
+| **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 380 tokens | Saved 50 | **-11.6%** | **-95.5%** | **100/100** | **+0 pts** | **195.5** |
+| **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 380 tokens | 0 | **0.0%** | **-95.5%** | **100/100** | **+0 pts** | **195.5** |
+| **+ L9: CoT Governor [CoT Budget Governor] 🏆** | 350 tokens | Saved 30 | **-7.9%** | **-95.9%** | **100/100** | **+0 pts** | **195.9** |
+| **+ L10: Model Router [Model Cascading Router] 🏆** | 350 tokens | 0 | **0.0%** | **-95.9%** | **100/100** | **+0 pts** | **195.9** |
 
 ---
 
@@ -51,5 +53,5 @@
 | **Bonus** | Grid Optimization: Implements bt.optimize(maximize="Sharpe Ratio") | +10 pts | **🌟 BONUS PASSED** |
 | **Bonus** | Recommends Lookahead Bias & Overfitting safeguards on in-sample backtest data | +10 pts | **🌟 BONUS PASSED** |
 
-> **💡 Total Quality Score:** **100/100 pts** (CEI Index: **197.1 🏆**)
+> **💡 Total Quality Score:** **100/100 pts** (CEI Index: **195.9 🏆**)
 > **Assessment:** *"Flawless strategy backtest code, filters 9,000 order execution lines, extracts Sharpe/Drawdown with 100% precision."*

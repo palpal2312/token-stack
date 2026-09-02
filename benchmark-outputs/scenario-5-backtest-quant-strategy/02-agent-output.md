@@ -2,7 +2,7 @@
 
 > **Scenario #5:** Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data  
 > **Raw Context Tokens:** 8,500 tokens  
-> **Compressed Tokens:** **250 tokens (-97.1% savings)**  
+> **Compressed Tokens:** **350 tokens (-95.9% savings)**  
 > **Answer Quality Score:** **100/100 pts**
 
 ```python

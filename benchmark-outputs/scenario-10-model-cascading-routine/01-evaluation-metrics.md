@@ -21,11 +21,12 @@
 | **0. Raw Baseline (No Layers)** | 14,000 tokens | --- | **---** | **0.0%** | **80/100** | **--- (Raw)** | **80.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 14,000 tokens | 0 | **0.0%** | **-0.0%** | **95/100** | **+15 pts** | **95.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 10,000 tokens | Saved 4,000 | **-28.6%** | **-28.6%** | **95/100** | **+0 pts** | **122.1** |
-| **+ L1: Ponytail [Ponytail] ** | 9,400 tokens | Saved 600 | **-6.0%** | **-32.9%** | **95/100** | **+0 pts** | **126.2** |
-| **+ L2: Caveman [Caveman] 🏆** | 8,200 tokens | Saved 1,200 | **-12.8%** | **-41.4%** | **95/100** | **+0 pts** | **134.4** |
-| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 7,400 tokens | Saved 800 | **-9.8%** | **-47.1%** | **95/100** | **+0 pts** | **139.8** |
-| **+ L4: Headroom [Headroom Proxy] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **95/100** | **+0 pts** | **139.8** |
-| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **100/100** | **+5 pts** | **147.1** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 10,000 tokens | 0 | **0.0%** | **-28.6%** | **100/100** | **+5 pts** | **128.6** |
+| **+ L1: Ponytail [Ponytail] ** | 9,400 tokens | Saved 600 | **-6.0%** | **-32.9%** | **100/100** | **+0 pts** | **132.9** |
+| **+ L2: Caveman [Caveman] 🏆** | 8,200 tokens | Saved 1,200 | **-12.8%** | **-41.4%** | **100/100** | **+0 pts** | **141.4** |
+| **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 7,400 tokens | Saved 800 | **-9.8%** | **-47.1%** | **100/100** | **+0 pts** | **147.1** |
+| **+ L4: Headroom [Headroom Proxy] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **100/100** | **+0 pts** | **147.1** |
+| **+ L5: Knowledge Memory [MemoraX Code] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **100/100** | **+0 pts** | **147.1** |
 | **+ L6: Autonomous Distill [OpenViking] 🏆** | 7,400 tokens | 0 | **0.0%** | **-47.1%** | **100/100** | **+0 pts** | **147.1** |
 | **+ L7: Turn Folding [Dynamic Turn Folding] 🏆** | 6,400 tokens | Saved 1,000 | **-13.5%** | **-54.3%** | **100/100** | **+0 pts** | **154.3** |
 | **+ L8: Loop Breaker [Loop Breaker & Failover] 🏆** | 6,400 tokens | 0 | **0.0%** | **-54.3%** | **100/100** | **+0 pts** | **154.3** |

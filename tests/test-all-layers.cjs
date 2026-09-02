@@ -1,8 +1,8 @@
 /**
- * Token-Stack 3.0 Master Integration Test Runner
- * Executes all test suites for the 5 new orthogonal layers:
- * Layer -1 (Semantic Cache), Layer 0 (Model Router), Layer 6 (CoT Governor),
- * Layer 7 (Turn Folding), Layer 8 (Loop Breaker & Failover)
+ * Token-Stack 3.1 Master Integration Test Runner
+ * Executes all test suites for all modular layers:
+ * Layer -1 (Semantic Cache), Layer 0 (Model Router), Layer 1.5 (Data Lens),
+ * Layer 6 (CoT Governor), Layer 7 (Turn Folding), Layer 8 (Loop Breaker & Failover)
  */
 
 const { execSync } = require('child_process');
@@ -13,11 +13,12 @@ const suites = [
   'guardrail.test.cjs',
   'cot-governor.test.cjs',
   'semantic-cache.test.cjs',
-  'model-router.test.cjs'
+  'model-router.test.cjs',
+  'data-lens.test.cjs'
 ];
 
 console.log("===============================================================================");
-console.log("🚀 TOKEN-STACK 3.0: 12-LAYER MASTER INTEGRATION TEST RUNNER");
+console.log("🚀 TOKEN-STACK 3.1: 13-LAYER MASTER INTEGRATION TEST RUNNER");
 console.log("===============================================================================\n");
 
 let passed = 0;

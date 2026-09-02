@@ -27,6 +27,7 @@
 | **0. Raw Baseline (No Layers)** | 4,247 tokens | --- | **---** | **0.0%** | **90/100** | **--- (Raw)** | **90.0** |
 | **+ L-1: Semantic Cache [Zero-Token Semantic Cache] 🏆** | 4,247 tokens | 0 | **0.0%** | **-0.0%** | **100/100** | **+10 pts** | **100.0** |
 | **+ L0: Code Topology [Graphify] 🏆** | 363 tokens | Saved 3,884 | **-91.5%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
+| **+ L1.5: Data Lens [Zero-Row Data Lens] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
 | **+ L1: Ponytail [Ponytail] ** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
 | **+ L2: Caveman [Caveman] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
 | **+ L3: RTK [RTK (Rust Token Killer)] 🏆** | 363 tokens | 0 | **0.0%** | **-91.5%** | **100/100** | **+0 pts** | **191.5** |
