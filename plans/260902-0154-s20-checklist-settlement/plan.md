@@ -37,10 +37,10 @@ and implementation of the real gaps, then a standard close gate.
 
 ## Success criteria
 
-- [ ] Zero unchecked items without an evidence link or an explicit OPEN resolution.
-- [ ] OPEN gaps closed or explicitly marked owner-gated/external (Docker exec, production flips).
-- [ ] Suites/go/tsc/chains clean; controls `legacy_writer: disabled`, `phase_21: blocked`.
-- [ ] Independent arbiter GO; CLOSED_GO + journal; no release authority.
+- [x] Zero unchecked items without an evidence link or an explicit OPEN resolution.
+- [x] OPEN gaps closed or explicitly marked owner-gated/external (Docker exec, production flips).
+- [x] Suites/go/tsc/chains clean; controls `legacy_writer: disabled`, `phase_21: blocked`.
+- [x] Independent arbiter GO; CLOSED_GO + journal; no release authority.
 
 ## Ownership
 

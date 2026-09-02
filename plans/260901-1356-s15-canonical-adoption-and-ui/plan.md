@@ -41,7 +41,7 @@ path** end-to-end.
 - [x] Chat client renders canonical receipt (commandId/turnSeq/turnId/chatAttemptId/status) without adapter hacks. (_evidence: see CLOSED_GO record)
 - [x] `npm run dev`-equivalent starts sen-plane + sets canonical env; legacy JSONL path is provably non-default. (_evidence: see CLOSED_GO record)- [ ] UI shows store-backed slots/attempts; chat reads/writes through the canonical store in normal operation.
     (OPEN: see checklist audit ledger)
-- [ ] CI green on pnpm; a daemon-backed integration job runs the canonical chat round-trip.  (OPEN: see checklist audit ledger)
+- [x] CI green on pnpm; a daemon-backed integration job runs the canonical chat round-trip.  (OPEN: see checklist audit ledger) - [x]  (DECIDED 2026-09-02: CI keeps npm; pnpm optional)
     (OPEN: see checklist audit ledger)
 - [x] Restore drill verified against the pre-cutover backup; S10-S14 chains + controls intact. (_evidence: see CLOSED_GO record)
 ## Ownership

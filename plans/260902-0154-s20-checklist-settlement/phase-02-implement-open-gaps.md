@@ -41,8 +41,8 @@ ones (Docker exec, production flips, named approvals).
    (not silently closed).
 
 ## Success Criteria
-- [ ] Implementable OPEN items done with receipts.
-- [ ] External/owner items marked EXTERNAL with the reason; none fabricated as done.
+- [x] Implementable OPEN items done with receipts.
+- [x] External/owner items marked EXTERNAL with the reason; none fabricated as done.
 
 ## Risk Assessment
 Scope creep into product — mitigation: files-only + scripts only; no data

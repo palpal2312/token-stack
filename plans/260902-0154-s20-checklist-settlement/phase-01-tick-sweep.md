@@ -29,8 +29,8 @@ change.
 4. Update phase frontmatter status=completed where all its items settled.
 
 ## Success Criteria
-- [ ] No unchecked item without an evidence link or OPEN marker.
-- [ ] Phase statuses consistent.
+- [x] No unchecked item without an evidence link or OPEN marker.
+- [x] Phase statuses consistent.
 
 ## Risk Assessment
 Accidental over-tick — mitigation: only tick items the ledger classifies DONE,

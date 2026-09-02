@@ -22,8 +22,8 @@ without evidence/OPEN marker.
 2. Re-run the checklist scan: expect 0 `- [ ]` without marker.
 
 ## Success Criteria
-- [ ] All suites green; chains PASS; controls 0 enabled.
-- [ ] Checkbox ledger: 0 unresolved unmarked items.
+- [x] All suites green; chains PASS; controls 0 enabled.
+- [x] Checkbox ledger: 0 unresolved unmarked items.
 
 ## Risk Assessment
 Sweep typos — mitigation: diff review of phase-01 edits by the close-gate arbiter.

@@ -18,8 +18,8 @@ Standard independent-arbiter close for S20 settlement scope.
 2. GO -> CLOSED_GO record + journal events.
 
 ## Success Criteria
-- [ ] Arbiter GO; CLOSED_GO + journal appended.
-- [ ] `legacy_writer: disabled`, `phase_21: blocked`; no release authority.
+- [x] Arbiter GO; CLOSED_GO + journal appended.
+- [x] `legacy_writer: disabled`, `phase_21: blocked`; no release authority.
 
 ## Risk Assessment
 N/A (proven S10-S19 pattern).

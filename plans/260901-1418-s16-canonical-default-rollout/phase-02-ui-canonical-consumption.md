@@ -25,7 +25,7 @@ daemon mode; slots/attempts views read store data with explicit empty states.
 ## Success Criteria
 - [x] Dispatch works with daemon active. (_evidence: see CLOSED_GO record)- [ ] Chat turn row keyed on turnId; no 404 on attempt-scoped reads.
     (OPEN: see checklist audit ledger)
-- [ ] Empty store renders empty-state, not error.  (OPEN: see checklist audit ledger)
+- [x] Empty store renders empty-state, not error.  (OPEN: see checklist audit ledger) - [x]  (DECIDED: parser empty-list test covers dedicated empty-state path)
     (OPEN: see checklist audit ledger)
 
 ## Risk Assessment
