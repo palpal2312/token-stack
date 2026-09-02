@@ -1,6 +1,6 @@
 ---
 title: "NEWS OS plateau operations hardening and archive reconciliation"
-status: pending
+status: completed
 priority: P1
 effort: "3-5d plus owner decisions"
 blockedBy: []

@@ -21,3 +21,9 @@ made). This file is the archive index: each plan maps to its independent
 Every verdict was issued by a fresh-session independent arbiter on committed
 bytes. `legacy_writer: disabled` and `phase_21: blocked` were preserved
 throughout; no release/cutover/flip authority was exercised.
+
+## Legacy master plan (external, superseded)
+
+`C:\Users\ADMIN\Documents\Agent OS\plans\260804-0518-sen-news-os-implementation\`
+(24 phase, ~353 unchecked) — superseded by the SQLite/Orca reset; kept in place,
+not imported. Audit mapping done in `plans/reports/checklist-audit-260902-s10-s19.md`.
