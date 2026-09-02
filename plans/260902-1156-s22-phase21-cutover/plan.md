@@ -37,7 +37,7 @@ owner-recorded gate.
 |---|-------|--------|
 | 1 | Authority + preflight (owner approval ID, environment, budget, risk) | Completed |
 | 2 | Provisioning and canary (host, deploy, monitored SLO) | Completed |
-| 3 | Cutover + verify + rollback drill | Pending |
+| 3 | Cutover + verify + rollback drill | Completed |
 | 4 | Close gate: arbiter GO → CLOSED_GO → live enablement note + runbook | Pending |
 
 ## Success criteria
@@ -47,7 +47,9 @@ owner-recorded gate.
       Docker this machine; budget bounded local; guard holds; rehearsal PASS.
 - [x] Host healthz 200; canary write durable (readback canonical, survives
       container restart); receipt `plans/reports/s22-phase21-canary-production-260902.md`.
-- [ ] Cutover verified (write-verification), old surface inert, rollback drill PASS.
+- [x] Cutover verified (canonical write durable + readback); old surface inert
+      (501/501/410); rollback drill PASS (stop→true down→restore→data intact);
+      receipt `plans/reports/s22-phase21-cutover-verify-rollback-260902.md`.
 - [ ] Independent arbiter GO → `CLOSED_GO`; document `legacy_writer: enabled`
       (final writer authority) with rollback path; legacy/phase21 flags explicitly
       transitioned via the recorded gate only.
