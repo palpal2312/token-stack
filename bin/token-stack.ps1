@@ -248,6 +248,16 @@ function Invoke-Verify {
     }
 }
 
+function Invoke-Bench {
+    param([string[]]$SubArgs)
+    $tuiPath = Join-Path $RepoRoot "skills\token-stack-benchmark\scripts\benchmark-tui.cjs"
+    if (-not (Test-Path -LiteralPath $tuiPath)) {
+        Write-Error "Benchmark TUI script not found at $tuiPath"
+        return
+    }
+    & node $tuiPath @SubArgs
+}
+
 # Router
 switch ($Command.ToLower()) {
     "status"   { Invoke-Status }
@@ -256,6 +266,7 @@ switch ($Command.ToLower()) {
     "doctor"   { Invoke-Doctor }
     "profile"  { Invoke-Profile -SubArgs $CommandArgs }
     "verify"   { Invoke-Verify -Target ($CommandArgs -join " ") }
+    "bench"    { Invoke-Bench -SubArgs $CommandArgs }
     "help"     { Show-Help }
     "--help"   { Show-Help }
     "-h"       { Show-Help }
