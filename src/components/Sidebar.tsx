@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Brain, TrendingUp, Columns3, NotebookText, Film, Building2, Workflow, MessagesSquare, Image as ImageIcon, Gamepad2, Music2, Network, Clapperboard, Repeat, Cpu, LayoutDashboard, Palette, GripVertical, Eye, EyeOff, SlidersHorizontal, Check, SquareTerminal, Route, Scissors, FlaskConical, Swords, Bot, Plus, Boxes, Waypoints, CalendarClock, ChevronDown, Target } from "lucide-react";
+import { Brain, BookOpen, TrendingUp, Columns3, NotebookText, Film, Building2, Workflow, MessagesSquare, Image as ImageIcon, Gamepad2, Music2, Network, Clapperboard, Repeat, Cpu, LayoutDashboard, Palette, GripVertical, Eye, EyeOff, SlidersHorizontal, Check, SquareTerminal, Route, Scissors, FlaskConical, Swords, Bot, Plus, Boxes, Waypoints, CalendarClock, ChevronDown, Target } from "lucide-react";
 import { useState, useEffect, type ReactNode } from "react";
 import AgentAvatar from "./AgentAvatar";
 import {
@@ -54,6 +54,7 @@ const NAV: NavItem[] = [
   { href: "/routers",     label: "Router Config", icon: <Waypoints size={17} />,                     accent: "#2dd4bf", dim: "rgba(45,212,191,0.16)" },
   { href: "/integrations", label: "Integrations", icon: <Boxes size={16} />,                        accent: "#94a3b8", dim: "rgba(148,163,184,0.16)" },
   { href: "/goals",       label: "Goals & Workflows", icon: <Target size={16} />,                   accent: "#fbbf24", dim: "rgba(251,191,36,0.16)" },
+  { href: "/journal",     label: "Journal",     icon: <BookOpen size={16} />,                        accent: "#c084fc", dim: "rgba(192,132,252,0.16)" },
   { href: "/automations", label: "Automations", icon: <CalendarClock size={17} />,                   accent: "#fbbf24", dim: "rgba(251,191,36,0.16)" },
   { href: "/arena",       label: "Arena",       icon: <Swords size={17} />,                          accent: "#fb923c", dim: "rgba(251,146,60,0.16)" },
   // Personal
@@ -87,7 +88,7 @@ const LS_COLLAPSED = "agentos.sidebar.collapsed";
 // created agents + nested Agent Skins under "Agents"; everything else under "Apps".
 const WORKSPACE_ORDER = [
   "/sen", "/agent-kanban", "/code-space", "/memory", "/builders", "/routers",
-  "/integrations", "/goals", "/automations", "/loop",
+  "/integrations", "/goals", "/journal", "/automations", "/loop",
 ];
 const WORKSPACE_ROUTES = new Set([...WORKSPACE_ORDER, "/firstmate"]);
 const ORCHESTRATION_ROUTES = new Set(["/paperclip", "/room", "/pipeline", "/arena", "/dify"]);

@@ -16,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Brain,
+  BookOpen,
   CalendarClock,
   Columns3,
   LayoutDashboard,
@@ -50,6 +51,7 @@ const ICONS: Record<IconToken, LucideIcon> = {
   waypoints: Waypoints,
   boxes: Boxes,
   target: Target,
+  "book-open": BookOpen,
   "calendar-clock": CalendarClock,
   repeat: Repeat,
 };

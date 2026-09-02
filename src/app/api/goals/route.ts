@@ -20,7 +20,10 @@ function failed(e: unknown) {
   return NextResponse.json({ error: `Could not reach your vault: ${String(e)}`, vault: true }, { status: 500 });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const guard = checkLocalRequest(req, { requireJson: false });
+  if (guard) return NextResponse.json({ error: guard.error }, { status: guard.status });
+
   if (!VAULT_AVAILABLE) return NextResponse.json({ goals: [], vault: false, error: NO_VAULT });
   try {
     return NextResponse.json({ goals: await readGoals(), vault: true });

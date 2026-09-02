@@ -19,7 +19,7 @@ test("module registry is schema-versioned with unique ids and routes", () => {
     routes.add(m.route);
   }
   // The authoritative nav surface must include the workspace shell routes.
-  for (const route of ["/sen", "/agent-kanban", "/kanban", "/code-space", "/memory", "/builders", "/goals", "/automations", "/loop"]) {
+  for (const route of ["/sen", "/agent-kanban", "/kanban", "/code-space", "/memory", "/builders", "/goals", "/journal", "/automations", "/loop"]) {
     assert.ok(routes.has(route), `registry is missing shell route ${route}`);
   }
 });

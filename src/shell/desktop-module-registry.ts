@@ -32,6 +32,7 @@ export type IconToken =
   | "waypoints"
   | "boxes"
   | "target"
+  | "book-open"
   | "calendar-clock"
   | "repeat";
 
@@ -190,6 +191,20 @@ export const DESKTOP_MODULES: readonly DesktopModuleDefinition[] = [
     titleKey: "nav.goals",
     iconToken: "target",
     order: 90,
+    requiredCapabilities: [],
+    requiredPermissions: [],
+    load: loader,
+    prefetch: () => {},
+    commands: [],
+    settingsSections: [],
+  },
+  {
+    schemaVersion: DESKTOP_MODULE_SCHEMA_VERSION,
+    id: "journal",
+    route: "/journal",
+    titleKey: "nav.journal",
+    iconToken: "book-open",
+    order: 95,
     requiredCapabilities: [],
     requiredPermissions: [],
     load: loader,
