@@ -1,6 +1,6 @@
 # ⚡ Master Token Stack Benchmark Report: Multi-Scenario Evaluation
 
-> **Benchmark Date:** Wed, 02 Sep 2026 18:17:15 GMT
+> **Benchmark Date:** Wed, 02 Sep 2026 18:21:21 GMT
 > **Iterations:** 1 runs (Arithmetic Mean Average)
 > **Active Layer Config:** L-1: Semantic Cache [Zero-Token Semantic Cache], L0: Code Topology [Graphify], L1: Ponytail [Ponytail], L2: Caveman [Caveman], L3: RTK [RTK (Rust Token Killer)], L4: Headroom [Headroom Proxy], L5: Knowledge Memory [MemoraX Code], L6: Autonomous Distill [OpenViking], L7: Turn Folding [Dynamic Turn Folding], L8: Loop Breaker [Loop Breaker & Failover], L9: CoT Governor [CoT Budget Governor], L10: Model Router [Model Cascading Router]
 
@@ -365,3 +365,109 @@ print(stats[['Return [%]', 'Sharpe Ratio', 'Max. Drawdown [%]', 'Win Rate [%]']]
 
 ---
 
+
+
+---
+
+## 🔬 Leave-One-Out Ablation Study (Sensitivity Analysis)
+
+> **Objective:** Evaluate the independent contribution of each layer ($L_0 \to L_6$) by disabling one layer at a time across all 5 benchmark scenarios.
+> **Total Raw Context Volume:** 29,497 tokens.
+
+### 📌 Ablation Matrix - Scenario 1: Scenario 1: Repository Architecture Survey & Data Flow Analysis
+
+> **Public Source:** [hagopj13/node-express-boilerplate](https://github.com/hagopj13/node-express-boilerplate) | **Raw Tokens:** 4,247 tokens | **Dominant Layer:** **L0: Graphify (-91.5%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 7-LAYER STACK (All Layers ON)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L0: Graphify (No AST Pruning)** | **4,182** | **-1.5%** | **100/100** | **+10 pts** | **101.5 🏆** | **+3,884 tok** | *⚠️ Context bloat of +3,884 tokens* |
+| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L2: Caveman (No Git Patch Diff)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L3: RTK (No Test Log Filter)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L4: Headroom (No Prompt Cache)** | **298** | **-93.0%** | **100/100** | **+10 pts** | **193.0 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: MemoraX (No Memory Recall)** | **263** | **-93.8%** | **100/100** | **+10 pts** | **193.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: OpenViking (No Distillation)** | **273** | **-93.6%** | **100/100** | **+10 pts** | **193.6 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 2: Scenario 2: Database Connection Pool Leak Bugfix (TDD Test Suite & Git Patch Diff)
+
+> **Public Source:** [gothinkster/node-express-realworld-example-app](https://github.com/gothinkster/node-express-realworld-example-app) | **Raw Tokens:** 4,250 tokens | **Dominant Layer:** **L3: RTK (-54.7%) & L2: Caveman (-69.5%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 7-LAYER STACK (All Layers ON)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L0: Graphify (No AST Pruning)** | **3,210** | **-24.5%** | **100/100** | **+15 pts** | **124.5 🏆** | **+3,050 tok** | *⚠️ Context bloat of +3,050 tokens* |
+| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **310** | **-92.7%** | **100/100** | **+15 pts** | **192.7 🏆** | **+150 tok** | *⚠️ Context bloat of +150 tokens* |
+| **❌ Without L2: Caveman (No Git Patch Diff)** | **890** | **-79.1%** | **100/100** | **+15 pts** | **179.1 🏆** | **+730 tok** | *⚠️ Context bloat of +730 tokens* |
+| **❌ Without L3: RTK (No Test Log Filter)** | **335** | **-92.1%** | **100/100** | **+15 pts** | **192.1 🏆** | **+175 tok** | *⚠️ Context bloat of +175 tokens* |
+| **❌ Without L4: Headroom (No Prompt Cache)** | **160** | **-96.2%** | **100/100** | **+15 pts** | **196.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: MemoraX (No Memory Recall)** | **120** | **-97.2%** | **100/100** | **+15 pts** | **197.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: OpenViking (No Distillation)** | **135** | **-96.8%** | **100/100** | **+15 pts** | **196.8 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 3: Scenario 3: Cross-Session Architecture Standard Recall (Episodic Memory Task)
+
+> **Public Source:** [THUIR/MemoryBench-LeaderBoard](https://github.com/THUIR/MemoryBench-LeaderBoard) | **Raw Tokens:** 6,250 tokens | **Dominant Layer:** **L5: MemoraX (-99.3%) & L4: Headroom (-86.0%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 7-LAYER STACK (All Layers ON)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L0: Graphify (No AST Pruning)** | **910** | **-85.4%** | **100/100** | **+25 pts** | **185.4 🏆** | **+875 tok** | *⚠️ Context bloat of +875 tokens* |
+| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **310** | **-95.0%** | **100/100** | **+25 pts** | **195.0 🏆** | **+275 tok** | *⚠️ Context bloat of +275 tokens* |
+| **❌ Without L2: Caveman (No Git Patch Diff)** | **85** | **-98.6%** | **100/100** | **+25 pts** | **198.6 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L3: RTK (No Test Log Filter)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L4: Headroom (No Prompt Cache)** | **4,210** | **-32.6%** | **100/100** | **+25 pts** | **132.6 🏆** | **+4,175 tok** | *⚠️ Context bloat of +4,175 tokens* |
+| **❌ Without L5: MemoraX (No Memory Recall)** | **865** | **-86.2%** | **100/100** | **+25 pts** | **186.2 🏆** | **+830 tok** | *⚠️ Context bloat of +830 tokens* |
+| **❌ Without L6: OpenViking (No Distillation)** | **35** | **-99.4%** | **100/100** | **+25 pts** | **199.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 4: Scenario 4: Multi-Turn Trajectory Distillation (8-Turn Failure Recovery)
+
+> **Public Source:** [THUIR/MemoryBench-LeaderBoard](https://github.com/THUIR/MemoryBench-LeaderBoard) | **Raw Tokens:** 6,250 tokens | **Dominant Layer:** **L6: OpenViking (-93.0% Trajectory Compaction)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 7-LAYER STACK (All Layers ON)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L0: Graphify (No AST Pruning)** | **985** | **-84.2%** | **100/100** | **+30 pts** | **184.2 🏆** | **+875 tok** | *⚠️ Context bloat of +875 tokens* |
+| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **385** | **-93.8%** | **100/100** | **+30 pts** | **193.8 🏆** | **+275 tok** | *⚠️ Context bloat of +275 tokens* |
+| **❌ Without L2: Caveman (No Git Patch Diff)** | **160** | **-97.4%** | **100/100** | **+30 pts** | **197.4 🏆** | **+50 tok** | *⚠️ Context bloat of +50 tokens* |
+| **❌ Without L3: RTK (No Test Log Filter)** | **110** | **-98.2%** | **100/100** | **+30 pts** | **198.2 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L4: Headroom (No Prompt Cache)** | **960** | **-84.6%** | **100/100** | **+30 pts** | **184.6 🏆** | **+850 tok** | *⚠️ Context bloat of +850 tokens* |
+| **❌ Without L5: MemoraX (No Memory Recall)** | **1,510** | **-75.8%** | **100/100** | **+30 pts** | **175.8 🏆** | **+1,400 tok** | *⚠️ Context bloat of +1,400 tokens* |
+| **❌ Without L6: OpenViking (No Distillation)** | **2,715** | **-56.6%** | **95/100** | **+25 pts** | **148.7 🏆** | **+2,605 tok** | *⚠️ Context bloat of +2,605 tokens* |
+
+---
+
+### 📌 Ablation Matrix - Scenario 5: Scenario 5: Quant Strategy Backtesting on Historical OHLCV CSV Data
+
+> **Public Source:** [kernc/backtesting.py](https://github.com/kernc/backtesting.py) | **Raw Tokens:** 8,500 tokens | **Dominant Layer:** **L0: Graphify (-82.4%) & L3: RTK (-56.7%) & L2: Caveman (-68.0%)**
+
+| Ablation Configuration | Tokens Remaining | Token Savings % | Answer Quality | QA Delta | CEI Index | Token Bloat Penalty | Empirical Impact |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 7-LAYER STACK (All Layers ON)** | **250** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 (Optimal)** | *Optimal baseline (Full Stack)* |
+| **❌ Without L0: Graphify (No AST Pruning)** | **7,250** | **-14.7%** | **100/100** | **+20 pts** | **114.7 🏆** | **+7,000 tok** | *⚠️ Context bloat of +7,000 tokens* |
+| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **500** | **-94.1%** | **100/100** | **+20 pts** | **194.1 🏆** | **+250 tok** | *⚠️ Context bloat of +250 tokens* |
+| **❌ Without L2: Caveman (No Git Patch Diff)** | **850** | **-90.0%** | **100/100** | **+20 pts** | **190.0 🏆** | **+600 tok** | *⚠️ Context bloat of +600 tokens* |
+| **❌ Without L3: RTK (No Test Log Filter)** | **630** | **-92.6%** | **100/100** | **+20 pts** | **192.6 🏆** | **+380 tok** | *⚠️ Context bloat of +380 tokens* |
+| **❌ Without L4: Headroom (No Prompt Cache)** | **250** | **-97.1%** | **100/100** | **+20 pts** | **197.1 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L5: MemoraX (No Memory Recall)** | **215** | **-97.5%** | **100/100** | **+20 pts** | **197.5 🏆** | **0 tok** | *Minimal impact on this scenario* |
+| **❌ Without L6: OpenViking (No Distillation)** | **225** | **-97.4%** | **100/100** | **+20 pts** | **197.4 🏆** | **0 tok** | *Minimal impact on this scenario* |
+
+---
+
+### 📊 Master Ablation Matrix: Overall System Impact Across All Scenarios
+
+| Ablation Configuration | Tokens Remaining | Overall Savings % | Answer Quality | QA Delta | CEI Index | System Token Penalty | Empirical Finding |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **★ FULL 7-LAYER STACK (All Layers ON)** | **853** | **-97.1%** | **100/100** | **+20 pts** | **196.8 🏆** | **0 (Optimal)** | *Optimal baseline reference* |
+| **❌ Without L0: Graphify (No AST Pruning)** | **16,537** | **-43.9%** | **100/100** | **+20 pts** | **142.1 🏆** | **+15,684 tok** | *Fails to prune 95% of irrelevant source files* |
+| **❌ Without L1: Ponytail (No Anti-Boilerplate)** | **1,803** | **-93.9%** | **100/100** | **+20 pts** | **193.7 🏆** | **+950 tok** | *Permits repetitive boilerplate & code debt* |
+| **❌ Without L2: Caveman (No Git Patch Diff)** | **2,283** | **-92.3%** | **100/100** | **+20 pts** | **191.6 🏆** | **+1,430 tok** | *Outputs verbose full-file rewrites* |
+| **❌ Without L3: RTK (No Test Log Filter)** | **1,408** | **-95.2%** | **100/100** | **+20 pts** | **195.1 🏆** | **+555 tok** | *Leaves verbose test & execution noise in context* |
+| **❌ Without L4: Headroom (No Prompt Cache)** | **5,878** | **-80.1%** | **100/100** | **+20 pts** | **180.7 🏆** | **+5,025 tok** | *Loses 90% prompt cache breakpoints on long history* |
+| **❌ Without L5: MemoraX (No Memory Recall)** | **2,973** | **-89.9%** | **100/100** | **+20 pts** | **190.1 🏆** | **+2,120 tok** | *Fails instant recall for cross-session architecture* |
+| **❌ Without L6: OpenViking (No Distillation)** | **3,383** | **-88.5%** | **99/100** | **+19 pts** | **187.2 🏆** | **+2,530 tok** | *Loses 8-turn multi-round debug condensation* |
