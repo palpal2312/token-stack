@@ -136,5 +136,5 @@ token-stack cache clear
 Run all unit & integration tests across all 14 layers:
 
 ```bash
-node tests/test-all-layers.cjs
+npm run test:token-stack
 ```

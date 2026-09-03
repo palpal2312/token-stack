@@ -96,5 +96,5 @@ token-stack cache clear
 ## 🧪 运行完整测试套件 (10/10 单元测试全部通过)
 
 ```bash
-node tests/test-all-layers.cjs
+npm run test:token-stack
 ```

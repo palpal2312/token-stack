@@ -7,11 +7,16 @@
 
 [CmdletBinding()]
 param(
-    [string]$Profile = $null
+    [string]$Profile = $null,
+    [string]$RegistryPath = $null,
+    [string]$ApiKey = $env:TOKEN_STACK_API_KEY,
+    [switch]$AllowLive
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+$script:VerifierFailures = 0
+$script:VerifierAttempts = 0
 
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptRoot
@@ -21,7 +26,8 @@ $RepoRoot = Split-Path -Parent $ScriptRoot
 function Test-ProfileE2E {
     param(
         [string]$ProfileName,
-        [pscustomobject]$Config
+        [pscustomobject]$Config,
+        [string]$InjectedApiKey
     )
 
     Write-Host ""
@@ -29,9 +35,9 @@ function Test-ProfileE2E {
     Write-Host "  VERIFYING PROFILE: $ProfileName" -ForegroundColor Cyan
     Write-Host "----------------------------------------------------------------------------------" -ForegroundColor Cyan
 
-    $port = $Config.headroom_port
-    $upstream = $Config.upstream
-    $model = if ($Config.model) { $Config.model } else { "claude-sonnet-4-5-thinking" }
+    $port = if ($Config.PSObject.Properties['headroom_port']) { $Config.headroom_port } else { 8787 }
+    $upstream = if ($Config.PSObject.Properties['upstream']) { $Config.upstream } else { "http://127.0.0.1:9284" }
+    $model = if ($Config.PSObject.Properties['model']) { $Config.model } else { "claude-sonnet-4-5-thinking" }
 
     # Stage 1: Proxy Liveness Probe
     Write-Host "[Stage 1/3] Probing Headroom Proxy (Port $port)..." -NoNewline
@@ -43,40 +49,23 @@ function Test-ProfileE2E {
             $stage1Pass = $true
             Write-Host " [PASS] (HTTP 200 OK)" -ForegroundColor Green
         } else {
+            $script:VerifierFailures++
             Write-Host " [FAIL] (HTTP $($r.StatusCode))" -ForegroundColor Red
         }
     } catch {
+        $script:VerifierFailures++
         Write-Host " [FAIL] (Connection Refused / Down)" -ForegroundColor Red
     }
 
-    # Extract API Key from settings.json if exists
-    $configDir = $Config.config_dir
-    $apiKey = $null
-    if ($configDir) {
-        $settingsFile = Join-Path $configDir "settings.json"
-        if (Test-Path -LiteralPath $settingsFile) {
-            try {
-                $sObj = Get-Content -LiteralPath $settingsFile -Raw | ConvertFrom-Json
-                if ($sObj.env) {
-                    if ($sObj.env.ANTHROPIC_API_KEY) { $apiKey = $sObj.env.ANTHROPIC_API_KEY }
-                    elseif ($sObj.env.ANTHROPIC_AUTH_TOKEN) { $apiKey = $sObj.env.ANTHROPIC_AUTH_TOKEN }
-                }
-            } catch {}
-        }
-    }
-
-    if (-not $apiKey) {
-        # Fallback to known sub2api active key if applicable
-        if ($upstream -like "*9284*") {
-            $apiKey = "sk-0d56e7df6cf6e5b883f2c1ad502425f8ad1939cb1a008db9f4055306b8e9009f"
-        }
-    }
+    $apiKey = $InjectedApiKey
 
     if (-not $apiKey) {
         Write-Host "[Stage 2/3] Direct Upstream Probe: [SKIP] (No API key found in profile settings)" -ForegroundColor Yellow
         Write-Host "[Stage 3/3] Proxy Stream Probe:   [SKIP] (Requires valid API key)" -ForegroundColor Yellow
         return
     }
+
+    $script:VerifierAttempts++
 
     # Stage 2: Direct Upstream Streaming Probe
     Write-Host "[Stage 2/3] Direct Upstream Probe ($upstream)..." -NoNewline
@@ -103,9 +92,11 @@ function Test-ProfileE2E {
             $stage2Pass = $true
             Write-Host " [PASS] ($($stopwatch.ElapsedMilliseconds)ms)" -ForegroundColor Green
         } else {
+            $script:VerifierFailures++
             Write-Host " [FAIL] (HTTP $($resp.StatusCode))" -ForegroundColor Red
         }
     } catch {
+        $script:VerifierFailures++
         Write-Host " [FAIL]" -ForegroundColor Red
         if ($_.Exception.Response) {
             try {
@@ -117,7 +108,7 @@ function Test-ProfileE2E {
                 } elseif ($errContent -match 'model') {
                     Write-Host "        -> DIAGNOSIS: Model name '$model' rejected by upstream!" -ForegroundColor Red
                 } else {
-                    Write-Host "        -> Response: $errContent" -ForegroundColor Gray
+                    Write-Host "        -> Response body redacted." -ForegroundColor Gray
                 }
             } catch {}
         } else {
@@ -141,20 +132,36 @@ function Test-ProfileE2E {
             Write-Host " [PASS] (Streaming verified in $($stopwatch.ElapsedMilliseconds)ms)" -ForegroundColor Green
             Write-Host "RESULT: Profile '$ProfileName' is 100% OPERATIONAL." -ForegroundColor Green
         } else {
+            $script:VerifierFailures++
             Write-Host " [WARN] (HTTP $($resp.StatusCode) but unexpected stream format)" -ForegroundColor Yellow
         }
     } catch {
+        $script:VerifierFailures++
         Write-Host " [FAIL] ($($_.Exception.Message))" -ForegroundColor Red
     }
 }
 
-$reg = Get-TokenStackRegistry
+if (-not $AllowLive) {
+    Write-Host "RESULT: SKIP (live verification requires -AllowLive)." -ForegroundColor Yellow
+    exit 0
+}
+
+$reg = Get-TokenStackRegistry -Path $RegistryPath
 $profiles = $reg.profiles.PSObject.Properties
 
 foreach ($p in $profiles) {
     if ($Profile -and $Profile -ne "--all" -and $Profile -ne $p.Name) {
         continue
     }
-    Test-ProfileE2E -ProfileName $p.Name -Config $p.Value
+    Test-ProfileE2E -ProfileName $p.Name -Config $p.Value -InjectedApiKey $ApiKey
 }
 Write-Host ""
+if ($script:VerifierAttempts -eq 0) {
+    Write-Host "RESULT: SKIP (no credential supplied for live verification)." -ForegroundColor Yellow
+    exit 0
+}
+if ($script:VerifierFailures -gt 0) {
+    Write-Host "RESULT: FAIL ($($script:VerifierFailures) verifier check(s) failed)." -ForegroundColor Red
+    exit 1
+}
+Write-Host "RESULT: PASS (all attempted verifier checks passed)." -ForegroundColor Green

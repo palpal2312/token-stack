@@ -99,4 +99,4 @@ It orchestrates context across four critical operational phases:
 1. **Setup**: `token-stack setup -Apply` provisions all 14 layers, initializes SQLite cache, builds router configs, and pre-indexes skills.
 2. **Diagnostic Probe**: `token-stack doctor` probes live connectivity across all 14 layers in real-time.
 3. **Execution**: Dynamic in-flight optimization occurs transparently in the background across all turns.
-4. **Verification**: `node tests/test-all-layers.cjs` executes all 10 unit and integration suites to ensure 100% stack stability.
+4. **Verification**: `npm run test:token-stack` runs the hermetic offline unit and integration suite. Live verifier checks are explicit opt-in only.

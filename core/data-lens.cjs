@@ -18,11 +18,14 @@ const { execSync } = require('child_process');
 class DataLens {
   constructor(options = {}) {
     this.maxSampleSize = options.maxSampleSize || 2000;
-    this.duckDbPath = options.duckDbPath || this._detectDuckDb();
-    this.clickHouseInfo = options.clickHouseInfo || this._detectClickHouse();
+    this.duckDbPath = Object.hasOwn(options, 'duckDbPath') ? options.duckDbPath : this._detectDuckDb();
+    this.clickHouseInfo = Object.hasOwn(options, 'clickHouseInfo') ? options.clickHouseInfo : this._detectClickHouse();
   }
 
   _detectDuckDb() {
+    if (process.env.TOKEN_STACK_TEST_MODE === '1' && !process.env.TOKEN_STACK_ALLOW_EXTERNAL_ENGINES) {
+      return null;
+    }
     try {
       execSync('duckdb --version', { stdio: 'ignore' });
       return 'duckdb';
@@ -32,6 +35,9 @@ class DataLens {
   }
 
   _detectClickHouse() {
+    if (process.env.TOKEN_STACK_TEST_MODE === '1' && !process.env.TOKEN_STACK_ALLOW_EXTERNAL_ENGINES) {
+      return null;
+    }
     // 1. Check local native clickhouse binary
     try {
       execSync('clickhouse local --version', { stdio: 'ignore', timeout: 1000 });

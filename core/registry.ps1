@@ -43,6 +43,10 @@ function Save-TokenStackRegistry {
     )
 
     $resolvedPath = Get-RegistryPath $Path
+    $parentDir = Split-Path -Parent $resolvedPath
+    if ($parentDir -and -not (Test-Path -LiteralPath $parentDir)) {
+        New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
+    }
     $json = $Registry | ConvertTo-Json -Depth 10
     [System.IO.File]::WriteAllText($resolvedPath, $json, [System.Text.UTF8Encoding]::new($false))
 }

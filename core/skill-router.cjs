@@ -34,6 +34,10 @@ class SkillRouter {
   }
 
   _detectDefaultSkillDirs() {
+    if (process.env.TOKEN_STACK_TEST_MODE === '1' && !process.env.TOKEN_STACK_ALLOW_HOST_PROBE) {
+      const internalDir = path.join(__dirname, '..', 'skills');
+      return fs.existsSync(internalDir) ? [internalDir] : [];
+    }
     const home = process.env.USERPROFILE || process.env.HOME || '.';
     const dirs = [
       path.join(home, '.claude', 'skills'),
@@ -311,7 +315,14 @@ class SkillRouter {
   }
 }
 
+let _defaultRouter = null;
+
 module.exports = {
   SkillRouter,
-  defaultRouter: new SkillRouter({ autoIndex: true })
+  get defaultRouter() {
+    if (!_defaultRouter) {
+      _defaultRouter = new SkillRouter({ autoIndex: true });
+    }
+    return _defaultRouter;
+  }
 };

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker-js/master/packages/api/schema/stryker-schema.json",
+  "mutate": [
+    "core/semantic-cache.cjs",
+    "core/model-router.cjs",
+    "core/cot-governor.cjs",
+    "core/turn-folder.cjs",
+    "core/guardrail.cjs",
+    "core/skill-router.cjs"
+  ],
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "node tests/token-stack/run-tests.cjs"
+  },
+  "reporters": [
+    "progress",
+    "clear-text",
+    "json"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation-report.json"
+  },
+  "concurrency": 1,
+  "timeoutMS": 60000,
+  "thresholds": {
+    "high": 80,
+    "low": 75,
+    "break": 70
+  },
+  "cleanTempDir": true
+}

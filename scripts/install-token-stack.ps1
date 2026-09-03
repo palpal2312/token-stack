@@ -86,6 +86,7 @@ function Set-PluginEnabled {
 function Get-ExpectedSkillId {
     param([string]$DirectoryName)
     if ($DirectoryName -eq 'token-stack') { return 'token-stack' }
+    if ($DirectoryName -eq 'token-stack-benchmark') { return 'token-stack-benchmark' }
     return "token-stack:$($DirectoryName.Substring('token-stack-'.Length))"
 }
 

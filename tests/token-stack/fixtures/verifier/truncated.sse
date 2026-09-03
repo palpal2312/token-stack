@@ -1,0 +1,5 @@
+event: ping
+data: {}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Incomplete stream without message_start or message_stop"}}

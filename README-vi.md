@@ -131,5 +131,5 @@ token-stack cache clear
 ## 🧪 Chạy Toàn Bộ Bộ Kiểm Thử (10/10 Suites Passed)
 
 ```bash
-node tests/test-all-layers.cjs
+npm run test:token-stack
 ```

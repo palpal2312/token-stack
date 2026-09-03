@@ -66,3 +66,5 @@ repomix-output.xml
 /go/bin/
 /go/sen-plane.exe
 /.memorax-code/
+.stryker-tmp/
+

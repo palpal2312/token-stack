@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "sub2api_upstream": "http://127.0.0.1:9284",
+  "profiles": {
+    "fixture-profile": {
+      "headroom_port": 8787,
+      "upstream": "http://127.0.0.1:8787",
+      "model": "claude-sonnet-4-5-thinking"
+    }
+  }
+}

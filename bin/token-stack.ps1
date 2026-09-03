@@ -11,17 +11,50 @@ param(
     [string]$Command = "status",
 
     [Parameter(Position = 1, ValueFromRemainingArguments = $true)]
-    [string[]]$CommandArgs
+    [string[]]$CommandArgs,
+
+    [switch]$Help
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Show-Help {
+    Write-Host @"
+Token-Stack 3.2 CLI - 14-Layer Master Token & Context Engine
+
+Usage:
+  token-stack <command> [arguments]
+
+Commands:
+  status                   Display live table of all profiles, ports, upstream & health
+  setup [-Apply]           Run automated 14-layer setup and component configuration
+  doctor                   Run full 14-layer health inspection and diagnostic probes
+  up [<name>|--all]        Start Headroom proxy daemon for profile(s)
+  down [<name>|--all]      Stop Headroom proxy daemon for profile(s)
+  profile list             List registered agent profiles
+  profile add <name>       Register a new profile (auto-allocates free port and DB path)
+  profile remove <name>    Unregister an existing profile
+  verify [--live] [<name>] Run automated 3-stage E2E validation pipeline (live calls require --live)
+  test                     Run all unit & integration tests across the modular layers
+  bench [args]             Launch interactive 14-layer Benchmark TUI
+  data profile <file>      Profile CSV/TSV into a compact Data Contract (<100 tokens)
+  quant tearsheet <file>   Collapse thousands of trade log lines into Quant Tear-Sheet
+  cache [stats|clear]      Inspect or clear Layer -1 Zero-Token Semantic Cache
+  skill route <prompt>     Route intent to Top-K skills (Anti-Skill-Shadowing, -98% bloat)
+  help                     Show this help message
+"@
+}
+
+if ($Help) {
+    Show-Help
+    exit 0
+}
+
 $ScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $CandidateRoots = @(
-    (Split-Path -Parent $ScriptRoot),
-    "C:\Users\ADMIN\Documents\token-stack",
-    (Join-Path $env:USERPROFILE "Documents\token-stack")
+    $env:TOKEN_STACK_REPO_ROOT,
+    (Split-Path -Parent $ScriptRoot)
 )
 $RepoRoot = $null
 foreach ($c in $CandidateRoots) {
@@ -54,7 +87,7 @@ Commands:
   profile list             List registered agent profiles
   profile add <name>       Register a new profile (auto-allocates free port and DB path)
   profile remove <name>    Unregister an existing profile
-  verify [<name>]          Run automated 3-stage E2E validation pipeline
+  verify [--live] [<name>] Run automated 3-stage E2E validation pipeline (live calls require --live)
   test                     Run all unit & integration tests across the modular layers
   bench [args]             Launch interactive 14-layer Benchmark TUI
   data profile <file>      Profile CSV/TSV into a compact Data Contract (<100 tokens)
@@ -101,7 +134,8 @@ function Invoke-Status {
     }
 
     $rows | Format-Table -AutoSize
-    Write-Host "Sub2API Native Upstream: $($reg.sub2api_upstream)" -ForegroundColor Gray
+    $sub2api = if ($reg.PSObject.Properties['sub2api_upstream']) { $reg.sub2api_upstream } else { "N/A" }
+    Write-Host "Sub2API Native Upstream: $sub2api" -ForegroundColor Gray
     Write-Host ""
 }
 
@@ -167,9 +201,7 @@ function Invoke-Up {
 
 function Invoke-Down {
     param([string]$Target)
-    Write-Host "Stopping running Headroom instances..." -ForegroundColor Yellow
-    Get-Process -Name headroom -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-    Write-Host "All Headroom instances stopped." -ForegroundColor Green
+    Write-Error "Refusing to stop headroom processes because this CLI does not own persistent process handles. Stop the specific supervisor-owned process instead."
 }
 
 function Invoke-Doctor {
@@ -248,7 +280,11 @@ function Invoke-Verify {
     param([string]$Target)
     $verifierScript = Join-Path $RepoRoot "core\verifier.ps1"
     if (Test-Path -LiteralPath $verifierScript) {
-        & $verifierScript -Profile $Target
+        $parts = @($Target -split '\s+' | Where-Object { $_ })
+        $allowLive = $parts -contains '--live'
+        $profile = $parts | Where-Object { $_ -ne '--live' } | Select-Object -First 1
+        & $verifierScript -Profile $profile -AllowLive:$allowLive
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     } else {
         Write-Host "Running proxy readiness check..." -ForegroundColor Cyan
         Invoke-Status
@@ -256,9 +292,10 @@ function Invoke-Verify {
 }
 
 function Invoke-Test {
-    $testRunner = Join-Path $RepoRoot "tests\test-all-layers.cjs"
+    $testRunner = Join-Path $RepoRoot "tests\token-stack\run-tests.cjs"
     if (Test-Path -LiteralPath $testRunner) {
         & node $testRunner
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     } else {
         Write-Error "Test runner not found at $testRunner"
     }
@@ -391,7 +428,8 @@ switch ($Command.ToLower()) {
     "--help"   { Show-Help }
     "-h"       { Show-Help }
     Default {
-        Write-Host "Unknown command: $Command" -ForegroundColor Red
+        [Console]::Error.WriteLine("Unknown command: $Command")
         Show-Help
+        exit 1
     }
 }

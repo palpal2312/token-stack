@@ -1,0 +1,150 @@
+[
+  {
+    "id": "CACHE-SECRET-01",
+    "module": "semantic-cache",
+    "scenario": "Rejects synthetic secret token in prompt and prevents disk write",
+    "input": {
+      "prompt": "Here is token=synthetic-canary-secret-do-not-persist",
+      "response": "Should be filtered"
+    },
+    "expected": {
+      "stored": false
+    }
+  },
+  {
+    "id": "CACHE-CAP-02",
+    "module": "semantic-cache",
+    "scenario": "Enforces 500 entry capacity limit on 501 items",
+    "input": {
+      "entryCount": 501
+    },
+    "expected": {
+      "maxEntries": 500
+    }
+  },
+  {
+    "id": "CACHE-CORRUPT-03",
+    "module": "semantic-cache",
+    "scenario": "Graceful recovery from malformed storage file",
+    "input": {
+      "rawFileContent": "{\"corrupted_json: true,"
+    },
+    "expected": {
+      "entriesCount": 0
+    }
+  },
+  {
+    "id": "FOLD-PRESERVE-01",
+    "module": "turn-folder",
+    "scenario": "Preserves live window turns completely intact",
+    "input": {
+      "messageCount": 4,
+      "liveWindow": 4
+    },
+    "expected": {
+      "modified": false
+    }
+  },
+  {
+    "id": "FOLD-PRESERVE-02",
+    "module": "turn-folder",
+    "scenario": "Never folds tool result containing error or exception string",
+    "input": {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "content": "Error: compilation failed\nline 1\nline 2\nline 3\nline 4\nline 5\nline 6\nline 7\nline 8\nline 9\nline 10\nline 11\nline 12\nline 13\nline 14\nline 15\nline 16\nline 17\nline 18\nline 19\nline 20",
+          "is_error": false
+        }
+      ]
+    },
+    "expected": {
+      "folded": false
+    }
+  },
+  {
+    "id": "COT-BOUND-01",
+    "module": "cot-governor",
+    "scenario": "Explicit budget override comment is strictly respected",
+    "input": {
+      "prompt": "Fix bug <!-- budget: 12000 --> in payment handler"
+    },
+    "expected": {
+      "budget": 12000
+    }
+  },
+  {
+    "id": "COT-BOUND-02",
+    "module": "cot-governor",
+    "scenario": "Low complexity prompt gets bounded to 1024 tokens",
+    "input": {
+      "prompt": "Fix typo in comment",
+      "fileCount": 1
+    },
+    "expected": {
+      "budget": 1024
+    }
+  },
+  {
+    "id": "COT-BOUND-03",
+    "module": "cot-governor",
+    "scenario": "High complexity architecture keyword triggers 8192 budget",
+    "input": {
+      "prompt": "Refactor distributed scheduler to eliminate race condition",
+      "fileCount": 1
+    },
+    "expected": {
+      "budget": 8192
+    }
+  },
+  {
+    "id": "GUARD-FAIL-CLOSED-01",
+    "module": "guardrail",
+    "scenario": "Detects runaway loop after exactly 3 identical tool calls",
+    "input": {
+      "tool": "view_file",
+      "args": { "path": "server.ts" },
+      "repeats": 3
+    },
+    "expected": {
+      "isLoop": true
+    }
+  },
+  {
+    "id": "GUARD-FAIL-CLOSED-02",
+    "module": "guardrail",
+    "scenario": "Waterfall fails over on 429 and terminates on 400 without false retry",
+    "input": {
+      "statuses": [429, 400]
+    },
+    "expected": {
+      "finalStatus": 400,
+      "failoverCount": 1
+    }
+  },
+  {
+    "id": "DATA-LENS-01",
+    "module": "data-lens",
+    "scenario": "Handles empty string and whitespace without crashing",
+    "input": {
+      "csv": "   "
+    },
+    "expected": {
+      "hasContract": true
+    }
+  },
+  {
+    "id": "MODEL-ROUTER-01",
+    "module": "model-router",
+    "scenario": "Explicit slash model override takes precedence over complexity",
+    "input": {
+      "prompt": "/model custom-tuned-model Refactor the entire architecture",
+      "filesCount": 10
+    },
+    "expected": {
+      "selectedModel": "custom-tuned-model",
+      "isOverride": true
+    }
+  }
+]

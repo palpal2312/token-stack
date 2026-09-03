@@ -15,6 +15,9 @@
     "postinstall": "node scripts/copy-ghostty-wasm.mjs",
     "test": "tsx --test src/shell/view-session-store.test.ts src/shell/intent-prefetch.test.ts src/shell/desktop-shell-flag.test.ts src/shell/panel-layout-store.test.ts src/shell/panel-resize-controller.test.ts src/shell/sen-surface-store.test.ts src/shell/desktop-module-registry.test.ts src/lib/agentRuntime/orca-slot-client.test.ts src/lib/sen/canonical-chat-adapter.test.ts qa/tests/s10-*.test.ts",
     "test:shell": "tsx --test src/shell/view-session-store.test.ts src/shell/intent-prefetch.test.ts src/shell/desktop-shell-flag.test.ts src/shell/panel-layout-store.test.ts src/shell/panel-resize-controller.test.ts src/shell/sen-surface-store.test.ts src/shell/desktop-module-registry.test.ts src/lib/agentRuntime/orca-slot-client.test.ts",
+    "test:token-stack": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-token-stack.ps1",
+    "test:token-stack:coverage": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-token-stack.ps1 -Coverage",
+    "test:token-stack:live": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-token-stack-live.ps1",
     "go:check": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"cd go; go vet ./...; go test ./internal/... ./cmd/sen-plane\"",
     "dev:canonical": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev-sen-plane.ps1",
     "protected:check": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-protected-controls.ps1",
@@ -51,6 +54,7 @@
     "@types/react-dom": "^19",
     "@types/three": "^0.184.1",
     "@types/ws": "^8.18.1",
+    "fast-check": "^4.9.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.5",
     "typescript": "^5"

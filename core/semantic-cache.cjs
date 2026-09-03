@@ -10,7 +10,11 @@ const crypto = require('crypto');
 class SemanticCache {
   constructor(options = {}) {
     this.threshold = options.threshold || 0.88;
-    this.dbPath = options.dbPath || path.join(process.env.USERPROFILE || process.env.HOME || '.', '.token-stack', 'semantic_cache.json');
+    const os = require('os');
+    const defaultBase = (process.env.TOKEN_STACK_TEST_MODE === '1' && !process.env.TOKEN_STACK_ALLOW_HOST_PROBE)
+      ? path.join(os.tmpdir(), '.token-stack-test')
+      : path.join(process.env.USERPROFILE || process.env.HOME || '.', '.token-stack');
+    this.dbPath = options.dbPath || path.join(defaultBase, 'semantic_cache.json');
     this.entries = [];
     this.load();
   }
@@ -77,6 +81,10 @@ class SemanticCache {
 
     if (normA === 0 || normB === 0) return 0;
     return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  similarity(vecA, vecB) {
+    return this.cosineSimilarity(vecA, vecB);
   }
 
   isSecret(text) {
@@ -163,7 +171,14 @@ class SemanticCache {
   }
 }
 
+let _defaultCache = null;
+
 module.exports = {
   SemanticCache,
-  defaultCache: new SemanticCache()
+  get defaultCache() {
+    if (!_defaultCache) {
+      _defaultCache = new SemanticCache();
+    }
+    return _defaultCache;
+  }
 };

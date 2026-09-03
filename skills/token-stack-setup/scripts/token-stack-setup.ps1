@@ -1,7 +1,10 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$ProfileDirectory,
+    [string]$TokenStackHome,
+    [string]$GlobalBinDirectory,
     [switch]$Apply,
+    [switch]$Offline,
     [switch]$Full
 )
 
@@ -17,7 +20,10 @@ if (-not $ProfileDirectory) {
 }
 $ProfileDirectory = [Environment]::ExpandEnvironmentVariables($ProfileDirectory)
 $settingsPath = Join-Path $ProfileDirectory 'settings.json'
-$tokenStackHome = Join-Path $HOME '.token-stack'
+if (-not $TokenStackHome) {
+    $TokenStackHome = Join-Path $HOME '.token-stack'
+}
+$tokenStackHome = [Environment]::ExpandEnvironmentVariables($TokenStackHome)
 $memoryDir = Join-Path $tokenStackHome 'memory'
 $contextDir = Join-Path $tokenStackHome 'context'
 $binDir = Join-Path $tokenStackHome 'bin'
@@ -70,10 +76,10 @@ foreach ($d in @($tokenStackHome, $memoryDir, $contextDir, $binDir)) {
 
 # ── 2. Layer -1: Semantic Cache Initialization ──
 Write-Host "[2/7] Initializing Layer -1 Semantic Cache (SQLite)..." -ForegroundColor Cyan
-$repoCoreDir = Join-Path $PSScriptRoot "..\..\core"
+$repoCoreDir = Join-Path $PSScriptRoot "..\..\..\core"
 $cacheModulePath = (Join-Path $repoCoreDir "semantic-cache.cjs").Replace('\', '/')
 $escapedDb = $cacheDbPath.Replace('\', '/')
-$cacheInitJs = "const { SemanticCache } = require('$cacheModulePath'); const cache = new SemanticCache({ dbPath: '$escapedDb' }); cache.set('__setup_probe__', 'ok', { ttlMs: 5000 }); console.log(cache.get('__setup_probe__') ? 'SUCCESS' : 'FAIL');"
+$cacheInitJs = "const { SemanticCache } = require('$cacheModulePath'); const cache = new SemanticCache({ dbPath: '$escapedDb' }); cache.store('__setup_probe__', 'ok'); console.log(cache.find('__setup_probe__') ? 'SUCCESS' : 'FAIL');"
 try {
     $cacheResult = node -e $cacheInitJs 2>$null
     if ($cacheResult -match 'SUCCESS') {
@@ -115,23 +121,27 @@ try {
 # ── 5. Layer 1.5: Data Lens and Columnar Engine ──
 Write-Host "[5/8] Probing Layer 1.5 Data Lens (ClickHouse and DuckDB)..." -ForegroundColor Cyan
 $clickHouseAvailable = $false
-try {
-    $res = Invoke-WebRequest -Uri "http://127.0.0.1:8123/ping" -UseBasicParsing -TimeoutSec 1 -ErrorAction SilentlyContinue
-    if ($res -and $res.StatusCode -eq 200) { $clickHouseAvailable = $true }
-} catch {}
-
-# Also probe WSL2 if Windows native is offline
-if (-not $clickHouseAvailable -and (Get-Command wsl -ErrorAction SilentlyContinue)) {
+if (-not $Offline) {
     try {
-        $wslPing = wsl curl -s http://127.0.0.1:8123/ping 2>$null
-        if ($wslPing -match 'Ok') {
-            $clickHouseAvailable = $true
-            Write-Host "  OK ClickHouse Server active via WSL2 environment" -ForegroundColor Green
-        }
+        $res = Invoke-WebRequest -Uri "http://127.0.0.1:8123/ping" -UseBasicParsing -TimeoutSec 1 -ErrorAction SilentlyContinue
+        if ($res -and $res.StatusCode -eq 200) { $clickHouseAvailable = $true }
     } catch {}
+
+    # Also probe WSL2 if Windows native is offline
+    if (-not $clickHouseAvailable -and (Get-Command wsl -ErrorAction SilentlyContinue)) {
+        try {
+            $wslPing = wsl curl -s http://127.0.0.1:8123/ping 2>$null
+            if ($wslPing -match 'Ok') {
+                $clickHouseAvailable = $true
+                Write-Host "  OK ClickHouse Server active via WSL2 environment" -ForegroundColor Green
+            }
+        } catch {}
+    }
 }
 
-if ($clickHouseAvailable) {
+if ($Offline) {
+    Write-Host "  Offline mode: external ClickHouse probes skipped." -ForegroundColor Gray
+} elseif ($clickHouseAvailable) {
     Write-Host "  OK ClickHouse Columnar Acceleration active (http://127.0.0.1:8123)" -ForegroundColor Green
 } else {
     Write-Host "  ClickHouse HTTP offline; DuckDB and Zero-Row Stream Shield active as fallback" -ForegroundColor Yellow
@@ -184,7 +194,13 @@ if (-not $hasRtk) {
 
 # ── 8. Global CLI PATH Registration ──
 Write-Host "[8/8] Registering Global 'token-stack' CLI in PATH..." -ForegroundColor Cyan
-$globalNpmDir = Join-Path $env:APPDATA 'npm'
+if (-not $GlobalBinDirectory) {
+    $GlobalBinDirectory = Join-Path $env:APPDATA 'npm'
+}
+$globalNpmDir = [Environment]::ExpandEnvironmentVariables($GlobalBinDirectory)
+if (-not (Test-Path -LiteralPath $globalNpmDir)) {
+    New-Item -ItemType Directory -Path $globalNpmDir -Force | Out-Null
+}
 $repoTokenStackPs1 = Join-Path $PSScriptRoot '..\..\..\bin\token-stack.ps1'
 if (Test-Path -LiteralPath $globalNpmDir) {
     $globalCliTarget = Join-Path $globalNpmDir 'token-stack.ps1'

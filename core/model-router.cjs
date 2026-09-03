@@ -25,6 +25,7 @@ class ModelRouter {
       return {
         tier: 'flagship',
         selectedModel: this.defaultFlagshipModel,
+        isOverride: false,
         estimatedSavingsPercent: 0,
         rationale: 'Defaulting to flagship for undefined task'
       };
@@ -37,6 +38,7 @@ class ModelRouter {
       return {
         tier: 'user_override',
         selectedModel: overrideMatch[2],
+        isOverride: true,
         estimatedSavingsPercent: 0,
         rationale: `User explicitly specified model '${overrideMatch[2]}'`
       };
@@ -56,6 +58,7 @@ class ModelRouter {
       return {
         tier: 'flagship',
         selectedModel: this.defaultFlagshipModel,
+        isOverride: false,
         estimatedSavingsPercent: 0,
         rationale: 'Task requires deep architectural reasoning or multi-file context'
       };
@@ -72,6 +75,7 @@ class ModelRouter {
       return {
         tier: 'cheap',
         selectedModel: this.defaultCheapModel,
+        isOverride: false,
         estimatedSavingsPercent: savings,
         rationale: `Trivial task routed to fast tier (${this.defaultCheapModel}) saving ~${savings}% cost`
       };
@@ -81,6 +85,7 @@ class ModelRouter {
     return {
       tier: 'flagship',
       selectedModel: this.defaultFlagshipModel,
+      isOverride: false,
       estimatedSavingsPercent: 0,
       rationale: 'Standard implementation task routed to flagship model'
     };

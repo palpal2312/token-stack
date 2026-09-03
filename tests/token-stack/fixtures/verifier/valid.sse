@@ -1,0 +1,9 @@
+event: message_start
+data: {"type":"message_start","message":{"id":"msg_fixture_01","type":"message","role":"assistant","content":[]}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello from synthetic stream"}}
+
+event: message_stop
+data: {"type":"message_stop"}
+

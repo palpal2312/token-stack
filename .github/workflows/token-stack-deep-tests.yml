@@ -1,0 +1,61 @@
+name: Token-Stack Deep Adversarial Tests
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Daily at 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      runs_flake:
+        description: "Number of flake test iterations"
+        required: false
+        type: number
+        default: 10
+      fuzz_iterations:
+        description: "Number of pure fuzzer iterations"
+        required: false
+        type: number
+        default: 2000
+
+permissions:
+  contents: read
+
+jobs:
+  flake-soak-fuzz:
+    name: Flake, Fuzz, and Soak Verification
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Pure-Parser Bounded Fuzzing
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-token-stack-fuzz.ps1 -Iterations ${{ inputs.fuzz_iterations || 2000 }}
+
+      - name: Memory Soak and Core Microbenchmarks
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-token-stack-soak.ps1 -Cycles 1000
+
+      - name: Flake Detection Loop (Deterministic Invariants)
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-token-stack-flake.ps1 -Runs ${{ inputs.runs_flake || 10 }} -StopOnFailure
+
+  mutation-gate:
+    name: Mutation Testing Gate
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Execute Mutation Testing
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-token-stack-mutation.ps1

@@ -1,0 +1,50 @@
+name: Token-Stack Live Provider Certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Registered profile name to certify"
+        required: true
+        type: string
+        default: "default"
+      allow_live:
+        description: "Explicitly allow live egress and credential use"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  certify-live:
+    name: Live Provider Certification
+    environment: live-certification
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Protected Live Certification
+        env:
+          LIVE_API_KEY: ${{ secrets.TOKEN_STACK_LIVE_API_KEY }}
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/certify-token-stack-live.ps1 `
+            -Profile "${{ inputs.profile }}" `
+            -ApiKey "$env:LIVE_API_KEY" `
+            -AllowLive:$${{ inputs.allow_live }}
+
+      - name: Upload Redacted Certification Receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-certification-receipt
+          path: reports/live-certification-*.json
