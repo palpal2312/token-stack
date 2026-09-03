@@ -28,11 +28,37 @@ function Find-FreeHeadroomPort {
     param(
         [int]$StartPort = 8787,
         [int]$EndPort = 9999,
-        [int[]]$ReservedPorts = @()
+        [int[]]$ReservedPorts = @(),
+        [switch]$IncludeRunningProcesses
     )
 
+    $allReserved = [System.Collections.Generic.HashSet[int]]::new()
+    foreach ($r in $ReservedPorts) { [void]$allReserved.Add($r) }
+
+    if ($IncludeRunningProcesses) {
+        $scriptDir = $null
+        try {
+            if ($MyInvocation -and $MyInvocation.MyCommand -and $MyInvocation.MyCommand.Path) {
+                $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+            }
+        } catch {}
+        if (-not $scriptDir -and $PSScriptRoot) { $scriptDir = $PSScriptRoot }
+        if (-not $scriptDir) { $scriptDir = (Get-Location).Path }
+        $discoveryScript = Join-Path $scriptDir "headroom-discovery.ps1"
+        if (-not (Test-Path -LiteralPath $discoveryScript)) {
+            $discoveryScript = Join-Path $scriptDir "core\headroom-discovery.ps1"
+        }
+        if (Test-Path -LiteralPath $discoveryScript) {
+            . $discoveryScript
+            $running = Get-ActiveHeadroomPorts -StartPort $StartPort -EndPort $EndPort
+            foreach ($rp in $running) {
+                [void]$allReserved.Add($rp.Port)
+            }
+        }
+    }
+
     for ($p = $StartPort; $p -le $EndPort; $p++) {
-        if ($ReservedPorts -contains $p) {
+        if ($allReserved.Contains($p)) {
             continue
         }
         if (Test-TcpPortFree -Port $p) {

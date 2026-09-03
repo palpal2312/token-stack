@@ -35,6 +35,8 @@ Commands:
   profile list             List registered agent profiles
   profile add <name>       Register a new profile (auto-allocates free port and DB path)
   profile remove <name>    Unregister an existing profile
+  headroom ports           Scan active Headroom processes & live ports across the OS
+  headroom install <name>  Safe self-install: probe ports, stage disk .env & inject SessionStart hook
   verify [--live] [<name>] Run automated 3-stage E2E validation pipeline (live calls require --live)
   test                     Run all unit & integration tests across the modular layers
   bench [args]             Launch interactive 14-layer Benchmark TUI
@@ -87,6 +89,8 @@ Commands:
   profile list             List registered agent profiles
   profile add <name>       Register a new profile (auto-allocates free port and DB path)
   profile remove <name>    Unregister an existing profile
+  headroom ports           Scan active Headroom processes & live ports across the OS
+  headroom install <name>  Safe self-install: probe ports, stage disk .env & inject SessionStart hook
   verify [--live] [<name>] Run automated 3-stage E2E validation pipeline (live calls require --live)
   test                     Run all unit & integration tests across the modular layers
   bench [args]             Launch interactive 14-layer Benchmark TUI
@@ -276,6 +280,59 @@ function Invoke-Profile {
     }
 }
 
+function Invoke-HeadroomCommand {
+    param([string[]]$SubArgs)
+    $subcmd = if ($SubArgs.Count -gt 0) { $SubArgs[0].ToLower() } else { "ports" }
+    switch ($subcmd) {
+        "ports" {
+            $discoveryScript = Join-Path $RepoRoot "core\headroom-discovery.ps1"
+            if (Test-Path -LiteralPath $discoveryScript) {
+                . $discoveryScript
+                $live = @(Get-ActiveHeadroomPorts)
+                Write-Host "Live Headroom Ports on System:" -ForegroundColor Cyan
+                if ($live.Length -eq 0) {
+                    Write-Host "  No active Headroom processes found." -ForegroundColor Yellow
+                } else {
+                    $live | Format-Table Port, Source, ProcessId, IsReady, DbPath
+                }
+            }
+            $noteFile = Join-Path $RepoRoot "docs\headroom-ports.md"
+            if (Test-Path -LiteralPath $noteFile) {
+                Write-Host "`nRegistered Profiles & Mappings ($noteFile):" -ForegroundColor Cyan
+                Get-Content -LiteralPath $noteFile -Encoding UTF8 | Select-Object -First 15
+            }
+        }
+        "install" {
+            if ($SubArgs.Count -lt 2) {
+                Write-Host "Usage: token-stack headroom install <profile-name> [config-dir] [upstream]" -ForegroundColor Red
+                return
+            }
+            $pName = $SubArgs[1]
+            $cfgDir = if ($SubArgs.Count -ge 3) { $SubArgs[2] } else { Join-Path $HOME ".claude-$pName" }
+            $upstream = if ($SubArgs.Count -ge 4) { $SubArgs[3] } else { "http://127.0.0.1:9284" }
+
+            $stageScript = Join-Path $RepoRoot "scripts\stage-headroom-profile.ps1"
+            if (Test-Path -LiteralPath $stageScript) {
+                . $stageScript
+                Write-Host "Executing Safe Headroom Self-Install for '$pName'..." -ForegroundColor Cyan
+                $res = Stage-AgentProfileHeadroom -ProfileName $pName -ConfigDir $cfgDir -Upstream $upstream
+                Write-Host "[OK] Staged successfully!" -ForegroundColor Green
+                Write-Host "  - Port: $($res.Port)"
+                Write-Host "  - Upstream: $($res.Upstream)"
+                Write-Host "  - Config Dir: $($res.ConfigDir)"
+                Write-Host "  - Staging Env: $($res.EnvFile)"
+                Write-Host "  - Hook Injected: $($res.HookFile)"
+                Write-Host "  - Notice: Current session untouched. Restart agent to activate Headroom." -ForegroundColor Yellow
+            } else {
+                Write-Error "Stage script not found at $stageScript"
+            }
+        }
+        Default {
+            Write-Host "Unknown headroom command: $subcmd (available: ports, install)" -ForegroundColor Red
+        }
+    }
+}
+
 function Invoke-Verify {
     param([string]$Target)
     $verifierScript = Join-Path $RepoRoot "core\verifier.ps1"
@@ -417,6 +474,7 @@ switch ($Command.ToLower()) {
     "down"     { Invoke-Down -Target ($CommandArgs -join " ") }
     "doctor"   { Invoke-Doctor }
     "profile"  { Invoke-Profile -SubArgs $CommandArgs }
+    "headroom" { Invoke-HeadroomCommand -SubArgs $CommandArgs }
     "verify"   { Invoke-Verify -Target ($CommandArgs -join " ") }
     "test"     { Invoke-Test }
     "bench"    { Invoke-Bench -SubArgs $CommandArgs }

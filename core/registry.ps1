@@ -110,6 +110,79 @@ function Ensure-ProfileDbDirectory {
     }
 }
 
+function Export-HeadroomPortNote {
+    [CmdletBinding()]
+    param(
+        [string]$Path,
+        [string]$OutputPath
+    )
+
+    $reg = Get-TokenStackRegistry -Path $Path
+    $resolvedRepo = if ($reg.PSObject.Properties['repo_root']) { $reg.repo_root } else { (Split-Path -Parent (Split-Path -Parent (Get-RegistryPath $Path))) }
+    if (-not $OutputPath) {
+        $OutputPath = Join-Path $resolvedRepo "docs\headroom-ports.md"
+    }
+
+    $outDir = Split-Path -Parent $OutputPath
+    if ($outDir -and -not (Test-Path -LiteralPath $outDir)) {
+        New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+    }
+
+    $discoveryScript = Join-Path $resolvedRepo "core\headroom-discovery.ps1"
+    $liveMap = @{}
+    if (Test-Path -LiteralPath $discoveryScript) {
+        . $discoveryScript
+        $live = Get-ActiveHeadroomPorts
+        foreach ($l in $live) {
+            $liveMap[$l.Port] = $l
+        }
+    }
+
+    $sb = [System.Text.StringBuilder]::new()
+    [void]$sb.AppendLine("# Token-Stack Headroom Port & Agent Registry")
+    [void]$sb.AppendLine("")
+    [void]$sb.AppendLine("> Tự động sinh bởi Token-Stack Registry Engine. Single Source of Truth cho multi-instance Headroom.")
+    [void]$sb.AppendLine("")
+    [void]$sb.AppendLine("| Profile | Agent Type | Port | Upstream | Live Process | Status | DB Path |")
+    [void]$sb.AppendLine("|:---|:---:|:---:|:---|:---:|:---:|:---|")
+
+    $profiles = $reg.profiles.PSObject.Properties
+    foreach ($p in $profiles) {
+        $cfg = $p.Value
+        $port = $cfg.headroom_port
+        $isLive = $liveMap.ContainsKey($port)
+        $isReady = if ($isLive) { $liveMap[$port].IsReady } else { $false }
+        $liveIcon = if ($isReady) { "Ready (PID: " + $liveMap[$port].ProcessId + ")" } elseif ($isLive) { "Starting" } else { "Offline (On Restart)" }
+        $agentType = if ($cfg.type) { $cfg.type } else { "claude" }
+        $upstreamUrl = if ($cfg.upstream) { $cfg.upstream } else { "" }
+        $db = if ($cfg.db_path) { $cfg.db_path } else { "(default)" }
+
+        $statusStr = if ($isReady) { 'ACTIVE' } else { 'STAGED' }
+        $line = [string]::Format("| **{0}** | `{1}` | `{2}` | `{3}` | {4} | {5} | `{6}` |", $p.Name, $agentType, $port, $upstreamUrl, $liveIcon, $statusStr, $db)
+        [void]$sb.AppendLine($line)
+    }
+
+    [void]$sb.AppendLine("")
+    [void]$sb.AppendLine("### Cổng phát hiện ngoài Registry:")
+    $unreg = 0
+    foreach ($lp in $liveMap.Values) {
+        $found = $false
+        foreach ($p in $profiles) {
+            if ($p.Value.headroom_port -eq $lp.Port) { $found = $true; break }
+        }
+        if (-not $found) {
+            $unreg++
+            [void]$sb.AppendLine("- Port `$($lp.Port)`: PID $($lp.ProcessId), Ready: $($lp.IsReady)")
+        }
+    }
+    if ($unreg -eq 0) {
+        [void]$sb.AppendLine("_Không có cổng lạ nào ngoài danh mục đăng ký._")
+    }
+
+    [System.IO.File]::WriteAllText($OutputPath, $sb.ToString(), [System.Text.UTF8Encoding]::new($false))
+    return $OutputPath
+}
+
 if ($ExecutionContext.SessionState.Module) {
-    Export-ModuleMember -Function Get-TokenStackRegistry, Save-TokenStackRegistry, Get-TokenStackProfile, Set-TokenStackProfile, Remove-TokenStackProfile, Ensure-ProfileDbDirectory
+    Export-ModuleMember -Function Get-TokenStackRegistry, Save-TokenStackRegistry, Get-TokenStackProfile, Set-TokenStackProfile, Remove-TokenStackProfile, Ensure-ProfileDbDirectory, Export-HeadroomPortNote
 }
