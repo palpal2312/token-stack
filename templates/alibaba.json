@@ -1,0 +1,19 @@
+{
+  "provider": "alibaba",
+  "description": "Alibaba Cloud Model Studio (MaaS Token Plan)",
+  "default_upstream": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic",
+  "recommended_model": "qwen3.8-max",
+  "allowed_models": [
+    "qwen3.8-max",
+    "deepseek-v4",
+    "deepseek-r1"
+  ],
+  "env_template": {
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+  },
+  "plugins": {
+    "caveman@caveman": true,
+    "ponytail@ponytail": true
+  }
+}

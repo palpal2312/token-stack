@@ -1,0 +1,20 @@
+{
+  "provider": "antigravity",
+  "description": "Sub2API / Google Antigravity Gateway with tiered Gemini & Claude mapping",
+  "default_upstream": "http://127.0.0.1:9284",
+  "recommended_model": "claude-sonnet-4-5-thinking",
+  "allowed_models": [
+    "claude-sonnet-4-5",
+    "claude-sonnet-4-5-thinking",
+    "claude-opus-4-6-thinking",
+    "claude-opus-4-5"
+  ],
+  "env_template": {
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+  },
+  "plugins": {
+    "caveman@caveman": true,
+    "ponytail@ponytail": true
+  }
+}
