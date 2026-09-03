@@ -41,7 +41,7 @@ test('Installer: apply mode installs skills, injects plugins, and is idempotent'
   ];
 
   // First apply
-  const r1 = runPowerShell(args, { env: sandbox.env });
+  const r1 = runPowerShell(args, { env: sandbox.env, timeout: 35000 });
   assert.equal(r1.status, 0, r1.stderr);
 
   // Assert skills directory and settings updated
@@ -54,7 +54,7 @@ test('Installer: apply mode installs skills, injects plugins, and is idempotent'
   assert.ok(settings.enabledPlugins['ponytail@ponytail']);
 
   // Second apply (Idempotency)
-  const r2 = runPowerShell(args, { env: sandbox.env });
+  const r2 = runPowerShell(args, { env: sandbox.env, timeout: 35000 });
   assert.equal(r2.status, 0, r2.stderr);
 
   const settings2 = JSON.parse(fs.readFileSync(path.join(profileDir, 'settings.json'), 'utf8'));
