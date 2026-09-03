@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/Microsoft/
 
 # next.js
 /.next/

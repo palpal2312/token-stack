@@ -45,7 +45,7 @@ function treeKill(pid) {
  */
 function spawnOwnedProcess(command, args, options = {}) {
   const runId = crypto.randomBytes(6).toString('hex');
-  const timeoutMs = options.timeoutMs || 25000;
+  const timeoutMs = options.timeoutMs || options.timeout || 45000;
   const startTime = Date.now();
 
   const child = spawn(command, args, {
@@ -137,7 +137,7 @@ function spawnOwnedAsync(command, args, options = {}) {
  */
 function spawnOwnedSync(command, args, options = {}) {
   const runId = crypto.randomBytes(6).toString('hex');
-  const timeout = options.timeoutMs || options.timeout || 25000;
+  const timeout = options.timeoutMs || options.timeout || 45000;
   const startTime = Date.now();
 
   const result = spawnSync(command, args, {

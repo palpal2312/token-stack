@@ -130,8 +130,8 @@ func hashFileOnDisk(path string) (string, error) {
 }
 
 // validatePathJail verifies that target is inside root, preventing directory
-// traversal attacks. Uses filepath.Abs + filepath.EvalSymlinks for
-// defense-in-depth.
+// traversal attacks. Uses filepath.Abs + filepath.Rel + filepath.EvalSymlinks
+// for defense-in-depth across platforms including Windows 8.3 short names.
 func validatePathJail(root, target string) error {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
@@ -142,19 +142,20 @@ func validatePathJail(root, target string) error {
 		return fmt.Errorf("resolve target: %w", err)
 	}
 
-	// Evaluate symlinks when the paths exist on disk.
-	if realRoot, e := filepath.EvalSymlinks(absRoot); e == nil {
-		absRoot = realRoot
-	}
-	if realTarget, e := filepath.EvalSymlinks(absTarget); e == nil {
-		absTarget = realTarget
+	// Lexical jail check using filepath.Rel
+	rel, err := filepath.Rel(absRoot, absTarget)
+	if err != nil || strings.HasPrefix(rel, "..") || rel == ".." || filepath.IsAbs(rel) {
+		return fmt.Errorf("path %q escapes worktree root %q", target, root)
 	}
 
-	// Normalize with trailing separator so /workspace doesn't match
-	// /workspace-other.
-	prefix := absRoot + string(filepath.Separator)
-	if absTarget != absRoot && !strings.HasPrefix(absTarget, prefix) {
-		return fmt.Errorf("path %q escapes worktree root %q", target, root)
+	// When both paths exist on disk, evaluate symlinks to block symlink traversal escapes
+	realRoot, errRoot := filepath.EvalSymlinks(absRoot)
+	realTarget, errTarget := filepath.EvalSymlinks(absTarget)
+	if errRoot == nil && errTarget == nil {
+		relReal, err := filepath.Rel(realRoot, realTarget)
+		if err != nil || strings.HasPrefix(relReal, "..") || relReal == ".." || filepath.IsAbs(relReal) {
+			return fmt.Errorf("path %q escapes worktree root %q via symlink", target, root)
+		}
 	}
 	return nil
 }

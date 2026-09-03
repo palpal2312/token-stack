@@ -97,7 +97,7 @@ async function withSandbox(prefix, fn) {
 
 function runPowerShell(args, options = {}) {
   const env = scrubEnv(process.env, options.env || {});
-  const timeoutMs = options.timeoutMs || 25000;
+  const timeoutMs = options.timeoutMs || options.timeout || 45000;
   return spawnOwnedSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', ...args], {
     cwd: options.cwd || repoRoot,
     encoding: 'utf8',
